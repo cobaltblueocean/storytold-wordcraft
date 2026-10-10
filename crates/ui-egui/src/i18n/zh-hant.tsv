@@ -1314,3 +1314,12 @@
 	Formatted	已設定格式
 	Interface size:	介面大小：
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	在系統顯示縮放的基礎上放大或縮小功能區、功能表與對話方塊。文件縮放另行設定。
+	Align Text	對齊文字
+	Create Link	建立連結
+	Break Link	中斷連結
+	Rotate all text 90°	將所有文字旋轉 90°
+	Rotate all text 270°	將所有文字旋轉 270°
+	Stacked	堆疊
+	Middle	中間
+	Click the empty text box the text should continue in (Esc cancels)	按一下要接續文字的空白文字方塊（按 Esc 取消）
+	Not linked: click a text box	未連結：請按一下文字方塊

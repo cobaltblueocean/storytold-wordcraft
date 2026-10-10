@@ -1325,3 +1325,12 @@
 	Formatted	Відформатовано
 	Interface size:	Розмір інтерфейсу:
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	Збільшує або зменшує стрічку, меню й діалогові вікна понад системне масштабування екрана. Масштаб документа налаштовується окремо.
+	Align Text	Вирівняти текст
+	Create Link	Створити зв'язок
+	Break Link	Розірвати зв'язок
+	Rotate all text 90°	Повернути весь текст на 90°
+	Rotate all text 270°	Повернути весь текст на 270°
+	Stacked	Стовпчиком
+	Middle	Посередині
+	Click the empty text box the text should continue in (Esc cancels)	Клацніть порожнє текстове поле, у якому має продовжитися текст (Esc — скасувати)
+	Not linked: click a text box	Не зв'язано: клацніть текстове поле
