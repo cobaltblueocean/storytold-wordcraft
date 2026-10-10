@@ -16,9 +16,11 @@ macro_rules! tl {
 pub mod backstage;
 pub mod canvas;
 pub mod chrome;
+pub mod content_controls;
 pub mod control;
 pub mod credits;
 pub mod dialogs;
+pub mod dialogs_controls;
 pub mod dialogs_insert;
 pub mod dialogs_keyboard;
 pub mod dialogs_lists;
@@ -171,6 +173,8 @@ pub struct WordApp {
     pub ui: UiState,
     pub services: Services,
     pub canvas: canvas::CanvasState,
+    /// Content control frames, check boxes and lists on the page.
+    pub controls: content_controls::ControlUi,
     pub dialog: Option<dialogs::Dialog>,
     pub status_msg: Option<(String, f64)>,
     pub previews: previews::Previews,
@@ -253,6 +257,7 @@ impl WordApp {
             ui: UiState::default(),
             services,
             canvas: canvas::CanvasState::default(),
+            controls: Default::default(),
             dialog: None,
             status_msg: None,
             previews: previews::Previews::default(),
@@ -991,6 +996,7 @@ impl WordApp {
                 canvas::show(self, ui);
             });
         }
+        content_controls::popup(self, &ctx);
         dialogs::show(self, &ctx);
         zotero::show_alert(self, &ctx);
         read_aloud::show(self, &ctx);
@@ -1188,6 +1194,8 @@ fn input_dialog(id: &str, params: &Value) -> Option<&'static str> {
         "insert.bookmark" if !has("name") => Some("bookmark"),
         // Word Count from the keyboard or command search shows its dialog, as the ribbon does.
         "review.wordCount" if params.as_object().is_none_or(|m| m.is_empty()) => Some("wordCount"),
+        // Content control Properties without settings shows the dialog.
+        "developer.properties" if params.as_object().is_none_or(|m| m.is_empty()) => Some("controlProperties"),
         // Enclose Characters without a shape (null is one: it takes the enclosure away).
         "format.enclose" if params.get("shape").is_none() => Some("enclose"),
         _ => None,

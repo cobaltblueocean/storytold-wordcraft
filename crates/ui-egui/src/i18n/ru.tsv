@@ -1790,6 +1790,38 @@ preview	Title	Пример
 	Left Only	Только слева
 	Right Only	Только справа
 	Largest Only	Только по большей стороне
+	Developer	Разработчик
+	Controls	Элементы управления
+	Rich Text Content Control	Элемент управления содержимым: форматированный текст
+	Plain Text Content Control	Элемент управления содержимым: обычный текст
+	Picture Content Control	Элемент управления содержимым: рисунок
+	Building Block Gallery Content Control	Элемент управления содержимым: коллекция стандартных блоков
+	Check Box Content Control	Элемент управления содержимым: флажок
+	Combo Box Content Control	Элемент управления содержимым: поле со списком
+	Drop-Down List Content Control	Элемент управления содержимым: раскрывающийся список
+	Date Picker Content Control	Элемент управления содержимым: выбор даты
+	Repeating Section Content Control	Элемент управления содержимым: повторяющийся раздел
+	Design Mode	Режим конструктора
+	Content Control at Selection	Элемент управления содержимым в выделении
+	Toggle Check Box	Переключить флажок
+	Choose List Item	Выбрать элемент списка
+	Set Date	Задать дату
+	Remove Content Control	Удалить элемент управления содержимым
+	Content Control Properties	Свойства элемента управления содержимым
+	Tag	Тег
+	Placeholder text	Текст-заполнитель
+	Can't be deleted	Нельзя удалять
+	Contents can't be edited	Содержимое нельзя изменять
+	Remove the control once edited	Удалить элемент управления после редактирования
+	Allow line breaks	Разрешить разрывы строк
+	Date format	Формат даты
+	Checked symbol	Символ установленного флажка
+	Unchecked symbol	Символ снятого флажка
+	List entries	Элементы списка
+	Display text	Отображаемый текст
+	Value	Значение
+	Today	Сегодня
+	Put the caret in a content control first.	Сначала поместите курсор в элемент управления содержимым.
 	Right-to-Left Table	Таблица справа налево
 	Right-to-Left Section	Раздел справа налево
 	Table direction:	Направление таблицы:

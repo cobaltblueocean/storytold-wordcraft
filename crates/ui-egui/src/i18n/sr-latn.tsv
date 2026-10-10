@@ -1406,6 +1406,39 @@
 	New Group	Nova grupa
 	Rename…	Preimenuj…
 	Ribbon and Quick Access Toolbar:	Traka i traka sa alatkama za brzi pristup:
+	Developer	Programer
+	Controls	Kontrole
+	Rich Text Content Control	Kontrola sadržaja za obogaćeni tekst
+	Plain Text Content Control	Kontrola sadržaja za običan tekst
+	Picture Content Control	Kontrola sadržaja za sliku
+	Building Block Gallery Content Control	Kontrola sadržaja za galeriju gradivnih blokova
+	Check Box Content Control	Kontrola sadržaja za polje za potvrdu
+	Combo Box Content Control	Kontrola sadržaja za kombinovano polje
+	Drop-Down List Content Control	Kontrola sadržaja za padajuću listu
+	Date Picker Content Control	Kontrola sadržaja za biranje datuma
+	Repeating Section Content Control	Kontrola sadržaja za odeljak koji se ponavlja
+	Design Mode	Režim dizajna
+	Content Control at Selection	Kontrola sadržaja na izboru
+	Toggle Check Box	Promeni polje za potvrdu
+	Choose List Item	Izaberi stavku liste
+	Set Date	Postavi datum
+	Remove Content Control	Ukloni kontrolu sadržaja
+	Content Control Properties	Svojstva kontrole sadržaja
+	Title	Naslov
+	Tag	Oznaka
+	Placeholder text	Tekst čuvara mesta
+	Can't be deleted	Ne može da se izbriše
+	Contents can't be edited	Sadržaj ne može da se uređuje
+	Remove the control once edited	Ukloni kontrolu posle uređivanja
+	Allow line breaks	Dozvoli prelome reda
+	Date format	Format datuma
+	Checked symbol	Simbol za potvrđeno
+	Unchecked symbol	Simbol za nepotvrđeno
+	List entries	Stavke liste
+	Display text	Prikazani tekst
+	Value	Vrednost
+	Today	Danas
+	Put the caret in a content control first.	Prvo postavite kursor u kontrolu sadržaja.
 	Right-to-Left Table	Tabela sa desna na levo
 	Right-to-Left Section	Odeljak sa desna na levo
 	Table direction:	Smer tabele:

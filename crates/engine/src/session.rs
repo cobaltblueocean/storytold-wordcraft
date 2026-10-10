@@ -86,6 +86,9 @@ pub struct ViewState {
     /// Show field codes instead of their results (`view.fieldCodes`, Alt+F9).
     #[serde(default)]
     pub field_codes: bool,
+    /// Developer › Design Mode: every content control shows its frame and title.
+    #[serde(default)]
+    pub design_mode: bool,
 }
 
 fn on() -> bool {
@@ -118,6 +121,7 @@ impl Default for ViewState {
             hide_ink: false,
             draw: Default::default(),
             field_codes: false,
+            design_mode: false,
         }
     }
 }
