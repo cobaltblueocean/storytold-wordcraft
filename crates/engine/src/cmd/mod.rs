@@ -12,6 +12,7 @@ pub mod fields;
 pub mod file;
 pub mod fmt_revisions;
 pub mod format;
+pub mod index;
 pub mod insert;
 pub mod inspector;
 pub mod lists;
@@ -64,6 +65,7 @@ pub fn registry() -> Registry {
     v.extend(fields::specs());
     v.extend(mailings::specs());
     v.extend(citations::specs());
+    v.extend(index::specs());
     v.extend(objects::specs());
     v.extend(draw::specs());
     v.extend(canvas::specs());
