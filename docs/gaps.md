@@ -37,7 +37,7 @@ first (`gh pr list`), and update this file and the parity doc when a gap closes.
 | 24 | **Default shortcuts**: ~135 of Word's ~250 (#330, #339, #343; Customize Keyboard #368, Customize Ribbon and the Quick Access Toolbar #379 landed) | | [ui-parity.md](ui-parity.md) | Power users | 4–7 | [ui-parity.md](ui-parity.md) |
 | 25 | **In-app AI assistant** (Copilot-style draft, rewrite, summarize) | | Chat PR #178 open | Users expecting Copilot | 15–30 + owner (provider) | [target-app-parity.md](target-app-parity.md) |
 | 26 | **Minor formats**: Flat OPC XML, Word 2003 XML, MHT, Works/WordPerfect | | | Rare | 20–35 | [file-format-parity.md](file-format-parity.md) |
-| 27 | **View windows**: Side by Side, Synchronous Scrolling, Arrange All, Switch Windows | | [parity-checklist.md](parity-checklist.md) (View 25/29) | Comparing documents | 3–5 | [ui-parity.md](ui-parity.md) |
+| 27 | **View windows**: Switch Windows, Arrange All, View Side by Side and Synchronous Scrolling landed across WordCraft windows (#322). Left: New Window (a second window on the same document) and Split are placeholders; Wayland doesn't let apps place or raise windows | | [parity-checklist.md](parity-checklist.md) (View 29/29 ids) | Comparing documents | 2–4 | [ui-parity.md](ui-parity.md) |
 | 28 | **Dictate** | | `tools.dictate` missing | Dictation users | 8–15 + owner (speech model) | [hardware-parity.md](hardware-parity.md) |
 | 29 | **Equations**: ink equations | | #191 notes; long display equations wrap at operators (#326) | Maths-heavy documents | 2–3 | [layout-parity.md](layout-parity.md) |
 
@@ -64,6 +64,7 @@ The same gaps grouped the way the parity documents are, for agents working in on
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | trivial | #27: Switch Windows, Arrange All, View Side by Side, Synchronous Scrolling landed (#322); New Window and Split left |
 | 2026-10-11 | trivial | #10: Shape Format › Text: text direction, align text and linked text boxes (#369) |
 | 2026-10-11 | trivial | #16: right-to-left tables (`w:bidiVisual`) and sections (`w:bidi`) laid out mirrored, with `table.rtl` and `layout.sectionRtl` (#362) |
 | 2026-10-11 | trivial | #4: columns balance before a continuous section break (#350) |
