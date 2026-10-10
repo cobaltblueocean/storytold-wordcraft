@@ -1432,6 +1432,13 @@
 	Search icons	Simgelerde ara
 	No icons match your search.	Aramanızla eşleşen simge yok.
 	Recolor a one-color picture, such as an icon	Simge gibi tek renkli bir resmi yeniden renklendir
+	WordCraft {version} is available.	WordCraft {version} sürümü çıktı.
+	Download	İndir
+	Open the release page in your browser	Sürüm sayfasını tarayıcıda aç
+	Skip this version	Bu sürümü atla
+	Dismiss	Kapat
+	Check for updates	Güncellemeleri denetle
+	Once a day, ask GitHub whether a newer WordCraft release is out and show a notice. Nothing else is sent.	Günde bir kez GitHub'a daha yeni bir WordCraft sürümü olup olmadığını sor ve bir bildirim göster. Başka hiçbir şey gönderilmez.
 	Align Text	Metni Hizala
 	Create Link	Bağlantı Oluştur
 	Break Link	Bağlantıyı Kes

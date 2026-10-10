@@ -1423,6 +1423,13 @@
 	Enlarge symbol	記号を拡大
 	Enclosure	囲い
 	Circle	円
+	WordCraft {version} is available.	WordCraft {version} が利用可能です。
+	Download	ダウンロード
+	Open the release page in your browser	リリース ページをブラウザーで開く
+	Skip this version	このバージョンをスキップ
+	Dismiss	閉じる
+	Check for updates	更新を確認する
+	Once a day, ask GitHub whether a newer WordCraft release is out and show a notice. Nothing else is sent.	1 日に 1 回、新しい WordCraft のリリースがあるか GitHub に問い合わせ、通知を表示します。それ以外の情報は送信されません。
 	Align Text	文字の配置
 	Create Link	リンクの作成
 	Break Link	リンクの解除
