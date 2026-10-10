@@ -27,6 +27,7 @@ pub use ribbon::RibbonLayout;
 pub use session::{ColumnBlock, EditSnapshot, FindState, MathEdit, Prefs, Selection, Session, ViewState};
 pub use wordcraft_doc as doc;
 pub use wordcraft_layout as layout;
+pub use wordcraft_proof as proof;
 pub use wordcraft_render as render;
 
 #[derive(Debug, thiserror::Error, Clone, PartialEq)]
