@@ -694,6 +694,7 @@ fn toc_field_skips_nested_stories() {
             story: Some(story),
             freeform: None,
             effects: Default::default(),
+            ends: Default::default(),
         }
     };
     let mut head = Paragraph::with_text("Contents", CharProps::default()).styled("TOCHeading");
@@ -817,6 +818,7 @@ fn shapes_textboxes_equations_dropcaps_round_trip() {
         story: Some(story),
         freeform: None,
         effects: Default::default(),
+        ends: Default::default(),
     };
     let star = InlineObject::Shape {
         kind: ShapeKind::Star,
@@ -829,6 +831,7 @@ fn shapes_textboxes_equations_dropcaps_round_trip() {
         story: None,
         freeform: None,
         effects: Default::default(),
+        ends: Default::default(),
     };
     let eq = InlineObject::Equation { linear: "x=(-b±√(b^2-4ac))/2a".into(), display: false, math: Default::default() };
     let mut p = Paragraph::with_text("shapes ", CharProps::default());
@@ -900,6 +903,7 @@ fn groups_round_trip() {
             glow: None,
             soft_edge: Some(2.5),
         },
+        ends: Default::default(),
     };
     let tb = InlineObject::Shape {
         kind: ShapeKind::TextBox,
@@ -912,6 +916,7 @@ fn groups_round_trip() {
         story: Some(story),
         freeform: None,
         effects: Default::default(),
+        ends: Default::default(),
     };
     let float = Float { wrap: Wrap::Square, h_rel: Anchor::Column, v_rel: Anchor::Paragraph, x: 20.0, y: 10.0, dist: 9.0, ..Default::default() };
     let group = InlineObject::Group {
@@ -1148,6 +1153,7 @@ fn self_showing_text_box_saves_bounded() {
         story: Some(id),
         freeform: None,
         effects: Default::default(),
+        ends: Default::default(),
     };
     for _ in 0..30 {
         d.insert_object(
@@ -1244,6 +1250,7 @@ fn ink_and_freeforms_round_trip_as_custom_geometry() {
         float: Float { wrap, h_rel: Anchor::Column, v_rel: Anchor::Paragraph, x: 30.0, y: 12.0, ..Default::default() },
         story: None,
         freeform: Some(Arc::new(f)),
+        ends: Default::default(),
         effects: Default::default(),
     };
     let pen = shape(None, 2.0, Wrap::InFrontOfText, Freeform::ink(InkTool::Pen, 60.0, 20.0, vec![[1.0, 1.0], [30.0, 19.0], [59.0, 4.0]]));
@@ -1298,6 +1305,7 @@ fn shape_effects_round_trip() {
         story: None,
         freeform: None,
         effects,
+        ends: Default::default(),
     };
     let mut p = Paragraph::with_text("x", CharProps::default());
     p.insert_object(1, shape, &CharProps::default()).unwrap();
@@ -1371,6 +1379,7 @@ fn rotation_and_flips_round_trip() {
         stroke_width: 0.0,
         float,
         story: None,
+        ends: Default::default(),
         freeform: None,
         effects: Default::default(),
     };
@@ -1425,6 +1434,7 @@ fn rotated_group_and_shadow_rotation_round_trip() {
         stroke: None,
         stroke_width: 0.0,
         float: Float { rot: 20.0, ..Default::default() },
+        ends: Default::default(),
         story: None,
         freeform: None,
         effects: ShapeEffects { shadow: Some(Shadow { rot_with_shape, ..Default::default() }), ..Default::default() },

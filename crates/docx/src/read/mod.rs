@@ -7,6 +7,7 @@ mod embed;
 mod freeform;
 mod math;
 mod props;
+mod shape_style;
 mod story;
 
 use std::collections::{BTreeMap, HashMap, HashSet};
