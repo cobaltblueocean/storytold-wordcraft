@@ -7,6 +7,8 @@ use proptest::prelude::*;
 
 use super::read;
 
+mod drawing;
+
 /// Offset in the WordDocument stream where test text pieces are placed (past the FIB).
 const TEXT_FC: u32 = 0x600;
 /// Offset in the Table stream where the test Clx is placed.
@@ -1600,7 +1602,7 @@ fn picture_bytes_are_capped_per_document() {
     pics.limit = 1000;
     let first = pics.get(&data, 0).expect("first fits");
     // Same location again: no new bytes.
-    assert_eq!(pics.get(&data, 0).map(|p| p.0), Some(first.0.clone()));
+    assert_eq!(pics.get(&data, 0).map(|p| p.key), Some(first.key.clone()));
     // A second distinct picture would exceed the cap.
     assert!(pics.get(&data, a.len() as u32).is_none());
     assert_eq!(pics.media.len(), 1);
