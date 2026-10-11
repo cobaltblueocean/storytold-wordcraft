@@ -223,6 +223,175 @@ pub fn check_password(password: &str) -> Result<(), DocxError> {
     Ok(())
 }
 
+/// Restrict Editing's password (`w:documentProtection`, ECMA-376 Part 1 §17.15.1.29): the
+/// attributes that store its hash — SHA-512 of a random 16-byte salt and the password as UTF-16LE,
+/// hashed again `spin_count` times with the iteration number appended ([MS-OFFCRYPTO] §2.4.2.4,
+/// the ISO write-protection method). Protection isn't encryption: the document stays readable,
+/// the password only guards turning protection off.
+pub fn protection_hash(password: &str, spin_count: u32) -> Result<Vec<(String, String)>, DocxError> {
+    check_password(password)?;
+    let spin_count = spin_count.min(MAX_SPIN_COUNT);
+    let salt = random(SALT)?;
+    let hash = iterate_appended(Hash::Sha512, &salt, password, spin_count);
+    let b64 = |b: &[u8]| base64::engine::general_purpose::STANDARD.encode(b);
+    Ok(vec![
+        ("w:algorithmName".into(), "SHA-512".into()),
+        ("w:hashValue".into(), b64(&hash)),
+        ("w:saltValue".into(), b64(&salt)),
+        ("w:spinCount".into(), spin_count.to_string()),
+    ])
+}
+
+/// What checking a Restrict Editing password found ([`check_protection_password`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PasswordCheck {
+    /// The protection has no password: anyone may stop it.
+    NoPassword,
+    /// The password matches the stored hash.
+    Correct,
+    /// The password doesn't match.
+    Incorrect,
+    /// The hash uses an algorithm or form WordCraft can't check, or is damaged. The protection
+    /// must stay on: guessing would let any password through.
+    Unsupported,
+}
+
+/// Does `password` match a Restrict Editing hash (attributes as [`protection_hash`] makes them, or
+/// as read from a file)? Two forms are checked:
+///
+/// - `w:algorithmName` / `w:hashValue` / `w:saltValue` / `w:spinCount`: the password itself is
+///   hashed ([`iterate_appended`]).
+/// - `w:cryptAlgorithmSid` / `w:hash` / `w:salt` / `w:cryptSpinCount` (ECMA-376 Part 4 §14.8.1):
+///   the password first becomes Word's legacy 32-bit key ([`legacy_key`]), whose bytes, reversed
+///   and written as an upper-case hex string, are hashed the same way.
+///
+/// Anything else — an algorithm other than SHA-1/SHA-256/SHA-384/SHA-512, an application-defined
+/// algorithm (`w:algIdExt`), a class other than `hash`, a spin count above the 10,000,000 Word
+/// accepts, damaged values — is [`PasswordCheck::Unsupported`], never a match.
+pub fn check_protection_password(attrs: &[(String, String)], password: &str) -> PasswordCheck {
+    let get = |k: &str| attrs.iter().find(|(n, _)| n == k).map(|(_, v)| v.trim());
+    if get("w:hashValue").is_some() {
+        let Some(hash) = get("w:algorithmName").and_then(Hash::parse) else { return PasswordCheck::Unsupported };
+        return verify(hash, get("w:hashValue"), get("w:saltValue"), get("w:spinCount"), password);
+    }
+    if get("w:hash").is_none() {
+        // §17.15.1.29: without a hash no password is associated with the protection.
+        return PasswordCheck::NoPassword;
+    }
+    let class_ok = get("w:cryptAlgorithmClass").is_none_or(|c| c == "hash");
+    let type_ok = get("w:cryptAlgorithmType").is_none_or(|t| t == "typeAny");
+    if !class_ok || !type_ok || get("w:algIdExt").is_some() {
+        return PasswordCheck::Unsupported;
+    }
+    // Part 4 §14.8.1 lists 1 MD2, 2 MD4, 3 MD5, 4 SHA-1, 12 SHA-256, 13 SHA-384, 14 SHA-512.
+    let hash = match get("w:cryptAlgorithmSid").and_then(|v| v.parse::<u32>().ok()) {
+        Some(4) => Hash::Sha1,
+        Some(12) => Hash::Sha256,
+        Some(13) => Hash::Sha384,
+        Some(14) => Hash::Sha512,
+        _ => return PasswordCheck::Unsupported,
+    };
+    verify(hash, get("w:hash"), get("w:salt"), get("w:cryptSpinCount"), &legacy_key_hex(password))
+}
+
+/// Hash `input` with the stored salt and spin count and compare with the stored hash. Damaged or
+/// out-of-range values are [`PasswordCheck::Unsupported`].
+fn verify(hash: Hash, want: Option<&str>, salt: Option<&str>, spin_count: Option<&str>, input: &str) -> PasswordCheck {
+    let dec = |v: &str| base64::engine::general_purpose::STANDARD.decode(v).ok();
+    let Some(want) = want.and_then(dec) else { return PasswordCheck::Unsupported };
+    // §17.15.1.29: without a salt nothing is prepended.
+    let salt = match salt {
+        Some(v) => match dec(v) {
+            Some(s) => s,
+            None => return PasswordCheck::Unsupported,
+        },
+        None => Vec::new(),
+    };
+    // Word accepts spin counts from 0 to 10,000,000 ([MS-OI29500] 2.1.402 d); a missing one is 0.
+    let spin_count = match spin_count.map(str::parse::<u32>) {
+        None => 0,
+        Some(Ok(n)) if n <= MAX_SPIN_COUNT => n,
+        Some(_) => return PasswordCheck::Unsupported,
+    };
+    if want.len() != hash.size() || salt.len() > 1024 {
+        return PasswordCheck::Unsupported;
+    }
+    if same(&iterate_appended(hash, &salt, input, spin_count), &want) { PasswordCheck::Correct } else { PasswordCheck::Incorrect }
+}
+
+/// The initial value of the legacy key's high-order word, by password length 1–15 (ECMA-376
+/// Part 4 §14.8.1, "Initial code array").
+const LEGACY_INITIAL_CODE: [u16; 15] =
+    [0xE1F0, 0x1D0F, 0xCC9C, 0x84C0, 0x110C, 0x0E10, 0xF1CE, 0x313E, 0x1872, 0xE139, 0xD40F, 0x84F9, 0x280C, 0xA96A, 0x4EC3];
+
+/// The legacy key's encryption matrix (Part 4 §14.8.1): one row per character position, rows
+/// "Last-14" to "Last", one column per bit 0–6. The password's last character uses the last row.
+const LEGACY_MATRIX: [[u16; 7]; 15] = [
+    [0xAEFC, 0x4DD9, 0x9BB2, 0x2745, 0x4E8A, 0x9D14, 0x2A09],
+    [0x7B61, 0xF6C2, 0xFDA5, 0xEB6B, 0xC6F7, 0x9DCF, 0x2BBF],
+    [0x4563, 0x8AC6, 0x05AD, 0x0B5A, 0x16B4, 0x2D68, 0x5AD0],
+    [0x0375, 0x06EA, 0x0DD4, 0x1BA8, 0x3750, 0x6EA0, 0xDD40],
+    [0xD849, 0xA0B3, 0x5147, 0xA28E, 0x553D, 0xAA7A, 0x44D5],
+    [0x6F45, 0xDE8A, 0xAD35, 0x4A4B, 0x9496, 0x390D, 0x721A],
+    [0xEB23, 0xC667, 0x9CEF, 0x29FF, 0x53FE, 0xA7FC, 0x5FD9],
+    [0x47D3, 0x8FA6, 0x0F6D, 0x1EDA, 0x3DB4, 0x7B68, 0xF6D0],
+    [0xB861, 0x60E3, 0xC1C6, 0x93AD, 0x377B, 0x6EF6, 0xDDEC],
+    [0x45A0, 0x8B40, 0x06A1, 0x0D42, 0x1A84, 0x3508, 0x6A10],
+    [0xAA51, 0x4483, 0x8906, 0x022D, 0x045A, 0x08B4, 0x1168],
+    [0x76B4, 0xED68, 0xCAF1, 0x85C3, 0x1BA7, 0x374E, 0x6E9C],
+    [0x3730, 0x6E60, 0xDCC0, 0xA9A1, 0x4363, 0x86C6, 0x1DAD],
+    [0x3331, 0x6662, 0xCCC4, 0x89A9, 0x0373, 0x06E6, 0x0DCC],
+    [0x1021, 0x2042, 0x4084, 0x8108, 0x1231, 0x2462, 0x48C4],
+];
+
+/// Word's legacy 32-bit password key (ECMA-376 Part 4 §14.8.1): the password as UTF-16 without a
+/// leading BOM, cut to 15 characters, each character reduced to one byte (its low byte, or its
+/// high byte when the low byte is 0); the high-order word comes from the initial code array and
+/// the encryption matrix, the low-order word from rotating and XOR-ing the bytes backwards.
+fn legacy_key(password: &str) -> u32 {
+    let mut units = password.encode_utf16().peekable();
+    units.next_if_eq(&0xFEFF);
+    let bytes: Zeroizing<Vec<u8>> =
+        Zeroizing::new(units.take(LEGACY_INITIAL_CODE.len()).map(|u| if u & 0xFF != 0 { (u & 0xFF) as u8 } else { (u >> 8) as u8 }).collect());
+    let Some(&initial) = bytes.len().checked_sub(1).and_then(|i| LEGACY_INITIAL_CODE.get(i)) else { return 0 };
+    let mut high = initial;
+    let first_row = LEGACY_MATRIX.len() - bytes.len();
+    for (row, &c) in LEGACY_MATRIX.iter().skip(first_row).zip(bytes.iter()) {
+        for (bit, &code) in row.iter().enumerate() {
+            if c & (1 << bit) != 0 {
+                high ^= code;
+            }
+        }
+    }
+    let rotate = |w: u16| ((w >> 14) & 0x0001) | ((w << 1) & 0x7FFF);
+    let mut low = 0u16;
+    for &c in bytes.iter().rev() {
+        low = rotate(low) ^ u16::from(c);
+    }
+    // `bytes` holds at most 15 values, so its length fits a word.
+    low = rotate(low) ^ (bytes.len() as u16) ^ 0xCE4B;
+    (u32::from(high) << 16) | u32::from(low)
+}
+
+/// What the legacy form hashes: the key's bytes in reversed order (Part 4 §14.8.1: 0x64CEED7E
+/// becomes 7EEDCE64), as an upper-case hex string — hashed as UTF-16LE like a password, as Word
+/// does ([MS-OE376] 2.1.410 a).
+fn legacy_key_hex(password: &str) -> Zeroizing<String> {
+    let key = legacy_key(password);
+    Zeroizing::new(key.to_le_bytes().iter().map(|b| format!("{b:02X}")).collect())
+}
+
+/// The ISO write-protection hash ([MS-OFFCRYPTO] §2.4.2.4): H0 = H(salt + password as UTF-16LE),
+/// Hn = H(Hn-1 + iterator) — the iterator after the hash, unlike encryption's [`iterate`].
+fn iterate_appended(hash: Hash, salt: &[u8], password: &str, spin_count: u32) -> Zeroizing<Vec<u8>> {
+    let pw: Zeroizing<Vec<u8>> = Zeroizing::new(password.encode_utf16().flat_map(u16::to_le_bytes).collect());
+    let mut h = Zeroizing::new(hash.hash(&[salt, &pw]));
+    for i in 0..spin_count.min(MAX_SPIN_COUNT) {
+        *h = hash.hash(&[&h, &i.to_le_bytes()]);
+    }
+    h
+}
+
 fn bad(msg: impl Into<String>) -> DocxError {
     DocxError::Encryption(msg.into())
 }
@@ -626,6 +795,72 @@ fn primary_transform() -> Vec<u8> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn protection_password_round_trip() {
+        use super::PasswordCheck::*;
+        let attrs = super::protection_hash("s3cret", 1000).unwrap();
+        assert_eq!(super::check_protection_password(&attrs, "s3cret"), Correct);
+        assert_eq!(super::check_protection_password(&attrs, "S3cret"), Incorrect);
+        // Damaged attributes are refused, never accepted.
+        let mut bad = attrs.clone();
+        bad.retain(|(k, _)| k != "w:hashValue");
+        bad.push(("w:hashValue".into(), "not base64!".into()));
+        assert_eq!(super::check_protection_password(&bad, "s3cret"), Unsupported);
+        let mut odd = attrs.clone();
+        odd.retain(|(k, _)| k != "w:algorithmName");
+        odd.push(("w:algorithmName".into(), "WHIRLPOOL".into()));
+        assert_eq!(super::check_protection_password(&odd, "s3cret"), Unsupported);
+        assert_eq!(super::check_protection_password(&[("w:cryptProviderType".into(), "rsaAES".into())], "x"), NoPassword);
+    }
+
+    /// The worked example of ECMA-376 Part 4 §14.8.1: "Example" gives the key 0x64CEED7E, hashed
+    /// as "7EEDCE64".
+    #[test]
+    fn legacy_key_matches_the_specification_example() {
+        assert_eq!(super::legacy_key("Example"), 0x64CE_ED7E);
+        assert_eq!(super::legacy_key_hex("Example").as_str(), "7EEDCE64");
+        assert_eq!(super::legacy_key(""), 0);
+        // A leading BOM is dropped; only the first 15 characters count.
+        assert_eq!(super::legacy_key("\u{FEFF}Example"), 0x64CE_ED7E);
+        assert_eq!(super::legacy_key("abcdefghijklmnopq"), super::legacy_key("abcdefghijklmno"));
+        assert_ne!(super::legacy_key("abcdefghijklmno"), super::legacy_key("abcdefghijklmn"));
+    }
+
+    /// The legacy form (`w:cryptAlgorithmSid`, `w:hash`, `w:salt`, `w:cryptSpinCount`), as Word
+    /// writes it. The expected hash was computed independently from the specification's stages.
+    #[test]
+    fn legacy_protection_hash_is_verified() {
+        use super::PasswordCheck::*;
+        let legacy = |sid: &str, hash: &str, spin: &str| -> Vec<(String, String)> {
+            vec![
+                ("w:cryptProviderType".into(), "rsaFull".into()),
+                ("w:cryptAlgorithmClass".into(), "hash".into()),
+                ("w:cryptAlgorithmType".into(), "typeAny".into()),
+                ("w:cryptAlgorithmSid".into(), sid.into()),
+                ("w:cryptSpinCount".into(), spin.into()),
+                ("w:hash".into(), hash.into()),
+                ("w:salt".into(), "AAECAwQFBgcICQoLDA0ODw==".into()),
+            ]
+        };
+        let attrs = legacy("4", KNOWN_LEGACY_SHA1, "100000");
+        assert_eq!(super::check_protection_password(&attrs, "Example"), Correct);
+        assert_eq!(super::check_protection_password(&attrs, "example"), Incorrect);
+        assert_eq!(super::check_protection_password(&attrs, ""), Incorrect);
+        // MD5 (and the other algorithms WordCraft lacks), hostile spin counts: refused.
+        assert_eq!(super::check_protection_password(&legacy("3", KNOWN_LEGACY_SHA1, "100000"), "Example"), Unsupported);
+        assert_eq!(super::check_protection_password(&legacy("4", KNOWN_LEGACY_SHA1, "4294967295"), "Example"), Unsupported);
+        assert_eq!(super::check_protection_password(&legacy("4", KNOWN_LEGACY_SHA1, "-1"), "Example"), Unsupported);
+        let mut ext = attrs.clone();
+        ext.push(("w:algIdExt".into(), "0000000A".into()));
+        assert_eq!(super::check_protection_password(&ext, "Example"), Unsupported);
+        // No algorithm named: the very old bare-hash form isn't defined, so it's refused.
+        let bare = vec![("w:hash".to_string(), KNOWN_LEGACY_SHA1.to_string())];
+        assert_eq!(super::check_protection_password(&bare, "Example"), Unsupported);
+    }
+
+    /// SHA-1 of the salt 00 01 … 0F and "7EEDCE64" as UTF-16LE, iterated 100,000 times.
+    const KNOWN_LEGACY_SHA1: &str = "pEWelKoH6SVpvMmyPAJ8bHA/g/s=";
+
     use super::*;
 
     fn zip_package() -> Vec<u8> {

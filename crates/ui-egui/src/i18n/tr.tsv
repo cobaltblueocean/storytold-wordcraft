@@ -1432,6 +1432,78 @@
 	Search icons	Simgelerde ara
 	No icons match your search.	Aramanızla eşleşen simge yok.
 	Recolor a one-color picture, such as an icon	Simge gibi tek renkli bir resmi yeniden renklendir
+	1. Formatting restrictions	1. Biçimlendirme kısıtlamaları
+	2. Editing restrictions	2. Düzenleme kısıtlamaları
+	3. Start enforcement	3. Korumayı başlat
+	<< Less	<< Daha az
+	Another file	Başka bir dosya
+	Apply as you type	Yazarken uygula
+	AutoCorrect	Otomatik Düzelt
+	AutoFormat As You Type	Yazarken Otomatik Biçimlendir
+	Automatic bulleted lists	Otomatik madde işaretli listeler
+	Automatic numbered lists	Otomatik numaralı listeler
+	Border lines	Kenarlık çizgileri
+	Capitalize first letter of sentences	Cümlelerin ilk harfini büyük yap
+	Capitalize first letter of table cells	Tablo hücrelerinin ilk harfini büyük yap
+	Capitalize names of days	Gün adlarını büyük harfle başlat
+	Case changes	Büyük/küçük harf değişiklikleri
+	Character level	Karakter düzeyi
+	Checked styles are allowed:	İşaretli stillere izin verilir:
+	Combine Documents	Belgeleri Birleştir
+	Compare Documents	Belgeleri Karşılaştır
+	Compared: {changes} changes	Karşılaştırıldı: {changes} değişiklik
+	Comparing with another file needs the desktop app.	Başka bir dosyayla karşılaştırma için masaüstü uygulaması gerekir.
+	Comparison settings	Karşılaştırma ayarları
+	Don't capitalize after:	Şundan sonra büyük harf yapma:
+	Editing in this document is restricted.	Bu belgede düzenleme kısıtlanmıştır.
+	Every change is recorded as a tracked change.	Her değişiklik izlenen değişiklik olarak kaydedilir.
+	Everyone	Herkes
+	Exceptions (optional)	Özel durumlar (isteğe bağlı)
+	Exceptions…	Özel durumlar…
+	Fields	Alanlar
+	Filling in forms	Form doldurma
+	Find Next Editable Region	Sonraki Düzenlenebilir Bölgeyi Bul
+	Footnotes and endnotes	Dipnotlar ve sonnotlar
+	Formatting, case changes, white space and tables are compared; the other settings are kept for later.	Biçimlendirme, harf büyüklüğü, boşluklar ve tablolar karşılaştırılır; diğer ayarlar daha sonra için saklanır.
+	Fractions (1/2) as fraction characters (½)	Kesirleri (1/2) kesir karakteri (½) olarak yaz
+	Headers and footers	Üst bilgiler ve alt bilgiler
+	Hyphens (--) as dashes (—)	Kısa çizgileri (--) uzun çizgi (—) olarak yaz
+	In equations, typing a name after a backslash replaces it with its symbol.	Denklemlerde ters eğik çizgiden sonra yazılan ad, simgesiyle değiştirilir.
+	Internet addresses as links	İnternet adreslerini bağlantı yap
+	Label changes with:	Değişiklikleri şununla etiketle:
+	Limit formatting to a selection of styles	Biçimlendirmeyi seçili stillerle sınırla
+	Math AutoCorrect	Matematik Otomatik Düzelt
+	More >>	Daha fazla >>
+	Moves	Taşımalar
+	New document	Yeni belge
+	No changes (read only)	Değişiklik yok (salt okunur)
+	Only allow this kind of editing:	Yalnızca bu tür düzenlemeye izin ver:
+	Only comments can be added, except in regions marked editable.	Düzenlenebilir işaretli bölgeler dışında yalnızca yorum eklenebilir.
+	Only form fields can be filled in.	Yalnızca form alanları doldurulabilir.
+	Only the allowed styles can be applied.	Yalnızca izin verilen stiller uygulanabilir.
+	Ordinals (1st) as superscript	Sıra sayılarını (1st) üst simge yap
+	Original document	Özgün belge
+	This password type isn't supported.	Bu parola türü desteklenmiyor.
+	Replace as you type	Yazarken değiştir
+	Replace text as you type	Yazarken metni değiştir
+	Replace:	Değiştirilecek:
+	Revised document	Düzeltilmiş belge
+	Select text, then tick who can still edit it.	Metni seçin, sonra kimlerin düzenleyebileceğini işaretleyin.
+	Settings…	Ayarlar…
+	Show changes at:	Değişiklikleri göster:
+	Show changes in:	Değişiklikleri şurada göster:
+	Smart quotes instead of straight quotes	Düz tırnak yerine akıllı tırnak
+	Start Enforcing Protection	Korumayı Başlat
+	Stop Protection	Korumayı Durdur
+	Text boxes	Metin kutuları
+	The document is read only, except for regions marked editable.	Düzenlenebilir işaretli bölgeler dışında belge salt okunurdur.
+	The password is optional; without it anyone can stop the protection.	Parola isteğe bağlıdır; olmadan herkes korumayı durdurabilir.
+	This document	Bu belge
+	Tracked changes	İzlenen değişiklikler
+	Type the password to stop the protection.	Korumayı durdurmak için parolayı yazın.
+	White space	Boşluk
+	With:	Yeni:
+	Word level	Sözcük düzeyi
 	Align Text	Metni Hizala
 	Create Link	Bağlantı Oluştur
 	Break Link	Bağlantıyı Kes
