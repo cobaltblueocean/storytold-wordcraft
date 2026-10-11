@@ -23,6 +23,8 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
     let mac = app.integrated_titlebar;
     egui::Panel::left("backstage_nav")
         .exact_size(200.0)
+        // Fixed width, as in Word: without this egui shows a resize handle that does nothing (#502).
+        .resizable(false)
         .frame(egui::Frame::NONE.fill(APP_COLOR).inner_margin(egui::Margin { left: 0, right: 0, top: if mac { 0 } else { 12 }, bottom: 12 }))
         .show(ui, |ui| {
             let back = if mac {
@@ -405,6 +407,20 @@ fn options_page(app: &mut WordApp, ui: &mut Ui) {
     if ui.checkbox(&mut ruler, tl!("Show rulers")).changed() {
         let _ = app.run("view.ruler", json!({"value": ruler}));
     }
+    ui.add_space(10.0);
+    ui.label(egui::RichText::new(tl!("Customize")).font(semibold(15.0)));
+    ui.horizontal(|ui| {
+        ui.label(tl!("Keyboard shortcuts:"));
+        if ui.button(tl!("Customize…")).clicked() {
+            let _ = app.run("tools.customizeKeyboard", json!({}));
+        }
+    });
+    ui.horizontal(|ui| {
+        ui.label(tl!("Ribbon and Quick Access Toolbar:"));
+        if ui.button(tl!("Customize…")).clicked() {
+            let _ = app.run("tools.customizeRibbon", json!({}));
+        }
+    });
     ui.add_space(10.0);
     ui.label(egui::RichText::new(tl!("Agents")).font(semibold(15.0)));
     ui.label(tl!("Every command is available to scripts and AI agents: run `wordcraft-cli mcp` for an MCP server, or start the app with `--control <port>` for the JSON control channel."));

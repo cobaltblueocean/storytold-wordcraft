@@ -587,6 +587,16 @@
 	Open	Otvori
 	OpenDocument Text (*.odt)	OpenDocument tekst (*.odt)
 	Optional Hyphen	Opcionalna crtica
+	Copyright Sign	Znak autorskog prava
+	Ellipsis	Tri tačke
+	Em Dash	Duga crta
+	Insert Date Field	Umetni polje datuma
+	Insert Page Field	Umetni polje strane
+	Insert Time Field	Umetni polje vremena
+	Registered Sign	Znak registrovanog žiga
+	Reset Character Formatting	Poništi formatiranje znakova
+	Reset Paragraph Formatting	Poništi formatiranje pasusa
+	Trademark Sign	Znak žiga
 	Options	Opcije
 	Orientation	Orijentacija
 	Outline	Kontura
@@ -1235,6 +1245,9 @@
 	South	Jug
 	West	Zapad
 	Total	Ukupno
+
+# Table Layout › Draw (#308)
+	Draw\nTable	Nacrtaj\ntabelu
 # Columns, Symbol and Field dialogs (#321).
 	(All)	(Sve)
 	(none)	(nema)
@@ -1254,8 +1267,6 @@
 	Document Information	Informacije o dokumentu
 	Double Closing Quote	Zatvoreni dvostruki navodnik
 	Double Opening Quote	Otvoreni dvostruki navodnik
-	Ellipsis	Tri tačke
-	Em Dash	Duga crta
 	En Dash	Srednja crta
 	Em Space	Em razmak
 	En Space	En razmak
@@ -1320,6 +1331,68 @@
 	Rotate Left 90°	Rotiraj ulevo za 90°
 	Flip Vertical	Okreni vertikalno
 	Flip Horizontal	Okreni horizontalno
+	Move Paragraph Up	Pomeri pasus nagore
+	Move Paragraph Down	Pomeri pasus nadole
+	Promote	Podigni nivo
+	Demote	Spusti nivo
+	Go Back	Vrati se nazad
+	Toggle Unicode Character	Prebaci Unicode znak
+	Toggle Field Codes	Uključi/isključi kodove polja
+	Edit Field Code	Uredi kod polja
+	Unlink Fields	Raskini vezu polja
+	Lock Fields	Zaključaj polja
+	Unlock Fields	Otključaj polja
+	Next Field	Sledeće polje
+	Previous Field	Prethodno polje
+	Selected Fields	Izabrana polja
+	Edit Field…	Uredi polje…
 	Formatted	Formatirano
 	Interface size:	Veličina interfejsa:
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	Povećava ili smanjuje traku, menije i dijaloge, povrh skaliranja ekrana u sistemu. Zumiranje dokumenta je zasebno.
+	In Line with Text	U ravni sa tekstom
+	Square	Kvadratno
+	Through	Kroz
+	Top and Bottom	Iznad i ispod
+	Behind Text	Iza teksta
+	In Front of Text	Ispred teksta
+	Wrap Text Sides	Strane preloma teksta
+	Both Sides	Obe strane
+	Left Only	Samo levo
+	Right Only	Samo desno
+	Largest Only	Samo šira strana
+	Customize Keyboard	Prilagođavanje tastature
+	Choose a command	Izaberite komandu
+	Choose a shortcut	Izaberite prečicu
+	All Commands	Sve komande
+	Commands:	Komande:
+	Keys for this command:	Tasteri za ovu komandu:
+	New shortcut:	Nova prečica:
+	Now used by {command}	Sada koristi: {command}
+	Not used by any command	Nijedna komanda je ne koristi
+	Remove every custom shortcut and restore the built-in keys?	Ukloniti sve prilagođene prečice i vratiti ugrađene tastere?
+	Assign	Dodeli
+	Remove	Ukloni
+	Reset All…	Resetuj sve…
+	Press a key combination	Pritisnite kombinaciju tastera
+	Customize	Prilagođavanje
+	Keyboard shortcuts:	Prečice na tastaturi:
+	Customize…	Prilagodi…
+	Customize Ribbon	Prilagodi traku
+	Add to Quick Access Toolbar	Dodaj na traku sa alatkama za brzi pristup
+	Remove from Quick Access Toolbar	Ukloni sa trake sa alatkama za brzi pristup
+	Customize the Ribbon…	Prilagodi traku…
+	Customize Quick Access Toolbar…	Prilagodi traku sa alatkama za brzi pristup…
+	More Commands…	Još komandi…
+	Ribbon	Traka
+	(Custom)	(Prilagođeno)
+	Remove every custom tab and group and show all tabs again?	Ukloniti sve prilagođene kartice i grupe i ponovo prikazati sve kartice?
+	Put the default commands back on the Quick Access Toolbar?	Vratiti podrazumevane komande na traku sa alatkama za brzi pristup?
+	Reset…	Resetuj…
+	Add >>	Dodaj >>
+	<< Remove	<< Ukloni
+	Pick a custom group (New Group makes one)	Izaberite prilagođenu grupu (Nova grupa pravi jednu)
+	Ribbon tabs	Kartice trake
+	New Tab	Nova kartica
+	New Group	Nova grupa
+	Rename…	Preimenuj…
+	Ribbon and Quick Access Toolbar:	Traka i traka sa alatkama za brzi pristup:

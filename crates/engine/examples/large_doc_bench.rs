@@ -94,6 +94,24 @@ fn main() -> Result<(), String> {
         row(&format!("keystroke at {label} (total)"), median(total), &format!("page {}", at_page + 1));
     }
 
+    // For comparison: a pass that places every block again (what each keystroke cost before
+    // incremental pagination), its paragraphs all from the cache.
+    {
+        let opts = wordcraft_engine::layout::LayoutOptions { proofing: true, ..Default::default() };
+        let mut cache = wordcraft_engine::layout::LayoutCache::new();
+        let _ = wordcraft_engine::layout::layout(&s.doc, &mut cache, &opts);
+        let mut times = Vec::new();
+        for _ in 0..3 {
+            let mut d = s.doc.clone();
+            d.body = d.body.iter().map(|b| std::sync::Arc::new((**b).clone())).collect();
+            let t = Instant::now();
+            let l = wordcraft_engine::layout::layout(&d, &mut cache, &opts);
+            times.push(ms(t));
+            let _ = l.blocks_placed;
+        }
+        row("re-layout placing every block (warm cache)", median(times), "the pre-#554 keystroke path, for comparison");
+    }
+
     // Caret and selection geometry the frame needs after a keystroke.
     let lay = s.layout();
     let t = Instant::now();
