@@ -162,7 +162,11 @@ pub fn small(ui: &mut Ui, app: &mut WordApp, icon: &str, label: Option<&str>, ti
     command_menu(&resp, app, id);
     if resp.clicked() && on {
         let _ = app.run(id, params);
+        if matches!(id, "para.alignLeft" | "para.alignCenter" | "para.alignRight" | "para.justify") {
+            app.canvas.want_focus = true;
+        }
     }
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, on, tip));
     resp
 }
 
