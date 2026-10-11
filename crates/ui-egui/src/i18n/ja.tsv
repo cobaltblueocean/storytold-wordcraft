@@ -1313,3 +1313,12 @@
 	Formatted	書式変更
 	Interface size:	表示サイズ:
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	リボン、メニュー、ダイアログを、システムの表示倍率に加えて拡大または縮小します。文書のズームは別に設定します。
+	Align Text	文字の配置
+	Create Link	リンクの作成
+	Break Link	リンクの解除
+	Rotate all text 90°	すべてのテキストを 90° 回転
+	Rotate all text 270°	すべてのテキストを 270° 回転
+	Stacked	縦積み
+	Middle	中央
+	Click the empty text box the text should continue in (Esc cancels)	テキストの続きを入れる空のテキスト ボックスをクリックしてください (Esc でキャンセル)
+	Not linked: click a text box	リンクされていません: テキスト ボックスをクリックしてください

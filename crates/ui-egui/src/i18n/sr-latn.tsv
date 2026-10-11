@@ -1323,3 +1323,12 @@
 	Formatted	Formatirano
 	Interface size:	Veličina interfejsa:
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	Povećava ili smanjuje traku, menije i dijaloge, povrh skaliranja ekrana u sistemu. Zumiranje dokumenta je zasebno.
+	Align Text	Poravnaj tekst
+	Create Link	Napravi vezu
+	Break Link	Prekini vezu
+	Rotate all text 90°	Rotiraj sav tekst za 90°
+	Rotate all text 270°	Rotiraj sav tekst za 270°
+	Stacked	Naslagano
+	Middle	Sredina
+	Click the empty text box the text should continue in (Esc cancels)	Kliknite prazno polje za tekst u kom tekst treba da se nastavi (Esc otkazuje)
+	Not linked: click a text box	Nije povezano: kliknite polje za tekst

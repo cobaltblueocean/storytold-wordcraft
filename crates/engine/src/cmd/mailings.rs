@@ -534,7 +534,7 @@ fn finish(s: &mut Session, v: &Value) -> CmdResult {
                 let mut blocks = part.blocks.clone();
                 let mut c = record;
                 merge_blocks(s, &mut blocks, &mut c, to, 0);
-                out.parts.insert(next_id, Part { kind: part.kind, blocks });
+                out.parts.insert(next_id, Part { kind: part.kind, blocks, body: part.body });
                 map.push((*id, next_id));
                 next_id += 1;
             }
