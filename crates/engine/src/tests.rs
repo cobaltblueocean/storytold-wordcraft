@@ -2011,6 +2011,49 @@ fn styles_apply_multi_paragraph_selection() {
     }
 }
 
+/// #555: Update Heading 2 to Match Selection (the styles pane's context menu) makes Heading 2
+/// look like the selected text — its paragraph style and direct formatting — so every Heading 2
+/// paragraph changes; the selected paragraph takes Heading 2, and it is one undo step.
+#[test]
+fn update_heading_to_match_selection_takes_the_selections_formatting() {
+    use wordcraft_doc::{Align, CharProps, ParaProps, Rgb, TextColor};
+    let mut s = s();
+    run(&mut s, "text.insert", json!({"text": "Heading text"}));
+    run(&mut s, "styles.apply", json!({"style": "Heading 2"}));
+    run(&mut s, "text.newParagraph", json!({}));
+    run(&mut s, "text.insert", json!({"text": "Body text"}));
+    run(&mut s, "styles.apply", json!({"style": "Normal"}));
+    run(&mut s, "select.text", json!({"text": "Body text"}));
+    run(&mut s, "format.size", json!({"size": 20}));
+    run(&mut s, "format.italic", json!({}));
+    run(&mut s, "format.color", json!({"color": "C00000"}));
+    run(&mut s, "para.alignCenter", json!({}));
+    let normal = s.doc.styles.resolve_char(Some("Normal"), &CharProps::default());
+    let before = s.undo_depth();
+
+    run(&mut s, "styles.updateToMatch", json!({"style": "Heading2"}));
+
+    let h2 = ParaProps { style: Some("Heading2".into()), ..Default::default() };
+    let c = s.doc.styles.resolve_char(Some("Heading2"), &CharProps::default());
+    assert_eq!(c.size, 20.0);
+    assert!(c.italic);
+    assert_eq!(c.color, TextColor::Rgb(Rgb(0xC0, 0, 0)));
+    assert_eq!(c.font, normal.font, "the heading font gives way to the selection's");
+    let p = s.doc.styles.resolve_para(&h2);
+    assert_eq!(p.align, Align::Center);
+    assert_eq!(p.outline_level, Some(1), "Heading 2 stays a level-2 heading");
+    // The selected paragraph now carries Heading 2, its direct formatting absorbed by the style.
+    assert_eq!(para_style(&s, 1).as_deref(), Some("Heading2"));
+    let body = s.doc.para_at(&Pos::body(1, 0)).unwrap();
+    assert!(body.props_of_char(0).formatting().is_empty(), "{:?}", body.props_of_char(0));
+    assert_eq!(body.props.align, None);
+    assert_eq!(s.undo_depth(), before + 1, "one undo step");
+
+    run(&mut s, "edit.undo", json!({}));
+    assert_eq!(s.doc.styles.resolve_char(Some("Heading2"), &CharProps::default()).size, 16.0);
+    assert_eq!(para_style(&s, 1).as_deref(), Some("Normal"));
+}
+
 #[test]
 fn styles_apply_rejected_on_protected_document() {
     let mut s = s();
