@@ -407,6 +407,10 @@ fn options_page(app: &mut WordApp, ui: &mut Ui) {
     if ui.checkbox(&mut ruler, tl!("Show rulers")).changed() {
         let _ = app.run("view.ruler", json!({"value": ruler}));
     }
+    let mut keytips = app.ui.keytips_enabled;
+    if ui.checkbox(&mut keytips, tl!("Show KeyTips (Alt or F10)")).changed() {
+        let _ = app.run("ui.keytips", json!({"value": keytips}));
+    }
     ui.add_space(10.0);
     ui.label(egui::RichText::new(tl!("Customize")).font(semibold(15.0)));
     ui.horizontal(|ui| {

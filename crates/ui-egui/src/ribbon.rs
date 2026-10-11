@@ -98,7 +98,7 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
                     let shown = if custom { tab } else { tl!(tab) };
                     let w = ui.ctx().fonts_mut(|f| f.layout_no_wrap(shown.to_string(), medium(12.5), t.text).size().x) + 18.0;
                     let (r, resp) = ui.allocate_exact_size(vec2(w, 30.0), Sense::click());
-                    if app.ui.keytips == crate::keytips::Phase::Tabs {
+                    if app.ui.keytips == crate::keytips::Phase::Tabs && app.ui.keytip_prefix.is_empty() {
                         crate::keytips::record_tab(r, tab, &mut app.keytip_rects);
                     }
                     let active = app.ui.tab == tab && !app.ui.backstage;
