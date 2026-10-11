@@ -1813,3 +1813,47 @@ preview	Title	Пример
 	Search icons	Поиск значков
 	No icons match your search.	Нет значков, соответствующих поиску.
 	Recolor a one-color picture, such as an icon	Перекрасить одноцветный рисунок, например значок
+
+# File > Options panes (#485).
+	As you type	По мере ввода
+	AutoSave writes your changes to the file a moment after you stop typing.	Автосохранение записывает изменения в файл вскоре после того, как вы перестанете печатать.
+	Centimeters	Сантиметры
+	Check spelling as you type	Проверять орфографию при вводе
+	Click to switch back to inserting	Нажмите, чтобы вернуться к вставке
+	Custom dictionary	Пользовательский словарь
+	Formatting marks	Знаки форматирования
+	Hidden text	Скрытый текст
+	Ignore web and file addresses	Пропускать веб-адреса и пути к файлам
+	Ignore words in capitals	Пропускать слова из прописных букв
+	Ignore words with numbers	Пропускать слова с цифрами
+	Inches	Дюймы
+	Initials:	Инициалы:
+	Interface	Интерфейс
+	Interface language	Язык интерфейса
+	Mark grammar errors as you type	Отмечать грамматические ошибки при вводе
+	Measurement units:	Единицы измерения:
+	Millimeters	Миллиметры
+	New comments and tracked changes are recorded under this name and these initials.	Новые примечания и исправления записываются под этим именем и инициалами.
+	New word	Новое слово
+	No words yet. Add to Dictionary on a misspelled word puts it here.	Слов пока нет. Команда «Добавить в словарь» для слова с ошибкой помещает его сюда.
+	Overtype	Замена
+	Overtype (typing replaces the characters after the caret)	Замена (вводимый текст заменяет символы после курсора)
+	Page display	Отображение страницы
+	Paragraph marks	Знаки абзаца
+	Personalize	Персонализация
+	Picas	Пики
+	Points	Пункты
+	Print the page color	Печатать цвет страницы
+	Printing	Печать
+	Proofing language	Язык проверки правописания
+	Recent documents to show:	Число недавних документов:
+	Save documents	Сохранение документов
+	Show the mini toolbar when text is selected	Показывать мини-панель при выделении текста
+	Spaces	Пробелы
+	Spelling	Орфография
+	Spelling and grammar are checked in English (United States).	Орфография и грамматика проверяются для английского языка (США).
+	Tab characters	Знаки табуляции
+	These marks show even when Show/Hide ¶ is off.	Эти знаки видны, даже когда «Показать все знаки» выключено.
+	Typing replaces selected text	Ввод заменяет выделенный текст
+	Update fields before printing	Обновлять поля перед печатью
+	Use the Insert key to switch overtype on and off	Клавиша Insert включает и выключает режим замены
