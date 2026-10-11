@@ -370,7 +370,8 @@ pub fn large_document(pages: usize) -> Document {
     let _ = f.insert_object(at, InlineObject::Field { instr: "PAGE".into(), result: "1".into(), locked: false, code: false }, &CharProps::default());
     add(&mut f, " of ", CharProps::default());
     let at = f.len();
-    let _ = f.insert_object(at, InlineObject::Field { instr: "NUMPAGES".into(), result: "1".into(), locked: false, code: false }, &CharProps::default());
+    let _ =
+        f.insert_object(at, InlineObject::Field { instr: "NUMPAGES".into(), result: "1".into(), locked: false, code: false }, &CharProps::default());
     let fid = d.add_part(PartKind::Footer, vec![para_block(f)]);
     d.last_section.footers.default = Some(fid);
     let hid = d.add_part(PartKind::Header, vec![para_block(styled("A Long Synthetic Book", "Header"))]);

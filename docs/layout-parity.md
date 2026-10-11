@@ -1,6 +1,6 @@
 # Layout and pagination parity with Microsoft Word
 
-> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-10 · **Change:** major (first version; line breaking, pagination and object placement checked against Word's behaviour from the layout source on origin/main) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
+> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-11 · **Change:** trivial (large-document performance measured, incremental pagination, #554; previously major: first version; line breaking, pagination and object placement checked against Word's behaviour from the layout source on origin/main) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
 
 A document only "opens correctly" if its pages break where Word breaks them: the same lines, the
 same page count, footnotes and pictures on the same pages. This checklist covers line breaking,
@@ -62,12 +62,15 @@ font can't match Word's metrics.
 | Cold layout, 188-page document | 61 ms | not measured | measured 2026-10-06 (not re-run this pass) |
 | Relayout after an edit | 1.4 ms | not measured | measured 2026-10-06 |
 | Font picker with many installed fonts | fixed freezes (#233) | instant | issue #31, #59 |
-| Large real-world documents (500+ pages, many pictures) | not measured | | gap |
+| Large document: 511 pages, 200 pictures, 100 tables, 250 footnotes (`cargo xtask bench --pages 500`) | first layout 333 ms; open .docx 20 ms; save 33 ms; PDF export 1.06 s | not measured | measured 2026-10-11 (#554) |
+| Keystroke in that document, at its start, middle or end (command + re-layout) | 2.8–3.1 ms; re-lays out 1–2 paragraphs and places 7–10 of 2,342 blocks (14 ms before #554: every block placed again) | not measured | measured 2026-10-11 (#554); counters pinned by `engine::tests_perf` |
+| Scrolling that document: render one page / three visible pages | 1.1 ms / 3–5 ms at 1.5× | not measured | measured 2026-10-11 (#554) |
 
 ## Revision history
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | trivial | Large-document benchmark and incremental pagination: a keystroke in a 511-page document re-lays out only from the edited paragraph (#554) |
 | 2026-10-11 | trivial | Group and Ungroup keep turned members' orientation and placement (#441, #443); Size resizes a group (#442); the eraser hits turned ink where it is drawn (#445) |
 | 2026-10-10 | trivial | Long footnotes continue onto the next page with a continuation separator (#352) |
 | 2026-10-10 | trivial | Wrap side: text on both sides, left only, right only or the largest side of an object (#354) |
