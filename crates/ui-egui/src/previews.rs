@@ -20,6 +20,8 @@ pub struct Previews {
     /// Lowercase English family → its name in that language (simsun → 宋体), and back.
     local_names: HashMap<String, String>,
     english_names: HashMap<String, String>,
+    /// The Chinese, Japanese and Korean fonts of the font list (the Asian text font box).
+    east_asian: Option<Vec<String>>,
     styles_hash: (u64, u64),
     /// Previews rendered this frame (rendering is spread over frames).
     budget: std::cell::Cell<u32>,
@@ -45,8 +47,27 @@ impl Previews {
             self.local_names = names.iter().map(|(e, l)| (e.to_lowercase(), l.clone())).collect();
             self.english_names = names.into_iter().map(|(e, l)| (l, e)).collect();
             self.families = Some((lang, f));
+            self.east_asian = None;
         }
         self.families.as_ref().map(|(_, f)| f.clone()).unwrap_or_default()
+    }
+
+    /// The Font dialog's Asian text font list: the installed Chinese, Japanese and Korean fonts,
+    /// named as in [`Previews::families`].
+    pub fn east_asian_families(&mut self) -> Vec<String> {
+        self.families();
+        if self.east_asian.is_none() {
+            let mut f: Vec<String> = wordcraft_fonts::FontDb::global()
+                .east_asian_families()
+                .into_iter()
+                .filter(|f| !f.starts_with('.'))
+                .map(|f| self.local_names.get(&f.to_lowercase()).cloned().unwrap_or(f))
+                .collect();
+            f.sort_by_key(|a| a.to_lowercase());
+            f.dedup();
+            self.east_asian = Some(f);
+        }
+        self.east_asian.clone().unwrap_or_default()
     }
 
     /// The name the font box shows for the document's font `family`: its name in the interface

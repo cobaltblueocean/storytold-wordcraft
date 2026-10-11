@@ -3372,3 +3372,42 @@ fn columns_before_a_page_break_or_a_column_break_are_not_balanced() {
     // The next section starts below the taller column.
     assert!(br > bl + 50.0 && after >= br - 0.5, "columns end at {bl} and {br}, next section at {after}");
 }
+
+#[test]
+fn east_asian_text_takes_the_asian_font_and_latin_text_the_latin_font() {
+    // #505: one run with a Latin font and an Asian font (w:eastAsia) of its own sets each script in
+    // its font. Prefer an installed CJK font other than the one fallback would pick anyway.
+    let resolve = |f: &str| wordcraft_fonts::word::resolve(f, false, false);
+    let fallback = wordcraft_fonts::FontDb::global().fallback_for('你', 0).map(|f| f.family.clone());
+    let mut fonts: Vec<String> = wordcraft_fonts::FontDb::global()
+        .east_asian_families()
+        .into_iter()
+        .filter(|f| {
+            let r = resolve(f);
+            !r.substituted && r.face.covers('你') && r.face.covers('好')
+        })
+        .collect();
+    fonts.sort_by_key(|f| Some(f) == fallback.as_ref());
+    let Some(asian) = fonts.first().cloned() else {
+        eprintln!("skipped: no Chinese font installed");
+        return;
+    };
+    let latin = wordcraft_doc::styles::BODY_FONT;
+    let text = "Hello 你好 World";
+    let mut d = Document::from_text(text);
+    d.format_range(&Pos::body(0, 0), &Pos::body(0, text.len()), &|c| {
+        c.font = Some(latin.into());
+        c.font_ea = Some(asian.clone());
+    })
+    .unwrap();
+    let l = lay(&d);
+    let para =
+        l.pages.iter().flat_map(|p| p.items.iter()).find_map(|it| if let Placed::Lines { para, .. } = it { Some(para) } else { None }).unwrap();
+    let (latin_face, asian_face) = (resolve(latin).face.id(), resolve(&asian).face.id());
+    for c in &para.clusters {
+        let Some(ch) = text.get(c.start..c.end).and_then(|s| s.chars().next()).filter(|ch| !ch.is_whitespace()) else { continue };
+        let face = para.styles[c.style as usize].face.id();
+        let want = if ch.is_ascii() { latin_face } else { asian_face };
+        assert_eq!(face, want, "{ch:?} in {}", if ch.is_ascii() { latin } else { &asian });
+    }
+}

@@ -219,12 +219,18 @@ impl FontFace {
     /// (Shift-JIS, GB2312, Wansung, Big5, Johab), or, without them, it maps common ideographs.
     /// Word applies such a font to East Asian text too (`w:eastAsia`).
     pub fn is_east_asian(&self) -> bool {
-        use skrifa::raw::TableProvider;
-        const CJK_CODE_PAGES: u32 = 0b1_1111 << 17;
-        match self.skrifa().and_then(|f| f.os2().ok()).and_then(|t| t.ul_code_page_range_1()) {
-            Some(pages) if pages != 0 => pages & CJK_CODE_PAGES != 0,
-            _ => ['中', '国', '日'].iter().all(|c| self.covers(*c)),
-        }
+        self.skrifa().is_some_and(|f| east_asian_font(&f))
+    }
+}
+
+/// Is `f` an East Asian (Chinese, Japanese or Korean) font: do its OS/2 code pages say so
+/// (Shift-JIS, GB2312, Wansung, Big5, Johab), or, without them, does it map common ideographs?
+fn east_asian_font(f: &skrifa::FontRef<'_>) -> bool {
+    use skrifa::raw::TableProvider;
+    const CJK_CODE_PAGES: u32 = 0b1_1111 << 17;
+    match f.os2().ok().and_then(|t| t.ul_code_page_range_1()) {
+        Some(pages) if pages != 0 => pages & CJK_CODE_PAGES != 0,
+        _ => ['中', '国', '日'].iter().all(|c| f.charmap().map(*c).is_some()),
     }
 }
 
@@ -265,6 +271,8 @@ struct CatalogEntry {
     style: String,
     legacy: String,
     local: Vec<LocalName>,
+    /// A Chinese, Japanese or Korean font ([`FontFace::is_east_asian`]).
+    east_asian: bool,
     path: std::path::PathBuf,
 }
 
@@ -460,8 +468,9 @@ fn file_face_names(path: &std::path::Path) -> Vec<Found> {
                 read_at(offset.into(), len as usize)
             };
             let name = table(b"name")?;
-            // Variable fonts: the named instances.
-            let mut tables: Vec<([u8; 4], Vec<u8>)> = table(b"fvar").map(|t| (*b"fvar", t)).into_iter().collect();
+            // Variable fonts: the named instances; OS/2: the code pages (East Asian fonts).
+            let mut tables: Vec<([u8; 4], Vec<u8>)> = table(b"OS/2").map(|t| (*b"OS/2", t)).into_iter().collect();
+            tables.extend(table(b"fvar").map(|t| (*b"fvar", t)));
             tables.push((*b"name", name));
             // A font holding just those tables, to read them as the font itself would.
             let font = mini_font(&tables);
@@ -543,6 +552,9 @@ struct Found {
     legacy: String,
     /// The family's names in other languages ([`FontFace::local_names`]).
     local: Vec<LocalName>,
+    /// A Chinese, Japanese or Korean font ([`FontFace::is_east_asian`]); the scan's catalog keeps it.
+    #[cfg_attr(target_arch = "wasm32", allow(dead_code))]
+    east_asian: bool,
     /// Variable fonts: the named instance's axis settings.
     coords: Vec<([u8; 4], f32)>,
 }
@@ -552,6 +564,7 @@ struct Found {
 fn font_faces(f: &skrifa::FontRef<'_>, index: u32) -> Vec<Found> {
     let Some((family, style, id1)) = face_names(f) else { return vec![] };
     let local = local_names(f, &family, id1.as_deref());
+    let east_asian = east_asian_font(f);
     let axes = f.axes();
     let mut named: Vec<Found> = Vec::new();
     for ni in f.named_instances().iter() {
@@ -564,13 +577,13 @@ fn font_faces(f: &skrifa::FontRef<'_>, index: u32) -> Vec<Found> {
         let legacy = legacy_family(&family, &style);
         // Name ID 1 names the default instance only: keep the names of the whole family.
         let local = local.iter().filter(|n| n.english.eq_ignore_ascii_case(&family)).cloned().collect();
-        named.push(Found { index, family: family.clone(), style, legacy, local, coords });
+        named.push(Found { index, family: family.clone(), style, legacy, local, east_asian, coords });
     }
     if !named.is_empty() {
         return named;
     }
     let legacy = id1.filter(|n| !n.eq_ignore_ascii_case(&family)).unwrap_or_else(|| legacy_family(&family, &style));
-    vec![Found { index, family, style, legacy, local, coords: Vec::new() }]
+    vec![Found { index, family, style, legacy, local, east_asian, coords: Vec::new() }]
 }
 
 /// Parse every face in `data` (a font file or collection); a variable font yields one face per
@@ -751,6 +764,17 @@ impl FontDb {
         v
     }
 
+    /// The installed Chinese, Japanese and Korean families (English names), for the Font dialog's
+    /// Asian text font list.
+    pub fn east_asian_families(&self) -> Vec<String> {
+        let mut v: Vec<String> = self.read_faces().iter().filter(|f| f.is_east_asian()).map(|f| f.family.clone()).collect();
+        #[cfg(not(target_arch = "wasm32"))]
+        v.extend(self.read_catalog().iter().filter(|c| c.east_asian).map(|c| c.family.clone()));
+        v.sort_by_key(|a| a.to_lowercase());
+        v.dedup_by(|a, b| a.eq_ignore_ascii_case(b));
+        v
+    }
+
     /// Every family's name in the interface language `lang` (`zh-hans`, `zh-hant`, `ja`…), as
     /// (English name, localized name) pairs: SimSun is 宋体 in Simplified Chinese. Families without
     /// a name in that language are left out.
@@ -919,7 +943,14 @@ impl FontDb {
                     continue;
                 }
                 for f in file_face_names(&p) {
-                    found.push(CatalogEntry { family: f.family, style: f.style, legacy: f.legacy, local: f.local, path: p.clone() });
+                    found.push(CatalogEntry {
+                        family: f.family,
+                        style: f.style,
+                        legacy: f.legacy,
+                        local: f.local,
+                        east_asian: f.east_asian,
+                        path: p.clone(),
+                    });
                 }
             }
         }

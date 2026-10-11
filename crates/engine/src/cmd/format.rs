@@ -95,7 +95,7 @@ pub fn specs() -> Vec<CommandSpec> {
         CommandSpec::new("format.shadow", "Shadow", "Home › Font › Text Effects", |s, v| toggle(s, v, |r| r.shadow, |c, on| c.shadow = Some(on))),
         CommandSpec::new("format.emboss", "Emboss", "Home › Font › Font", |s, v| toggle(s, v, |r| r.emboss, |c, on| c.emboss = Some(on))),
         CommandSpec::new("format.engrave", "Engrave", "Home › Font › Font", |s, v| toggle(s, v, |r| r.engrave, |c, on| c.engrave = Some(on))),
-        CommandSpec::new("format.font", "Font", "Home › Font", font).key("Mod+Shift+F").params(r#"{"name": string}"#),
+        CommandSpec::new("format.font", "Font", "Home › Font", font).key("Mod+Shift+F").params(r#"{"name"?: string, "eastAsia"?: string}"#),
         CommandSpec::new("format.size", "Font Size", "Home › Font", size).key("Mod+Shift+P").params(r#"{"size": number}"#),
         CommandSpec::new("format.growFont", "Increase Font Size", "Home › Font", |s, _| step_size(s, 1)).key("Mod+Shift+. / Mod+Shift+>"),
         CommandSpec::new("format.shrinkFont", "Decrease Font Size", "Home › Font", |s, _| step_size(s, -1)).key("Mod+Shift+, / Mod+Shift+<"),
@@ -275,23 +275,37 @@ fn underline(s: &mut Session, v: &Value) -> CmdResult {
     apply(s, &|c| c.underline = Some(u))
 }
 
+/// `format.font`: `name` is the font (Latin text, and Persian/Arabic text too); `eastAsia` sets the
+/// East Asian text's font on its own, as the Font dialog's Asian text font box does (#505).
 fn font(s: &mut Session, v: &Value) -> CmdResult {
-    let name = p::req_str(v, "name")?.trim().to_string();
-    if name.is_empty() || name.len() > 128 {
-        return Err(CmdError::Params("bad font name".into()));
+    let arg = |k: &str| -> Result<Option<String>, CmdError> {
+        let Some(n) = v.get(k) else { return Ok(None) };
+        let n = n.as_str().map(str::trim).unwrap_or("");
+        if n.is_empty() || n.len() > 128 {
+            return Err(CmdError::Params(format!("bad font name `{k}`")));
+        }
+        Ok(Some(n.to_string()))
+    };
+    let (name, east_asia) = (arg("name")?, arg("eastAsia")?);
+    if name.is_none() && east_asia.is_none() {
+        return Err(CmdError::Params("`name` or `eastAsia` (string) is required".into()));
     }
     // The font applies to Persian/Arabic text in the selection too (its complex-script font). A
     // Chinese, Japanese or Korean font is the East Asian text's font as well (`w:eastAsia`), as in
     // Word; choosing a Latin font leaves that text's font as it was.
-    let east_asian = {
-        let r = wordcraft_fonts::word::resolve(&name, false, false);
-        !r.substituted && r.face.is_east_asian()
-    };
+    let ea = east_asia.or_else(|| {
+        name.clone().filter(|n| {
+            let r = wordcraft_fonts::word::resolve(n, false, false);
+            !r.substituted && r.face.is_east_asian()
+        })
+    });
     apply(s, &|c| {
-        c.font = Some(name.clone());
-        c.font_cs = Some(name.clone());
-        if east_asian {
-            c.font_ea = Some(name.clone());
+        if let Some(n) = &name {
+            c.font = Some(n.clone());
+            c.font_cs = Some(n.clone());
+        }
+        if let Some(n) = &ea {
+            c.font_ea = Some(n.clone());
         }
     })
 }
@@ -504,6 +518,7 @@ pub fn state(s: &Session) -> Value {
     let style_name = s.doc.styles.get(&style).map(|st| st.name.clone()).unwrap_or(style.clone());
     json!({
         "font": same(&|r| json!(r.font)),
+        "fontEastAsia": same(&|r| json!(r.font_ea)),
         "size": same(&|r| json!(r.size)),
         "bold": all.iter().all(|r| r.bold),
         "italic": all.iter().all(|r| r.italic),

@@ -323,3 +323,37 @@ fn chinese_fonts_are_listed_by_their_chinese_names_in_a_chinese_interface() {
         assert_eq!(name_language_matches(ui, tag), ok, "{ui} {tag}");
     }
 }
+
+/// `data` with its OS/2 code page bits (`ulCodePageRange1`) set to `pages`.
+fn with_code_pages(data: &[u8], pages: u32) -> Vec<u8> {
+    let font = skrifa::FontRef::new(data).unwrap();
+    let tables: Vec<([u8; 4], Vec<u8>)> = font
+        .table_directory()
+        .table_records()
+        .iter()
+        .map(|r| {
+            let mut t = font.table_data(r.tag()).unwrap().as_bytes().to_vec();
+            if r.tag() == skrifa::Tag::new(b"OS/2") {
+                t[78..82].copy_from_slice(&pages.to_be_bytes());
+            }
+            (r.tag().to_be_bytes(), t)
+        })
+        .collect();
+    mini_font(&tables)
+}
+
+#[test]
+fn east_asian_fonts_are_listed_for_the_asian_text_font_box() {
+    // #505: the Font dialog's Asian text font box lists the Chinese, Japanese and Korean fonts,
+    // found by their OS/2 code pages (here GB2312) during the scan, without loading them.
+    let dir = font_dir("eastasian");
+    let song = with_family_names("SourceSans3-Regular.ttf", &[(0x0409, "Songti Test"), (0x0804, "测试宋体")]);
+    std::fs::write(dir.join("song.ttf"), with_code_pages(&song, 1 << 18)).unwrap();
+    let db = FontDb::with_font_dirs(vec![dir]);
+    let listed = |db: &FontDb| db.east_asian_families().iter().filter(|f| *f == "Songti Test").count();
+    assert_eq!(listed(&db), 1);
+    assert!(!has(&db.east_asian_families(), FAMILY), "Latin fonts are left out");
+    // Loaded, it is still listed once.
+    assert!(db.face("Songti Test", "Regular").is_east_asian());
+    assert_eq!(listed(&db), 1);
+}
