@@ -880,7 +880,6 @@
 	Wide	寬
 	Widow/Orphan Control	遺留字串控制
 	Widow/Orphan control	遺留字串控制
-	Wildcards (regex)	萬用字元（規則運算式）
 	Window	視窗
 	Word Count	字數統計
 	Word document (*.docx)	Word 文件 (*.docx)
@@ -1420,3 +1419,34 @@
 	Enlarge symbol	放大符號
 	Enclosure	圍繞符號
 	Circle	圓形
+	Use wildcards	使用萬用字元
+	Special	特殊字元
+	Match prefix	比對字首
+	Match suffix	比對字尾
+	Ignore punctuation characters	忽略標點符號
+	Ignore white-space characters	忽略空白字元
+	Regular expressions	規則運算式
+	Search Options	搜尋選項
+	Tab Character	定位字元符號
+	Any Character	任意字元
+	Any Digit	任意數字
+	Any Letter	任意字母
+	Caret Character	插入號
+	Section Character	章節符號
+	Paragraph Character	段落符號
+	Graphic	圖形
+	Manual Line Break	手動換行
+	Manual Page Break	手動分頁
+	Section Break	分節符號
+	White Space	空白
+	Clipboard Contents	剪貼簿內容
+	Find What Text	找到的文字
+	Find What Expression	找到的運算式
+	Character in Range	範圍內的字元
+	Beginning of Word	單字開頭
+	End of Word	單字結尾
+	Expression	運算式
+	Not	非
+	Num Occurrences	出現次數
+	Previous 1 or More	前一項 1 次以上
+	0 or More Characters	0 個以上字元

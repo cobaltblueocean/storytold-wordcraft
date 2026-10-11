@@ -943,7 +943,6 @@
 	Wide	Широко
 	Widow/Orphan Control	Контрола усамљених редова
 	Widow/Orphan control	Контрола усамљених редова
-	Wildcards (regex)	Џокер знаци (regex)
 	Window	Прозор
 	Word Count	Број речи
 	Word document (*.docx)	Word документ (*.docx)
@@ -1433,3 +1432,34 @@
 	Enlarge symbol	Увећај симбол
 	Enclosure	Оквир
 	Circle	Круг
+	Use wildcards	Користи џокер знаке
+	Special	Посебно
+	Match prefix	Подудари префикс
+	Match suffix	Подудари суфикс
+	Ignore punctuation characters	Занемари знаке интерпункције
+	Ignore white-space characters	Занемари белине
+	Regular expressions	Регуларни изрази
+	Search Options	Опције претраге
+	Tab Character	Знак табулатора
+	Any Character	Било који знак
+	Any Digit	Било која цифра
+	Any Letter	Било које слово
+	Caret Character	Знак капице
+	Section Character	Знак одељка
+	Paragraph Character	Симбол пасуса
+	Graphic	Графика
+	Manual Line Break	Ручни прекид реда
+	Manual Page Break	Ручни прекид стране
+	Section Break	Прекид одељка
+	White Space	Белина
+	Clipboard Contents	Садржај оставе
+	Find What Text	Пронађени текст
+	Find What Expression	Пронађени израз
+	Character in Range	Знак у опсегу
+	Beginning of Word	Почетак речи
+	End of Word	Крај речи
+	Expression	Израз
+	Not	Није
+	Num Occurrences	Број понављања
+	Previous 1 or More	Претходно 1 или више пута
+	0 or More Characters	0 или више знакова
