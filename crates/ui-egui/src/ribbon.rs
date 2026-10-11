@@ -1070,7 +1070,19 @@ fn references(app: &mut WordApp, ui: &mut Ui) {
     });
     group(ui, "Table of Authorities", None, app, |ui, app| {
         big(ui, app, "markCitation", "Mark\nCitation", "references.markCitation", json!({}), false);
-        small(ui, app, "tableOfAuthorities", None, "Insert Table of Authorities", "references.tableOfAuthorities", json!({}), false);
+        stack(ui, |ui| {
+            small(
+                ui,
+                app,
+                "tableOfAuthorities",
+                Some("Insert Table of Authorities"),
+                "Insert Table of Authorities",
+                "references.tableOfAuthorities",
+                json!({}),
+                false,
+            );
+            small(ui, app, "update", Some("Update Table"), "Update Table", "references.updateAuthorities", json!({}), false);
+        });
     });
 }
 

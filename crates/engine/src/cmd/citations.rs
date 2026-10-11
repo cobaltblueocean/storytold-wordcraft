@@ -356,6 +356,10 @@ pub fn specs() -> Vec<CommandSpec> {
             generated_list(s, "TOA", "Table of Authorities")?;
             sel_result(s)
         }),
+        CommandSpec::new("references.updateAuthorities", "Update Table", "References › Table of Authorities", |s, _| {
+            update_generated(s)?;
+            sel_result(s)
+        }),
         CommandSpec::new("insert.crossReference", "Cross-reference", "Insert › Links", cross_ref)
             .params(r#"{"to": "heading|bookmark|figure|table", "target": string (text / name / number), "show"?: "text|page|number|aboveBelow"} or {} to list targets"#),
         CommandSpec::new("references.noteOptions", "Footnote and Endnote", "References › Footnotes", |s, v| {
@@ -1013,6 +1017,24 @@ mod tests {
         let (name, _) = s.doc.bookmarks().into_iter().find(|(n, _)| n.starts_with("_Ref")).unwrap();
         assert_eq!(crate::cmd::references::bookmark_text(&s.doc, &name).as_deref(), Some("Figure 1"));
         assert!(fields(&s).contains(&(format!("REF {name} \\h"), "Figure 1".to_string())), "{:?}", fields(&s));
+    }
+
+    /// #661: References › Table of Authorities › Update Table picks up citations marked after the table.
+    #[test]
+    fn table_of_authorities_updates() {
+        let mut s = Session::new(wordcraft_doc::Document::from_text("Smith v. Jones held it.\nDoe v. Roe agreed."));
+        s.run("select.text", &json!({"text": "Smith v. Jones"})).unwrap();
+        s.run("references.markCitation", &json!({})).unwrap();
+        s.run("caret.docEnd", &json!({})).unwrap();
+        s.run("text.newParagraph", &json!({})).unwrap();
+        s.run("references.tableOfAuthorities", &json!({})).unwrap();
+        let t = s.doc.plain_text(StoryRef::Body);
+        assert!(t.contains("Smith v. Jones") && !t.contains("Doe v. Roe, "), "{t}");
+        s.run("select.text", &json!({"text": "Doe v. Roe"})).unwrap();
+        s.run("references.markCitation", &json!({})).unwrap();
+        s.run("references.updateAuthorities", &json!({})).unwrap();
+        let after = s.doc.plain_text(StoryRef::Body);
+        assert!(after.matches("Doe v. Roe").count() > t.matches("Doe v. Roe").count(), "{after}");
     }
 
     /// Field instructions and results in the body, in order.
