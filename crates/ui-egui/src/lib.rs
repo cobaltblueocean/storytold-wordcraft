@@ -58,6 +58,9 @@ pub use file_dialogs::FileDialogRequest;
 pub struct Services {
     /// Pick a file to open; the argument says what for (`document`, `picture`).
     pub pick_open: Option<Box<dyn Fn(&str) -> Option<String>>>,
+    /// Desktop: open a document path in a separate application window instead of replacing the
+    /// current document.
+    pub open_document: Option<Box<dyn Fn(&str) -> Result<(), String>>>,
     /// Pick a path to save to, given a suggested name.
     pub pick_save: Option<Box<dyn Fn(&str) -> Option<String>>>,
     /// Desktop: show a native file dialog without blocking the UI thread (#94); used instead of
@@ -343,6 +346,14 @@ impl WordApp {
         {
             self.dialog = dialogs::Dialog::open(name, self);
             return Ok(json!({"pending": name}));
+        }
+        if id == "file.open"
+            && params.get("data").is_none()
+            && let Some(path) = params.get("path").and_then(Value::as_str)
+            && let Some(open_document) = &self.services.open_document
+        {
+            open_document(path)?;
+            return Ok(json!({"opened": path, "newWindow": true}));
         }
         if self.session.dirty && discards_document(id, &params) {
             let name =
@@ -1614,6 +1625,31 @@ mod tests {
         assert!(body_text(&a).contains("Signed contract"));
         assert_eq!(a.session.path.as_deref(), Some(path.as_path()));
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn desktop_open_uses_another_window_without_replacing_current_document() {
+        let opened = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+        let captured = opened.clone();
+        let services = Services {
+            open_document: Some(Box::new(move |path| {
+                captured.borrow_mut().push(path.to_string());
+                Ok(())
+            })),
+            ..Default::default()
+        };
+        let mut a = WordApp::new(Session::new(wordcraft_doc::Document::new()), services);
+        a.run("text.insert", json!({"text": UNSAVED})).unwrap();
+        let document = a.session.document_id();
+
+        let result = a.run("file.open", json!({"path": "second.docx"})).unwrap();
+
+        assert_eq!(result, json!({"opened": "second.docx", "newWindow": true}));
+        assert_eq!(&*opened.borrow(), &["second.docx"]);
+        assert_eq!(a.session.document_id(), document);
+        assert!(body_text(&a).contains(UNSAVED));
+        assert!(a.session.dirty);
+        assert_eq!(prompt(&a), None);
     }
 
     /// Mod+O without a path only shows the file picker, so it doesn't ask yet.

@@ -125,10 +125,22 @@ fn save_prefs(app: &WordApp) {
 fn services(file_dialog: file_dialogs::Hook) -> Services {
     Services {
         file_dialog: Some(file_dialog),
+        open_document: Some(Box::new(open_in_new_window)),
         print: Some(print::hook()),
         clipboard_picture: Some(Box::new(clipboard_picture)),
         ..Default::default()
     }
+}
+
+/// Keep the current document open and let the new app instance own the requested file.
+fn open_in_new_window(path: &str) -> Result<(), String> {
+    let executable = std::env::current_exe().map_err(|e| format!("couldn't locate WordCraft: {e}"))?;
+    std::process::Command::new(executable)
+        .arg(path)
+        .env_remove("WORDCRAFT_CONTROL_PORT")
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| format!("couldn't open {path} in a new window: {e}"))
 }
 
 /// The picture on the system clipboard (#45): copied files, else image pixels. The UI checks the
@@ -237,9 +249,17 @@ fn main() -> eframe::Result {
                 app = app.with_control(rx);
                 key_file = file;
             }
-            for f in files {
-                if let Err(e) = app.run("file.open", serde_json::json!({"path": f})) {
-                    log::warn!("{f}: {e}");
+            let open_document = app.services.open_document.take();
+            let mut files = files.into_iter();
+            if let Some(path) = files.next()
+                && let Err(e) = app.run("file.open", serde_json::json!({"path": path}))
+            {
+                log::warn!("{path}: {e}");
+            }
+            app.services.open_document = open_document;
+            for path in files {
+                if let Err(e) = open_in_new_window(&path) {
+                    log::warn!("{path}: {e}");
                 }
             }
             Ok(Box::new(App(
