@@ -36,6 +36,24 @@ fn substitutes(family: &str) -> &'static [&'static str] {
     // headings and screens. Open fonts with full Persian coverage first.
     const NASKH: &[&str] = &["Noto Naskh Arabic", "XB Zar", "XB Niloofar", "Amiri", "Vazirmatn", "Noto Sans Arabic", "DejaVu Sans", "Source Serif 4"];
     const ARABIC_SANS: &[&str] = &["Vazirmatn", "Sahel", "Shabnam", "Samim", "Noto Sans Arabic", "Noto Naskh Arabic", "DejaVu Sans", "Source Sans 3"];
+    // Palatino Linotype / Book Antiqua: macOS ships the same design as "Palatino"; open
+    // look-alikes with matching metrics (TeX Gyre Pagella, URW P052 / Palladio) on Linux.
+    const PALATINO: &[&str] = &[
+        "Palatino Linotype",
+        "Palatino",
+        "Book Antiqua",
+        "TeX Gyre Pagella",
+        "P052",
+        "URW Palladio L",
+        "Palladio",
+        "Caladea",
+        "Times New Roman",
+        "Liberation Serif",
+        "Georgia",
+        "Noto Serif",
+        "DejaVu Serif",
+        "Source Serif 4",
+    ];
     let f = family.to_ascii_lowercase();
     if is_persian_naskh(&f) {
         return NASKH;
@@ -44,6 +62,7 @@ fn substitutes(family: &str) -> &'static [&'static str] {
         return ARABIC_SANS;
     }
     match f.as_str() {
+        "palatino linotype" | "book antiqua" | "palatino" => PALATINO,
         "arial" | "helvetica" | "arial nova" => ARIAL,
         "times new roman" | "times" => TIMES,
         "courier new" | "courier" | "consolas" | "lucida console" | "cascadia code" | "cascadia mono" => MONO,
@@ -52,8 +71,6 @@ fn substitutes(family: &str) -> &'static [&'static str] {
         | "cambria math"
         | "georgia"
         | "garamond"
-        | "book antiqua"
-        | "palatino linotype"
         | "constantia"
         | "baskerville old face"
         | "century"
@@ -248,6 +265,19 @@ mod tests {
         assert!(!b.synth_bold);
         let (a, d) = line_metrics(&b.face);
         assert!(a > 0.0 && d >= 0.0);
+    }
+
+    #[test]
+    fn palatino_family_prefers_palatino_look_alikes_over_generic_serif() {
+        for name in ["Palatino Linotype", "Book Antiqua", "palatino"] {
+            let list = substitutes(name);
+            let pos = |n: &str| list.iter().position(|x| *x == n);
+            assert!(pos("Palatino").is_some() && pos("TeX Gyre Pagella").is_some() && pos("P052").is_some(), "{name}");
+            // All of them come before the generic serif fallbacks (Caladea, Times New Roman).
+            assert!(pos("Palatino") < pos("Caladea") && pos("TeX Gyre Pagella") < pos("Times New Roman"), "{name}");
+        }
+        // Other serif families are unchanged.
+        assert_eq!(substitutes("Georgia").first(), Some(&"Caladea"));
     }
 
     #[test]
