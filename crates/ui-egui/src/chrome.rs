@@ -173,7 +173,7 @@ pub fn title_bar(app: &mut WordApp, ui: &mut Ui) {
                         );
                         icons::paint(
                             ui.painter(),
-                            Rect::from_center_size(pos2(r.min.x + 13.0, r.center().y), vec2(14.0, 14.0)),
+                            Rect::from_center_size(pos2(r.min.x + 14.0, r.center().y), vec2(16.0, 16.0)),
                             "discord",
                             egui::Color32::WHITE,
                             egui::Color32::WHITE,
@@ -342,7 +342,7 @@ pub fn status_bar(app: &mut WordApp, ui: &mut Ui) {
                         } else if resp.hovered() {
                             ui.painter().rect_filled(r, 3.0, t.hover);
                         }
-                        icons::paint(ui.painter(), r.shrink(3.0), icon, t.icon, t.accent);
+                        icons::paint(ui.painter(), Rect::from_center_size(r.center(), vec2(16.0, 16.0)), icon, t.icon, t.accent);
                         if resp.on_hover_text(id.trim_start_matches("view.")).clicked() {
                             let _ = app.run(id, json!({}));
                         }
@@ -376,11 +376,11 @@ pub fn status_bar(app: &mut WordApp, ui: &mut Ui) {
 
 fn small_icon(ui: &mut Ui, icon: &str, tip: &str) -> bool {
     let t = Tokens::get(ui.ctx());
-    let (r, resp) = ui.allocate_exact_size(vec2(18.0, 18.0), Sense::click());
+    let (r, resp) = ui.allocate_exact_size(vec2(20.0, 20.0), Sense::click());
     if resp.hovered() {
         ui.painter().rect_filled(r, 3.0, t.hover);
     }
-    icons::paint(ui.painter(), r.shrink(3.0), icon, t.icon, t.accent);
+    icons::paint(ui.painter(), Rect::from_center_size(r.center(), vec2(16.0, 16.0)), icon, t.icon, t.accent);
     resp.on_hover_text(tip).clicked()
 }
 
