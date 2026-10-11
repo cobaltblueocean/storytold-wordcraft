@@ -147,6 +147,22 @@ pub(crate) fn read_package(bytes: &[u8]) -> Result<Document, DocxError> {
         let ex = part(rt::COMMENTS_EX);
         lenient("comments", r.read_comments(&p, ex.as_deref()));
     }
+    if let Some(p) = part(rt::BIBLIOGRAPHY) {
+        lenient("bibliography", r.read_bibliography(&p));
+    }
+    for rel in root_rels.list.iter().chain(rels.list.iter()) {
+        if rel_is(&rel.kind, rt::CUSTOM_XML) && !rel.external {
+            lenient("customXml bibliography", r.read_bibliography(&rel.target));
+        }
+    }
+    if r.doc.sources.is_empty() {
+        for i in 1..=16 {
+            let path = format!("customXml/item{i}.xml");
+            if pkg.get(&path).is_some() {
+                lenient("customXml item", r.read_bibliography(&path));
+            }
+        }
+    }
 
     if let Some(bg) = root.child("w:background").and_then(|b| b.attr("w:color")).and_then(Rgb::parse) {
         r.doc.settings.page_color = Some(bg);
@@ -805,6 +821,62 @@ impl Reader<'_> {
             }
         }
         self.doc.comments = entries;
+        Ok(())
+    }
+
+    fn read_bibliography(&mut self, path: &str) -> Result<(), DocxError> {
+        let Some(root) = self.xml(path)? else { return Ok(()) };
+        if root.local() != "Sources" {
+            return Ok(());
+        }
+        let child_text = |el: &El, local: &str| el.els().find(|e| e.local() == local).map(|e| e.text()).unwrap_or_default();
+
+        for src_el in root.els().filter(|e| e.local() == "Source") {
+            let tag = child_text(src_el, "Tag");
+            let raw_kind = child_text(src_el, "SourceType");
+            let kind = crate::write::from_source_type(&raw_kind);
+            let author = src_el
+                .els()
+                .find(|e| e.local() == "Author")
+                .map(|a| {
+                    let mut authors = Vec::new();
+                    for name_el in a.els().filter(|e| e.local() == "NameList").flat_map(|n| n.els().filter(|e| e.local() == "Person")) {
+                        let last = child_text(name_el, "Last");
+                        let first = child_text(name_el, "First");
+                        let middle = child_text(name_el, "Middle");
+                        let name = if !first.is_empty() && !middle.is_empty() {
+                            format!("{last}, {first} {middle}")
+                        } else if !first.is_empty() {
+                            format!("{last}, {first}")
+                        } else {
+                            last
+                        };
+                        if !name.is_empty() {
+                            authors.push(name);
+                        }
+                    }
+                    authors.join("; ")
+                })
+                .unwrap_or_default();
+            let title = child_text(src_el, "Title");
+            let year = child_text(src_el, "Year");
+            let city = child_text(src_el, "City");
+            let publisher = child_text(src_el, "Publisher");
+            let journal = child_text(src_el, "JournalName");
+            let volume = child_text(src_el, "Volume");
+            let pages = child_text(src_el, "Pages");
+            let url = child_text(src_el, "URL");
+
+            // Only add if has meaningful content and not already added
+            let is_duplicate = if !tag.is_empty() {
+                self.doc.sources.iter().any(|s| s.tag == tag)
+            } else {
+                self.doc.sources.iter().any(|s| s.title == title && s.author == author)
+            };
+            if (!tag.is_empty() || !title.is_empty() || !author.is_empty()) && !is_duplicate {
+                self.doc.sources.push(wordcraft_doc::Source { tag, kind, author, title, year, city, publisher, journal, volume, pages, url });
+            }
+        }
         Ok(())
     }
 

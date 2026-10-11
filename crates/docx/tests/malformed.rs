@@ -163,6 +163,27 @@ const SNIPPETS: &[&str] = &[
     "<w:sectPr/>",
 ];
 
+#[test]
+fn malformed_or_hostile_bibliography_never_panics() {
+    let doc = format!("<w:document {W_NS}><w:body><w:p><w:r><w:t>body</w:t></w:r></w:p></w:body></w:document>");
+    let cases: &[&[u8]] = &[
+        b"<not_sources/>",
+        b"<b:Sources xmlns:b=\"http://schemas.openxmlformats.org/officeDocument/2006/bibliography\"><unclosed",
+        b"<b:Sources xmlns:b=\"http://schemas.openxmlformats.org/officeDocument/2006/bibliography\"><b:Source/></b:Sources>",
+        b"<b:Sources xmlns:b=\"http://schemas.openxmlformats.org/officeDocument/2006/bibliography\"><b:Source><b:Author><b:NameList><b:Person/></b:NameList></b:Author></b:Source></b:Sources>",
+        b"<b:Sources xmlns:b=\"http://schemas.openxmlformats.org/officeDocument/2006/bibliography\"><b:Source><b:Tag></b:Tag><b:SourceType></b:SourceType><b:Author><b:NameList><b:Person><b:Last>,,,,</b:Last><b:First></b:First></b:Person></b:NameList></b:Author></b:Source></b:Sources>",
+        b"\xff\xfe<\0b\0:\0S\0",
+    ];
+    let root_rels_bib = r#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml" Target="customXml/item1.xml"/></Relationships>"#;
+    for case in cases {
+        let z = zip(&[("_rels/.rels", root_rels_bib.as_bytes()), ("word/document.xml", doc.as_bytes()), ("customXml/item1.xml", case)]);
+        let res = read(&z);
+        if let Ok(d) = res {
+            let _ = write(&d);
+        }
+    }
+}
+
 proptest! {
     #![proptest_config(ProptestConfig { cases: 300, ..ProptestConfig::default() })]
 
