@@ -3041,6 +3041,7 @@ fn line_arrowheads_are_drawn_at_their_ends() {
     // Its tip is the bottom-right corner of the line's frame.
     assert!(matches!(heads[0].first(), Some(PathSeg::Move(x, y)) if (*x - 160.0).abs() < 0.01 && (*y - 240.0).abs() < 0.01), "{:?}", heads[0]);
     assert!(draws.iter().any(|dr| matches!(dr, Draw::Shape { kind: ShapeKind::Line, .. })));
+}
 
 /// The first paragraph's lines on page one: (top, bottom, left, right), relative to its column.
 fn line_spans(l: &DocLayout) -> Vec<(f32, f32, f32, f32)> {
