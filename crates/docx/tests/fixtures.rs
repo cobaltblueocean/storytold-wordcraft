@@ -47,6 +47,52 @@ fn read_body(body: &str) -> Document {
     wordcraft_docx::read(&docx(body, &[], &[])).unwrap()
 }
 
+#[test]
+fn paragraph_default_presence_survives_repeated_saves() {
+    // Omission leaves paragraph defaults application-defined (ISO 29500 pPrDefault).
+    // An explicitly empty container must therefore remain distinct from omission.
+    for (defaults, present, after) in [
+        ("", false, None),
+        ("<w:docDefaults/>", false, None),
+        ("<w:docDefaults><w:rPrDefault><w:rPr><w:sz w:val=\"22\"/></w:rPr></w:rPrDefault></w:docDefaults>", false, None),
+        ("<w:docDefaults><w:pPrDefault/></w:docDefaults>", true, None),
+        ("<w:docDefaults><w:pPrDefault><w:pPr/></w:pPrDefault></w:docDefaults>", true, None),
+        ("<w:docDefaults><w:pPrDefault><w:pPr><w:spacing w:after=\"160\"/></w:pPr></w:pPrDefault></w:docDefaults>", true, Some(8.0)),
+    ] {
+        let styles = format!(
+            r#"<w:styles {W_NS}>{defaults}<w:style w:type="paragraph" w:styleId="Normal" w:default="1"><w:name w:val="Normal"/></w:style></w:styles>"#
+        );
+        let mut d = wordcraft_docx::read(&docx(
+            "<w:p><w:r><w:t>First</w:t></w:r></w:p><w:p><w:r><w:t>Second</w:t></w:r></w:p>",
+            &[("rId1", "styles", "styles.xml")],
+            &[("word/styles.xml", &styles)],
+        ))
+        .unwrap();
+        for _ in 0..2 {
+            let bytes = wordcraft_docx::write(&d).unwrap();
+            let xml = text(&unzip(&bytes), "word/styles.xml");
+            assert_eq!(xml.contains("<w:pPrDefault>"), present, "{defaults}");
+            d = wordcraft_docx::read(&bytes).unwrap();
+            assert_eq!(d.styles.default_para.space_after, after);
+            assert_eq!(paras(&d).iter().map(|p| p.text.as_str()).collect::<Vec<_>>(), ["First", "Second"]);
+        }
+    }
+}
+
+#[test]
+fn omitted_paragraph_defaults_can_be_edited() {
+    let styles =
+        format!(r#"<w:styles {W_NS}><w:style w:type="paragraph" w:styleId="Normal" w:default="1"><w:name w:val="Normal"/></w:style></w:styles>"#);
+    let mut d = wordcraft_docx::read(&docx("<w:p/>", &[("rId1", "styles", "styles.xml")], &[("word/styles.xml", &styles)])).unwrap();
+    assert!(!d.styles.default_para_present);
+    d.styles.default_para.space_after = Some(12.0);
+    let again = wordcraft_docx::read(&wordcraft_docx::write(&d).unwrap()).unwrap();
+    assert!(again.styles.default_para_present);
+    assert_eq!(again.styles.default_para.space_after, Some(12.0));
+    let new = Document::new();
+    assert_eq!(wordcraft_docx::read(&wordcraft_docx::write(&new).unwrap()).unwrap().styles.default_para, new.styles.default_para);
+}
+
 fn paras(d: &Document) -> Vec<&Paragraph> {
     d.body.iter().filter_map(|b| b.as_para()).collect()
 }

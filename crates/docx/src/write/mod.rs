@@ -596,11 +596,13 @@ fn styles_xml(doc: &Document) -> Vec<u8> {
     props::rpr_inner(&mut w, &s.default_chr);
     w.close("w:rPr");
     w.close("w:rPrDefault");
-    w.open("w:pPrDefault", &[]);
-    w.open("w:pPr", &[]);
-    props::ppr_inner(&mut w, &s.default_para, false, None);
-    w.close("w:pPr");
-    w.close("w:pPrDefault");
+    if s.default_para_present || s.default_para != wordcraft_doc::props::ParaProps::default() {
+        w.open("w:pPrDefault", &[]);
+        w.open("w:pPr", &[]);
+        props::ppr_inner(&mut w, &s.default_para, false, None);
+        w.close("w:pPr");
+        w.close("w:pPrDefault");
+    }
     w.close("w:docDefaults");
     for st in &s.styles {
         style_xml(&mut w, st);

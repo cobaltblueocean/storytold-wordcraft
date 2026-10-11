@@ -134,6 +134,9 @@ pub struct StyleSheet {
     /// Document defaults (`w:docDefaults`).
     pub default_chr: CharProps,
     pub default_para: ParaProps,
+    /// Preserve an explicit `w:pPrDefault`, even when empty. Omission leaves defaults to
+    /// the application; nonempty `default_para` is always written after spacing edits.
+    pub default_para_present: bool,
     pub styles: Vec<Style>,
 }
 
@@ -161,7 +164,7 @@ fn color(c: Rgb) -> Option<TextColor> {
 
 impl StyleSheet {
     pub fn empty() -> Self {
-        StyleSheet { default_chr: CharProps::default(), default_para: ParaProps::default(), styles: Vec::new() }
+        StyleSheet { default_chr: CharProps::default(), default_para: ParaProps::default(), default_para_present: true, styles: Vec::new() }
     }
 
     /// The built-in style set used for new documents.
@@ -175,6 +178,7 @@ impl StyleSheet {
                 widow_control: Some(true),
                 ..para()
             },
+            default_para_present: true,
             styles: Vec::new(),
         };
         let mut add = |st: Style| s.styles.push(st);
@@ -582,6 +586,18 @@ mod tests {
         let g = s.gallery();
         assert_eq!(g.first().map(|s| s.id.as_str()), Some("Normal"));
         assert!(g.iter().any(|s| s.id == "Heading1"));
+    }
+
+    #[test]
+    fn older_serialized_styles_keep_explicit_defaults() {
+        let mut value = serde_json::to_value(StyleSheet::empty()).unwrap();
+        value.as_object_mut().unwrap().remove("defaultParaPresent");
+        let sheet: StyleSheet = serde_json::from_value(value).unwrap();
+        assert!(sheet.default_para_present);
+        let mut omitted = sheet;
+        omitted.default_para_present = false;
+        let again: StyleSheet = serde_json::from_str(&serde_json::to_string(&omitted).unwrap()).unwrap();
+        assert_eq!(again, omitted);
     }
 
     #[test]

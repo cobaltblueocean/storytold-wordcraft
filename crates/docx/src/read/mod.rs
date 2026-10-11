@@ -442,6 +442,7 @@ impl Reader<'_> {
             self.pc.alias.insert(id.to_string(), "Normal".into());
         }
         let mut sheet = StyleSheet::empty();
+        sheet.default_para_present = root.child("w:docDefaults").and_then(|dd| dd.child("w:pPrDefault")).is_some();
         if let Some(dd) = root.child("w:docDefaults") {
             if let Some(r) = dd.child("w:rPrDefault").and_then(|d| d.child("w:rPr")) {
                 sheet.default_chr = self.pc.rpr(r);

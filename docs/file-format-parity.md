@@ -71,6 +71,27 @@ Measured by grepping `crates/docx/src/read` and `src/write` for the OOXML elemen
 | `w:eastAsianLayout`, `w:fitText`, document grid (`w:docGrid`) | ❌ | ❌ | East Asian layout |
 | Glossary document (building blocks), `w:altChunk`, sub-documents | ❌ | ❌ | |
 | Hostile input | ✅ | — | `malformed.rs`, capped allocations, never-crash standard |
+| Document paragraph defaults (`w:pPrDefault`) | ✅ | ✅ | Omission and explicit empty defaults remain distinct across repeated saves; nonempty defaults and later default-spacing edits are written |
+
+## Paragraph-default preservation
+
+The styles reader records whether `w:pPrDefault` exists. The writer keeps an omitted
+container omitted when its modeled properties are still empty. An explicitly empty
+container stays present, and editing document-default spacing writes the new values.
+New documents and older serialized style sheets keep their explicit defaults.
+`crates/docx/tests/fixtures.rs` covers omitted `docDefaults`, omitted paragraph defaults,
+empty containers and populated defaults across two save/reopen cycles. This preserves
+application-defined defaults without assigning inferred Word spacing values to the model.
+Observed in Word for Mac 16.113.3 (26092714): three synthetic paragraph-default
+controls (omitted, explicitly empty, populated) and two reduced invoice controls retain
+identical text, glyph/image geometry, page sizes and embedded font-program hashes through
+two WordCraft save/reopen cycles. All fifteen variants open without repair warnings.
+Word PDFs and measurements remain local under ignored `plan/word/`; they are not fixtures.
+These checks cover preservation on Word reopen, not WordCraft pagination parity.
+
+The [public OOXML reference](https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.paragraphpropertiesdefault?view=openxml-3.0.1)
+describes omission as leaving paragraph defaults application-defined. Real-world corpus
+coverage and WordCraft layout matching remain separate gaps.
 
 ## What decides beta for formats
 
@@ -91,6 +112,7 @@ Measured by grepping `crates/docx/src/read` and `src/write` for the OOXML elemen
 | 2026-10-11 | trivial | Import/export fixes (#433–#440): TXT opens through the encoding-sniffing reader (Windows-1252, unmarked UTF-16) and saves list labels; RTF `\uN` in document info, bookmark names and field instructions; ODT common paragraph styles' text formatting and table-cell background colours; HTML borderless tables export without cell borders and `white-space:pre` keeps edge spaces; LaTeX brace groups scope `\centering`/`\raggedleft`/`\raggedright` |
 | 2026-10-11 | trivial | `.doc` import fixes per [MS-DOC]: piece Prm0/Prm1 decoding (#458), section-break kinds (#459), explicit orientation (#460), negative `sprmPIlfo` list references (#461), zero-based `istdBase` style inheritance (#462), font-table entries with alternate names (#463) |
 | 2026-10-11 | trivial | Formatting revisions (`w:rPrChange`, `w:pPrChange`, table, row, cell, section and numbering changes) read and written (#41) |
+| 2026-10-11 | trivial | Omitted `w:pPrDefault` stays omitted across saves; explicit empty/default properties and later spacing edits remain writable. Synthetic preservation checks only; readiness estimates unchanged |
 | 2026-10-10 | trivial | OLE objects turned or flipped in WordCraft keep the turn on save (VML `rotation`/`flip`, DrawingML `a:xfrm` with the rotated effect extent); test counts refreshed |
 | 2026-10-10 | trivial | Charts, SmartArt and OLE objects written back on save with their parts (#319); chart/SmartArt reading (#292) recorded |
 | 2026-10-10 | trivial | Footnote and endnote separators and continuation notices read and written (#352) |
