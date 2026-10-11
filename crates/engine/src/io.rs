@@ -26,9 +26,11 @@ pub const OPEN_EXTS: &[&str] = &[
 /// Formats WordCraft saves (Save As).
 pub const SAVE_EXTS: &[&str] = &["docx", "docm", "dotx", "dotm", "pdf", "txt", "md", "html", "rtf", "odt", "tex", "png", "json"];
 
+/// The extension of a file name or path, lower-case; empty when the file name has none (a dot
+/// in a folder name doesn't count).
 fn ext_of(name: &str) -> String {
-    let lower = name.to_ascii_lowercase();
-    lower.rsplit('.').next().unwrap_or("").to_string()
+    let file = name.rsplit(['/', '\\']).next().unwrap_or(name);
+    file.rsplit_once('.').map(|(_, ext)| ext.to_ascii_lowercase()).unwrap_or_default()
 }
 
 /// Is `ext` one of Word's package formats (.docx/.docm/.dotx/.dotm), which save without loss?
@@ -93,17 +95,46 @@ pub fn open_bytes_with(name: &str, bytes: &[u8], password: Option<&str>) -> Resu
         doc.ensure_nonempty();
         return Ok((doc, true));
     }
+    if ext.is_empty() {
+        return open_by_content(name, &ext, bytes, password);
+    }
     let mut doc = match ext.as_str() {
         // Plain text goes through the formats importer: BOMs, unmarked UTF-16, Windows-1252.
         "txt" | "text" | "" => wordcraft_formats::txt::import(bytes),
         "json" => serde_json::from_slice::<Document>(bytes).map_err(|e| format!("{name}: {e}"))?,
         other => match crate::io_ext::open(other, bytes) {
             Some(r) => r?,
-            None => return Err(format!("{name}: unsupported format `.{other}`")),
+            None => return open_by_content(name, other, bytes, password),
         },
     };
     doc.ensure_nonempty();
     Ok((doc, false))
+}
+
+/// A file whose extension names no format WordCraft knows (`.m3u`, `.log`, `.ini`, none…),
+/// opened by what it holds, as Word does: a Word document or RTF file by its signature, any
+/// other text through the plain-text import with encoding detection (#569). Anything else is
+/// refused with a clear error rather than shown as garbage.
+fn open_by_content(name: &str, ext: &str, bytes: &[u8], password: Option<&str>) -> Result<(Document, bool), String> {
+    const ZIP: &[u8] = b"PK\x03\x04";
+    const OLE: &[u8] = &[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
+    let (mut doc, encrypted) = if bytes.starts_with(OLE) && wordcraft_docx::is_encrypted(bytes) {
+        (wordcraft_docx::read_with_password(bytes, password).map_err(|e| e.to_string())?, true)
+    } else if bytes.starts_with(ZIP) {
+        (wordcraft_docx::read(bytes).map_err(|e| format!("{name}: not a document WordCraft can open ({e})"))?, false)
+    } else if bytes.starts_with(OLE) {
+        (wordcraft_docbin::read(bytes).map_err(|e| format!("{name}: not a document WordCraft can open ({e})"))?, false)
+    } else if bytes.starts_with(b"{\\rtf") {
+        (wordcraft_formats::rtf::import(bytes)?, false)
+    } else if wordcraft_formats::txt::is_text(bytes) {
+        (wordcraft_formats::txt::import(bytes), false)
+    } else if ext.is_empty() {
+        return Err(format!("{name}: not a document or text file WordCraft can open"));
+    } else {
+        return Err(format!("{name}: unsupported format `.{ext}` (not a document or text file)"));
+    };
+    doc.ensure_nonempty();
+    Ok((doc, encrypted))
 }
 
 /// Serialise a document; `name` gives the format by extension.
