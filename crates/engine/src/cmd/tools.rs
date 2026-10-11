@@ -85,9 +85,34 @@ pub fn specs() -> Vec<CommandSpec> {
                 s.autocorrect_user.retain(|(a, _)| a != f);
                 s.autocorrect_user.push((f.to_string(), t.to_string()));
             }
-            Ok(json!({"enabled": s.autocorrect_on, "entries": AUTOCORRECT.len() + s.autocorrect_user.len(), "user": s.autocorrect_user}))
+            let caps = &mut s.autocorrect_caps;
+            for (key, flag) in [("twoInitialCaps", &mut caps.two_initial_caps), ("capsLock", &mut caps.caps_lock), ("capCells", &mut caps.cap_cells)] {
+                if let Some(b) = p::bool(v, key) {
+                    *flag = b;
+                }
+            }
+            if let Some(w) = p::str(v, "addException").map(str::trim).filter(|w| !w.is_empty() && w.chars().count() <= 64) {
+                caps.initial_caps_exceptions.retain(|e| e != w);
+                if caps.initial_caps_exceptions.len() < 10_000 {
+                    caps.initial_caps_exceptions.push(w.to_string());
+                }
+            }
+            if let Some(w) = p::str(v, "removeException") {
+                caps.initial_caps_exceptions.retain(|e| e != w);
+            }
+            Ok(json!({
+                "enabled": s.autocorrect_on,
+                "entries": AUTOCORRECT.len() + s.autocorrect_user.len(),
+                "user": s.autocorrect_user,
+                "twoInitialCaps": s.autocorrect_caps.two_initial_caps,
+                "capsLock": s.autocorrect_caps.caps_lock,
+                "capCells": s.autocorrect_caps.cap_cells,
+                "exceptions": INITIAL_CAPS_EXCEPTIONS.iter().map(|e| e.to_string()).chain(s.autocorrect_caps.initial_caps_exceptions.iter().cloned()).collect::<Vec<_>>(),
+            }))
         })
-        .params(r#"{"enabled"?: bool, "add"?: {"from": string, "to": string}}"#)
+        .params(
+            r#"{"enabled"?: bool, "add"?: {"from": string, "to": string}, "twoInitialCaps"?: bool, "capsLock"?: bool, "capCells"?: bool, "addException"?: string (keeps TWo INitial CApitals), "removeException"?: string}"#,
+        )
         .pure(),
         CommandSpec::new("tools.customizeKeyboard", "Customize Keyboard", "File › Options", customize_keyboard)
             .params(
@@ -452,7 +477,7 @@ pub fn autocorrect_word(s: &mut Session, on_enter: bool) -> Result<(), CmdError>
     if !s.autocorrect_on {
         return Ok(());
     }
-    let f = s.sel.focus.clone();
+    let mut f = s.sel.focus.clone();
     let Some(text) = s.doc.para_at(&f).map(|p| p.text.clone()) else { return Ok(()) };
     let Some(before) = text.get(..f.off) else { return Ok(()) };
     let Some(last) = before.chars().next_back() else { return Ok(()) };
@@ -462,9 +487,28 @@ pub fn autocorrect_word(s: &mut Session, on_enter: bool) -> Result<(), CmdError>
     let trigger = if on_enter { 0 } else { last.len_utf8() };
     let Some(body) = before.get(..before.len() - trigger) else { return Ok(()) };
     let start = body.rfind(char::is_whitespace).map(|i| i + 1).unwrap_or(0);
-    let Some(word) = body.get(start..).map(str::to_string) else { return Ok(()) };
+    let Some(mut word) = body.get(start..).map(str::to_string) else { return Ok(()) };
     if word.is_empty() {
         return Ok(());
+    }
+    // TWo INitial CApitals and cAPS LOCK come first, so "TEh" is still a replacement's typo.
+    if let Some((at, reps)) = case_fix(&s.autocorrect_caps, &word) {
+        let para = s.doc.para_mut(f.story, &f.path)?;
+        let letters = word.get(at..).unwrap_or("").chars().take(reps.len()).collect::<String>();
+        let mut end = start + at + letters.len();
+        for (c, rep) in letters.chars().rev().zip(reps.iter().rev()) {
+            let from = end.saturating_sub(c.len_utf8());
+            if rep.chars().ne(std::iter::once(c)) {
+                let props = para.props_of_char(from).clone();
+                para.delete(from, end)?;
+                para.insert_text(from, rep, &props)?;
+            }
+            end = from;
+        }
+        let fixed: String = reps.concat();
+        f.off = (f.off + fixed.len()).saturating_sub(letters.len());
+        s.sel = Selection::caret(f.clone());
+        word = format!("{}{fixed}{}", word.get(..at).unwrap_or(""), word.get(at + letters.len()..).unwrap_or(""));
     }
     let user = s.autocorrect_user.iter().find(|(a, _)| *a == word).map(|(_, b)| b.clone());
     let builtin = AUTOCORRECT
@@ -521,7 +565,11 @@ pub fn autocorrect_word(s: &mut Session, on_enter: bool) -> Result<(), CmdError>
         s.pending = Some(after);
         return Ok(());
     }
-    if starts_sentence(text.get(..start).unwrap_or("")) && should_capitalize(&word, if on_enter { '\n' } else { last }) {
+    // The first word of a table cell follows "Capitalize first letter of table cells".
+    let before_word = text.get(..start).unwrap_or("");
+    let cell_start = f.path.cell().is_some() && f.path.last() == 0 && before_word.trim().is_empty();
+    let capital = if cell_start { s.autocorrect_caps.cap_cells } else { starts_sentence(before_word) };
+    if capital && should_capitalize(&word, if on_enter { '\n' } else { last }) {
         let para = s.doc.para_mut(f.story, &f.path)?;
         if let Some(c) = word.chars().next() {
             let up: String = c.to_uppercase().collect();
@@ -533,6 +581,49 @@ pub fn autocorrect_word(s: &mut Session, on_enter: bool) -> Result<(), CmdError>
         }
     }
     Ok(())
+}
+
+/// Built-in words that keep their two initial capitals (plurals of two-letter abbreviations).
+pub const INITIAL_CAPS_EXCEPTIONS: &[&str] = &["CDs", "IDs", "PCs", "TVs", "DJs", "GBs", "KBs", "MBs", "TBs", "VMs"];
+
+/// Words with a lowercase first letter and the rest in capitals that aren't cAPS LOCK slips.
+const CAPS_LOCK_EXCEPTIONS: &[&str] = &["iOS", "mRNA", "tRNA", "rRNA", "cDNA", "eSIM", "eSATA", "iSCSI", "vCPU"];
+
+/// The capitalisation fix for a finished word: TWo INitial CApitals ("WOrd" → "Word") or cAPS
+/// LOCK ("wORD" → "Word"). Returns the byte offset of the word's letters and each letter's
+/// replacement. Only words of three or more letters, optionally in quotes or brackets.
+fn case_fix(caps: &crate::AutoCorrectCaps, word: &str) -> Option<(usize, Vec<String>)> {
+    if !caps.two_initial_caps && !caps.caps_lock {
+        return None;
+    }
+    let at = word.find(char::is_alphabetic)?;
+    let rest = word.get(at..)?;
+    let letters = rest.get(..rest.find(|c: char| !c.is_alphabetic()).unwrap_or(rest.len()))?;
+    let tail = rest.get(letters.len()..)?;
+    if !word.get(..at)?.chars().all(|c| "\"'“‘([".contains(c)) || !tail.chars().all(|c| "\"'”’)]".contains(c)) {
+        return None;
+    }
+    let cs: Vec<char> = letters.chars().collect();
+    let (&a, &b, more) = match cs.as_slice() {
+        [a, b, more @ ..] if !more.is_empty() => (a, b, more),
+        _ => return None,
+    };
+    let one = |c: char| c.to_string();
+    let lower = |c: char| c.to_lowercase().collect::<String>();
+    if caps.two_initial_caps
+        && a.is_uppercase()
+        && b.is_uppercase()
+        && more.iter().all(|c| c.is_lowercase())
+        && !INITIAL_CAPS_EXCEPTIONS.contains(&letters)
+        && !caps.initial_caps_exceptions.iter().any(|e| e == letters)
+    {
+        return Some((at, std::iter::once(one(a)).chain(std::iter::once(lower(b))).chain(more.iter().map(|&c| one(c))).collect()));
+    }
+    if caps.caps_lock && a.is_lowercase() && b.is_uppercase() && more.iter().all(|c| c.is_uppercase()) && !CAPS_LOCK_EXCEPTIONS.contains(&letters) {
+        let up = a.to_uppercase().collect::<String>();
+        return Some((at, std::iter::once(up).chain(std::iter::once(lower(b))).chain(more.iter().map(|&c| lower(c))).collect()));
+    }
+    None
 }
 
 /// Byte length of an ordinal suffix to superscript ("1st" → 2), if `word` is a correct ordinal.

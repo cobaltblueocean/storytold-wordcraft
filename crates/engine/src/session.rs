@@ -238,6 +238,8 @@ pub struct Session {
     pub macros: std::collections::BTreeMap<String, Vec<(String, Value)>>,
     pub autocorrect_on: bool,
     pub autocorrect_user: Vec<(String, String)>,
+    /// AutoCorrect's capitalisation fixes (TWo INitial CApitals, cAPS LOCK, table cells).
+    pub autocorrect_caps: AutoCorrectCaps,
     /// Saved versions: (label, date, document).
     pub versions: Vec<(String, String, Document)>,
     /// Quick Parts / AutoText entries.
@@ -310,6 +312,26 @@ impl Default for Prefs {
     }
 }
 
+/// AutoCorrect's capitalisation options (each on by default, as in Word).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct AutoCorrectCaps {
+    /// Correct TWo INitial CApitals: "WOrd" → "Word" (not the exceptions, e.g. "IDs").
+    pub two_initial_caps: bool,
+    /// Correct accidental usage of cAPS LOCK: "wORD" → "Word".
+    pub caps_lock: bool,
+    /// Capitalize the first letter of table cells.
+    pub cap_cells: bool,
+    /// The user's words that keep two initial capitals (besides the built-in ones).
+    pub initial_caps_exceptions: Vec<String>,
+}
+
+impl Default for AutoCorrectCaps {
+    fn default() -> Self {
+        AutoCorrectCaps { two_initial_caps: true, caps_lock: true, cap_cells: true, initial_caps_exceptions: Vec::new() }
+    }
+}
+
 /// Maximum undo depth.
 const MAX_UNDO: usize = 500;
 
@@ -348,6 +370,7 @@ impl Session {
             macros: Default::default(),
             autocorrect_on: true,
             autocorrect_user: Vec::new(),
+            autocorrect_caps: AutoCorrectCaps::default(),
             versions: Vec::new(),
             building_blocks: Default::default(),
             autosave: true,
@@ -623,6 +646,7 @@ impl Session {
             macros: _,
             autocorrect_on: _,
             autocorrect_user: _,
+            autocorrect_caps: _,
             versions: _,
             building_blocks: _,
             autosave: _,

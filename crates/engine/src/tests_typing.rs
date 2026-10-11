@@ -481,3 +481,58 @@ fn shift_f5_goes_back_through_the_last_edits() {
     assert_eq!(back(), Pos::body(2, 5), "then round again");
     assert!(Session::new(wordcraft_doc::Document::new()).run("edit.goBack", &json!({})).is_err(), "nothing edited yet");
 }
+
+#[test]
+fn two_initial_capitals_are_corrected() {
+    let s = typed("the WOrd and THe end, not IDs or CDs. TV is fine ");
+    assert_eq!(s.doc.plain_text(StoryRef::Body), "The Word and The end, not IDs or CDs. TV is fine ");
+    // "TEh" loses its second capital, then the replacement list fixes the typo.
+    assert_eq!(typed("TEh ").doc.plain_text(StoryRef::Body), "The ");
+    // A user exception.
+    let mut s = typed("");
+    run(&mut s, "tools.autocorrect", json!({"addException": "WCraft"}));
+    typ(&mut s, "WCraft ");
+    assert_eq!(s.doc.plain_text(StoryRef::Body), "WCraft ");
+}
+
+#[test]
+fn accidental_caps_lock_is_corrected() {
+    let s = typed("a wORD and hELLO there. iOS stays ");
+    assert_eq!(s.doc.plain_text(StoryRef::Body), "A Word and Hello there. iOS stays ");
+}
+
+#[test]
+fn capitalisation_fixes_undo_and_turn_off() {
+    let mut s = typed("WOrd");
+    typ(&mut s, " ");
+    assert_eq!(s.doc.plain_text(StoryRef::Body), "Word ");
+    run(&mut s, "edit.undo", json!({}));
+    assert_eq!(s.doc.plain_text(StoryRef::Body), "WOrd ");
+    let mut s = typed("x wORD");
+    typ(&mut s, " ");
+    run(&mut s, "edit.undo", json!({}));
+    assert_eq!(s.doc.plain_text(StoryRef::Body), "X wORD ");
+    let mut s = typed("");
+    run(&mut s, "tools.autocorrect", json!({"twoInitialCaps": false, "capsLock": false}));
+    typ(&mut s, "x WOrd wORD ");
+    assert_eq!(s.doc.plain_text(StoryRef::Body), "X WOrd wORD ");
+}
+
+#[test]
+fn first_letter_of_a_table_cell_is_capitalised() {
+    let cell_text = |s: &Session, c: usize| {
+        s.doc.body.iter().find_map(|b| b.as_table()).and_then(|t| t.rows.first()?.cells.get(c)?.blocks.first()?.as_para().map(|p| p.text.clone()))
+    };
+    let mut s = typed("");
+    run(&mut s, "insert.table", json!({"rows": 1, "cols": 2}));
+    typ(&mut s, "apples and pears\tplums ");
+    assert_eq!(cell_text(&s, 0).as_deref(), Some("Apples and pears"));
+    assert_eq!(cell_text(&s, 1).as_deref(), Some("Plums "));
+    run(&mut s, "edit.undo", json!({}));
+    assert_eq!(cell_text(&s, 1).as_deref(), Some("plums "));
+    let mut s = typed("");
+    run(&mut s, "tools.autocorrect", json!({"capCells": false}));
+    run(&mut s, "insert.table", json!({"rows": 1, "cols": 1}));
+    typ(&mut s, "plums ");
+    assert_eq!(cell_text(&s, 0).as_deref(), Some("plums "));
+}
