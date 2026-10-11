@@ -1809,3 +1809,7 @@ preview	Title	Пример
 	Search icons	Поиск значков
 	No icons match your search.	Нет значков, соответствующих поиску.
 	Recolor a one-color picture, such as an icon	Перекрасить одноцветный рисунок, например значок
+
+# Asian and Latin text fonts (#505).
+	Asian text font:	Шрифт азиатского текста:
+	Latin text font:	Шрифт латинского текста:

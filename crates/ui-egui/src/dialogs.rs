@@ -19,7 +19,15 @@ use crate::theme::{Tokens, semibold};
 #[serde(tag = "dialog", rename_all = "camelCase")]
 pub enum Dialog {
     Font {
+        /// The font (Latin text) and the Asian text font, as the font lists name them, and their
+        /// values when the dialog opened: OK changes only the ones changed (#505).
         font: String,
+        font_was: String,
+        font_ea: String,
+        font_ea_was: String,
+        /// Show the Asian text font box: a Chinese or Japanese interface, or East Asian text or
+        /// an Asian font in the selection.
+        asian: bool,
         size: String,
         bold: bool,
         italic: bool,
@@ -738,21 +746,37 @@ impl Dialog {
         let s = |k: &str| st.get(k).and_then(Value::as_str).unwrap_or("").to_string();
         let b = |k: &str| st.get(k).and_then(Value::as_bool).unwrap_or(false);
         Some(match name {
-            "font" => Dialog::Font {
-                font: s("font"),
-                size: st.get("size").and_then(Value::as_f64).map(|v| v.to_string()).unwrap_or_default(),
-                bold: b("bold"),
-                italic: b("italic"),
-                underline: b("underline"),
-                strike: b("strike"),
-                sup: b("superscript"),
-                sub: b("subscript"),
-                small_caps: false,
-                caps: false,
-                hidden: false,
-                color: s("color"),
-                spacing: 0.0,
-            },
+            "font" => {
+                let font = app.previews.font_shown(&s("font"));
+                let font_ea = app.previews.font_shown(&s("fontEastAsia"));
+                let lang = crate::i18n::current().code();
+                let text = app.session.selected_text();
+                let text = if text.is_empty() {
+                    app.session.doc.para_at(&app.session.sel.focus).map(|p| p.plain_text().to_string()).unwrap_or_default()
+                } else {
+                    text
+                };
+                let asian = ["zh", "ja", "ko"].iter().any(|l| lang.starts_with(l)) || !font_ea.is_empty() || text.chars().any(east_asian_char);
+                Dialog::Font {
+                    font_was: font.clone(),
+                    font,
+                    font_ea_was: font_ea.clone(),
+                    font_ea,
+                    asian,
+                    size: st.get("size").and_then(Value::as_f64).map(|v| v.to_string()).unwrap_or_default(),
+                    bold: b("bold"),
+                    italic: b("italic"),
+                    underline: b("underline"),
+                    strike: b("strike"),
+                    sup: b("superscript"),
+                    sub: b("subscript"),
+                    small_caps: false,
+                    caps: false,
+                    hidden: false,
+                    color: s("color"),
+                    spacing: 0.0,
+                }
+            }
             "paragraph" | "asianTypography" => {
                 let rp = app.session.doc.para_at(&app.session.sel.focus).map(|p| app.session.doc.styles.resolve_para(&p.props));
                 let rp = rp?;
@@ -1105,10 +1129,64 @@ pub(crate) fn buttons(ui: &mut Ui, ok: &str) -> (bool, bool) {
     r
 }
 
+/// Is `c` Chinese, Japanese or Korean text (ideographs, kana, Hangul, CJK punctuation, fullwidth
+/// forms)?
+fn east_asian_char(c: char) -> bool {
+    matches!(u32::from(c), 0x1100..=0x11FF | 0x2E80..=0x9FFF | 0xA960..=0xA97F | 0xAC00..=0xD7FF | 0xF900..=0xFAFF | 0xFE30..=0xFE4F | 0xFF00..=0xFFEF | 0x20000..=0x3FFFF)
+}
+
+/// The Font dialog's OK: one formatting step. The fonts are set only when changed, the Latin
+/// font for Persian/Arabic text too (as `format.font`), each by its stored (English) name.
+fn apply_font(app: &mut WordApp, d: &Dialog) {
+    let Dialog::Font {
+        font,
+        font_was,
+        font_ea,
+        font_ea_was,
+        size,
+        bold,
+        italic,
+        underline,
+        strike,
+        sup,
+        sub,
+        small_caps,
+        caps,
+        hidden,
+        color,
+        spacing,
+        ..
+    } = d
+    else {
+        return;
+    };
+    let mut props = json!({
+        "bold": *bold, "italic": *italic, "strike": *strike,
+        "underline": if *underline { "single" } else { "none" },
+        "vertAlign": if *sup { "superscript" } else if *sub { "subscript" } else { "baseline" },
+        "smallCaps": *small_caps, "caps": *caps, "hidden": *hidden, "spacing": *spacing,
+    });
+    if font.trim() != font_was.trim() && !font.trim().is_empty() {
+        let f = app.previews.font_stored(font.trim());
+        props["font"] = json!(f);
+        props["fontCs"] = json!(f);
+    }
+    if font_ea.trim() != font_ea_was.trim() && !font_ea.trim().is_empty() {
+        props["fontEa"] = json!(app.previews.font_stored(font_ea.trim()));
+    }
+    if let Ok(s) = size.trim().parse::<f64>() {
+        props["size"] = json!(s);
+    }
+    if let Some(c) = wordcraft_doc::Rgb::parse(color) {
+        props["color"] = json!({"Rgb": [c.0, c.1, c.2]});
+    }
+    let _ = app.run("format.set", json!({"props": props}));
+}
+
 /// Returns true to close.
 fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
     match d {
-        Dialog::Font { font, size, bold, italic, underline, strike, sup, sub, small_caps, caps, hidden, color, spacing } => {
+        Dialog::Font { font, font_ea, asian, size, bold, italic, underline, strike, sup, sub, small_caps, caps, hidden, color, spacing, .. } => {
             // Build the sample text format for the preview pane below.
             let preview_size = size.trim().parse::<f32>().unwrap_or(12.0).clamp(6.0, 72.0);
             let preview_color = wordcraft_doc::Rgb::parse(color).map(crate::theme::c32).unwrap_or_else(|| ui.visuals().text_color());
@@ -1130,8 +1208,22 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                 fmt.strikethrough = egui::Stroke::new(1.0, preview_color);
             }
             egui::Grid::new("fontdlg").num_columns(2).spacing(vec2(10.0, 6.0)).show(ui, |ui| {
-                ui.label(tl!("Font:"));
-                ui.text_edit_singleline(font);
+                // Word's two font boxes when East Asian text is in use: the Latin text font and
+                // the Asian text font, each with its own list (type to find a font).
+                let prev = app.previews.font_preview_fn();
+                if *asian {
+                    ui.label(tl!("Asian text font:"));
+                    let fams = app.previews.east_asian_families();
+                    if let Some(f) = crate::widgets::font_combo(ui, "fontdlg_asian", 220.0, font_ea, &fams, Some(&*prev)) {
+                        *font_ea = f;
+                    }
+                    ui.end_row();
+                }
+                ui.label(if *asian { tl!("Latin text font:") } else { tl!("Font:") });
+                let fams = app.previews.families();
+                if let Some(f) = crate::widgets::font_combo(ui, "fontdlg_font", 220.0, font, &fams, Some(&*prev)) {
+                    *font = f;
+                }
                 ui.end_row();
                 ui.label(tl!("Size:"));
                 ui.text_edit_singleline(size);
@@ -1170,22 +1262,7 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             ui.label(job);
             let (ok, cancel) = buttons(ui, tl!("OK"));
             if ok {
-                let mut props = json!({
-                    "bold": *bold, "italic": *italic, "strike": *strike,
-                    "underline": if *underline { "single" } else { "none" },
-                    "vertAlign": if *sup { "superscript" } else if *sub { "subscript" } else { "baseline" },
-                    "smallCaps": *small_caps, "caps": *caps, "hidden": *hidden, "spacing": *spacing,
-                });
-                if !font.trim().is_empty() {
-                    props["font"] = json!(font.trim());
-                }
-                if let Ok(s) = size.trim().parse::<f64>() {
-                    props["size"] = json!(s);
-                }
-                if let Some(c) = wordcraft_doc::Rgb::parse(color) {
-                    props["color"] = json!({"Rgb": [c.0, c.1, c.2]});
-                }
-                let _ = app.run("format.set", json!({"props": props}));
+                apply_font(app, d);
             }
             ok || cancel
         }
@@ -2605,6 +2682,7 @@ fn enclose_preview(ui: &mut Ui, style: &str, text: &str, shape: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use wordcraft_doc::Pos;
     use wordcraft_doc::props::Align;
     use wordcraft_engine::Session;
 
@@ -2699,6 +2777,35 @@ mod tests {
             assert_eq!((after.bidi, after.align), (before.bidi, before.align), "{align} in rtl={rtl}");
             assert_eq!((after.indent_left, after.indent_right), (Some(18.0), Some(9.0)), "{align} in rtl={rtl}");
         }
+    }
+
+    #[test]
+    fn font_dialog_sets_the_asian_and_latin_fonts_separately() {
+        // #505: the Asian text font box and the Latin text font box each set their own font, and
+        // OK leaves the one not changed as it was.
+        let mut app = app_with("Hello 你好");
+        let _ = app.run("select.all", json!({}));
+        let fonts = |app: &WordApp| {
+            let c = app.session.doc.para_at(&Pos::body(0, 0)).map(|p| p.props_of_char(0).clone()).unwrap_or_default();
+            (c.font, c.font_ea)
+        };
+        let latin = fonts(&app).0;
+        let Some(mut d) = Dialog::open("font", &mut app) else { panic!("no font dialog") };
+        let Dialog::Font { asian, font_ea, .. } = &mut d else { panic!() };
+        assert!(*asian, "Chinese text in the selection shows the Asian text font box");
+        *font_ea = "SimSun".into();
+        apply_font(&mut app, &d);
+        assert_eq!(fonts(&app), (latin, Some("SimSun".into())));
+        let Some(mut d) = Dialog::open("font", &mut app) else { panic!() };
+        let Dialog::Font { font, font_ea, .. } = &mut d else { panic!() };
+        assert_eq!(font_ea, "SimSun");
+        *font = "Georgia".into();
+        apply_font(&mut app, &d);
+        assert_eq!(fonts(&app), (Some("Georgia".into()), Some("SimSun".into())));
+        // One undo step each.
+        let _ = app.run("edit.undo", json!({}));
+        assert_eq!(fonts(&app).1.as_deref(), Some("SimSun"));
+        assert_ne!(fonts(&app).0.as_deref(), Some("Georgia"));
     }
 
     #[test]

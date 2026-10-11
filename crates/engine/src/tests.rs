@@ -2905,3 +2905,27 @@ fn enclose_characters_make_an_eq_field_and_come_back_out() {
     assert_eq!(text(&s), "No 12 and 字 hereA");
     assert_eq!(field(&s), Some(("eq \\o\\ac(△,A)".to_string(), "A".to_string())));
 }
+
+fn format_font_sets_the_asian_and_latin_fonts_separately() {
+    // #505: Word's Font dialog sets an Asian text font and a Latin text font of their own.
+    let mut s = s();
+    run(&mut s, "document.setText", json!({"text": "Hello 你好"}));
+    run(&mut s, "select.all", json!({}));
+    let fonts = |s: &Session| {
+        let c = s.doc.para(StoryRef::Body, &wordcraft_doc::Path::top(0)).unwrap().props_of_char(0).clone();
+        (c.font, c.font_ea)
+    };
+    let before = fonts(&s);
+    run(&mut s, "format.font", json!({"name": "Georgia", "eastAsia": "SimSun"}));
+    assert_eq!(fonts(&s), (Some("Georgia".into()), Some("SimSun".into())));
+    assert_eq!(run(&mut s, "format.state", json!({}))["fontEastAsia"], "SimSun");
+    // The Asian font alone leaves the Latin font as it is.
+    run(&mut s, "format.font", json!({"eastAsia": "Noto Sans CJK SC"}));
+    assert_eq!(fonts(&s), (Some("Georgia".into()), Some("Noto Sans CJK SC".into())));
+    // Each change is one undo step.
+    run(&mut s, "edit.undo", json!({}));
+    assert_eq!(fonts(&s), (Some("Georgia".into()), Some("SimSun".into())));
+    run(&mut s, "edit.undo", json!({}));
+    assert_eq!(fonts(&s), before);
+    assert!(s.run("format.font", &json!({})).is_err() && s.run("format.font", &json!({"eastAsia": " "})).is_err());
+}
