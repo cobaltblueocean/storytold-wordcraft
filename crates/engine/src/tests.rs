@@ -2859,6 +2859,8 @@ fn drag_after_multi_click_extends_by_units() {
         let _ = s.run("select.dragUnit", &v);
     }
     assert_eq!(text(&s), before);
+}
+
 /// Home › Font › Enclose Characters (#297): the selection becomes an `EQ \o\ac` field, saved the
 /// way Word stores it (the style in the code's run sizes) and read back; null takes the text out
 /// again, and each step undoes.
