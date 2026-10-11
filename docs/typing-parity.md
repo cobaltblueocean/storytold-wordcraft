@@ -1,6 +1,6 @@
 # Typing parity with Word
 
-> **Last reviewed:** 2026-10-11 · **Last updated:** 2026-10-11 · **Change:** minor (Move Paragraph Up/Down, Promote/Demote, Go Back and Alt+X keys, #343) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
+> **Last reviewed:** 2026-10-11 · **Last updated:** 2026-10-11 · **Change:** minor (names of days capitalised; AutoCorrect Options switch each AutoCorrect and AutoFormat behaviour, #412; Move Paragraph Up/Down, Promote/Demote, Go Back and Alt+X keys, #343) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
 
 What Word does when you type, observed black-box (same keystrokes typed into Word and
 WordCraft, results read back paragraph by paragraph) and pinned by tests in
@@ -60,6 +60,12 @@ Applied when a word is finished by a space, punctuation **or Enter** (`enter_fin
   `typing_at_either_end_of_a_link_is_not_linked`).
 - Enter after `---` `===` `***` `___` `~~~` `###` → a bottom border on the paragraph above
   (single, double, dotted, thick, wave, triple) (`border_line_autoformat`).
+- Names of days are capitalised (`monday` → `Monday`). AutoCorrect Options (#412,
+  `tools.autocorrect`, saved per user) switch each of these off: replacements, sentence and
+  table-cell capitals, days, smart quotes, fractions, ordinals, dashes, links, bulleted and
+  numbered lists, border lines; user entries are added, replaced or deleted (built-in ones too),
+  and "don't capitalize after" exceptions extend the abbreviation list. A replacement of several
+  words takes a sentence capital on its first (`autocorrect_options_change_what_typing_does`).
 
 ## Layout
 
@@ -91,6 +97,7 @@ Applied when a word is finished by a space, punctuation **or Enter** (`enter_fin
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | minor | Names of days capitalised; AutoCorrect Options (user entries, deleted built-ins, exceptions, every AutoCorrect/AutoFormat switch) change typing (#412) |
 | 2026-10-11 | minor | Editing keys: Move Paragraph Up/Down, Promote/Demote, Go Back (Shift+F5), Alt+X (#343) |
 | 2026-10-11 | minor | Hyperlinks: text typed at either end of a link or after Enter stays outside it (#413) |
 | 2026-10-10 | trivial | Status line, revision history and cross-links added (progress-docs standard) |
