@@ -417,6 +417,7 @@ fn indic_and_khmer_backspace_removes_one_character() {
     // Latin keeps grapheme Backspace: e + combining acute goes as one.
     let s = typed("ae\u{301}\u{8}");
     assert_eq!(paras(&s)[0].0, "a");
+}
 
 /// Press a shortcut the way the keyboard does: run the command bound to it.
 fn press(s: &mut Session, combo: &str) -> Result<serde_json::Value, crate::CmdError> {
