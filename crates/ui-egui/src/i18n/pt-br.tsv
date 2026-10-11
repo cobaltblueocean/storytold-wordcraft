@@ -1325,3 +1325,5 @@
 	Formatted	Formatado
 	Interface size:	Tamanho da interface:
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	Aumenta ou diminui a faixa de opções, os menus e as caixas de diálogo, além da escala de exibição do sistema. O zoom do documento é separado.
+	Print Markup	Imprimir marcação
+	Comments beside each page and tracked changes in PDFs, prints and images; a comment list at the end of web pages, Markdown and text.	Comentários ao lado de cada página e alterações controladas em PDFs, impressões e imagens; uma lista de comentários no final de páginas da web, Markdown e texto.

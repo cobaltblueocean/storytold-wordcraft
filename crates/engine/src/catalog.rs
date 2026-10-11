@@ -13,6 +13,7 @@ File|Backstage|Open|file.open
 File|Backstage|Save|file.save
 File|Backstage|Save As|file.saveAs
 File|Backstage|Print|file.print
+File|Backstage|Print Markup|file.printMarkup
 File|Backstage|Close|file.close
 File|Backstage|Info|file.info
 File|Backstage|Properties|file.properties

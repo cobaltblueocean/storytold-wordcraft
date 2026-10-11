@@ -1325,3 +1325,5 @@
 	Formatted	Відформатовано
 	Interface size:	Розмір інтерфейсу:
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	Збільшує або зменшує стрічку, меню й діалогові вікна понад системне масштабування екрана. Масштаб документа налаштовується окремо.
+	Print Markup	Друкувати примітки та виправлення
+	Comments beside each page and tracked changes in PDFs, prints and images; a comment list at the end of web pages, Markdown and text.	Коментарі біля кожної сторінки й відстежені зміни в PDF, друку та зображеннях; список коментарів наприкінці вебсторінок, Markdown і тексту.

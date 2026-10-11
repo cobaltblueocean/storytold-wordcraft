@@ -763,3 +763,40 @@ fn cosmetic_metafile_pens_are_thin_but_visible() {
     let raw = String::from_utf8_lossy(&bytes);
     assert!(raw.contains("0.25 w"), "the hairline is a quarter point wide");
 }
+
+/// Print Markup (#589): the comments and their replies print beside each page, which is scaled
+/// down to keep its paper size; without it they stay out of the PDF.
+#[test]
+fn comments_print_in_balloons_beside_scaled_pages() {
+    let mut d = Document::from_text("Intro line.\nThe quarterly figures look strong.\nClosing line.");
+    let part = d.add_part(wordcraft_doc::PartKind::Comment, vec![para_block(Paragraph::with_text("Check the totals", CharProps::default()))]);
+    d.comments.insert(0, wordcraft_doc::Comment { author: "Ada Reviewer".into(), part, ..Default::default() });
+    let part = d.add_part(wordcraft_doc::PartKind::Comment, vec![para_block(Paragraph::with_text("Totals checked", CharProps::default()))]);
+    d.comments.insert(1, wordcraft_doc::Comment { author: "Ben Editor".into(), part, parent: Some(0), ..Default::default() });
+    d.insert_object(&wordcraft_doc::Pos::body(1, 13), InlineObject::CommentEnd { id: 0 }, &CharProps::default()).unwrap();
+    d.insert_object(&wordcraft_doc::Pos::body(1, 4), InlineObject::CommentStart { id: 0 }, &CharProps::default()).unwrap();
+    let size = |bytes: &[u8]| {
+        let pdf = hayro_syntax::Pdf::new(bytes.to_vec()).expect("parse");
+        pdf.pages().iter().map(|p| p.media_box()).map(|r| (r.width().round(), r.height().round())).collect::<Vec<_>>()
+    };
+    let plain = export(&d, &PdfOptions::default()).unwrap();
+    let text = squash(&extract_text(&plain).concat());
+    assert!(text.contains("quarterly figures") && !text.contains("Check the totals") && !text.contains("Ada Reviewer"), "{text}");
+    let marked = export(&d, &PdfOptions { include_markup: true, comments: true, ..Default::default() }).unwrap();
+    let text = squash(&extract_text(&marked).concat());
+    for want in ["quarterly figures", "Ada Reviewer", "Check the totals", "Ben Editor", "Totals checked"] {
+        assert!(text.contains(want), "{want} missing: {text}");
+    }
+    // Same paper: the page and its markup area are scaled to fit it.
+    assert_eq!(size(&plain), size(&marked));
+    assert_eq!(size(&marked), vec![(612.0, 792.0)]);
+    // Tagged or not, with links and an outline, it still writes.
+    let mut d2 = sample();
+    let part = d2.add_part(wordcraft_doc::PartKind::Comment, vec![para_block(Paragraph::with_text("On the heading", CharProps::default()))]);
+    d2.comments.insert(0, wordcraft_doc::Comment { author: "Ada".into(), part, ..Default::default() });
+    d2.insert_object(&wordcraft_doc::Pos::body(1, 3), InlineObject::CommentStart { id: 0 }, &CharProps::default()).unwrap();
+    for tagged in [false, true] {
+        let bytes = export(&d2, &PdfOptions { tagged, comments: true, ..Default::default() }).unwrap();
+        assert!(squash(&extract_text(&bytes).concat()).contains("On the heading"));
+    }
+}

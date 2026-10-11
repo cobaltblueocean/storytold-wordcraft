@@ -1013,7 +1013,7 @@ fn emit(mut nodes: Vec<Node>) -> Vec<Inline> {
 // Export
 
 /// Escape text for Markdown (inline context).
-fn escape(s: &str) -> String {
+pub(crate) fn escape(s: &str) -> String {
     let mut out = String::with_capacity(s.len() + 8);
     for c in s.chars() {
         match c {
