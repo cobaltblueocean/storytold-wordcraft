@@ -109,7 +109,9 @@ fn nav(app: &mut WordApp, ui: &mut Ui) {
                 let mut job = egui::text::LayoutJob::default();
                 let fmt = |c| egui::TextFormat { font_id: regular(12.0), color: c, ..Default::default() };
                 job.append(pre, 0.0, fmt(ui.visuals().text_color()));
-                job.append(hit, 0.0, egui::TextFormat { font_id: semibold(12.0), background: egui::Color32::from_rgb(0xFF, 0xF1, 0x76), color: egui::Color32::BLACK, ..Default::default() });
+                // The match is marked the way Find marks it on the page, per theme (#656).
+                let mark = Tokens::get(ui.ctx()).find_highlight;
+                job.append(hit, 0.0, egui::TextFormat { font_id: semibold(12.0), background: mark, color: ui.visuals().text_color(), ..Default::default() });
                 job.append(post, 0.0, fmt(ui.visuals().text_color()));
                 job.wrap.max_width = ui.available_width();
                 if ui.add(egui::Button::new(job).frame(false)).clicked() {

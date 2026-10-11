@@ -509,6 +509,25 @@ mod tests {
         (x.max(y) + 0.05) / (x.min(y) + 0.05)
     }
 
+    /// #656: dialog primary buttons, the Discord pill, the table eraser and the Navigation search
+    /// highlight take their colours from the theme, not fixed light-theme values.
+    #[test]
+    fn interface_colours_come_from_the_theme() {
+        let banned = ["fill(crate::theme::APP_COLOR)", "0x58, 0x65, 0xF2", "0x47, 0x52, 0xC4", "0xFF, 0xF1, 0x76", "0xD1, 0x3B, 0x3B"];
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        for entry in std::fs::read_dir(&dir).unwrap() {
+            let path = entry.unwrap().path();
+            let name = path.file_name().unwrap().to_string_lossy().to_string();
+            if !name.ends_with(".rs") || name == "theme.rs" || name == "icons.rs" {
+                continue;
+            }
+            let src = std::fs::read_to_string(&path).unwrap();
+            for b in banned {
+                assert!(!src.contains(b), "{name} hard-codes {b}; use theme::Tokens");
+            }
+        }
+    }
+
     /// #655: text and knobs on filled accent controls (Share, avatar, AutoSave, keytips) reach 4.5:1
     /// on the accent and on its hover shade, in both themes.
     #[test]

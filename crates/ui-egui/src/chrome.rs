@@ -166,25 +166,15 @@ pub fn title_bar(app: &mut WordApp, ui: &mut Ui) {
                     ui.add_space(8.0);
                     if app.ui.show_discord {
                         let (r, resp) = ui.allocate_exact_size(vec2(84.0, 22.0), Sense::click());
-                        ui.painter().rect_filled(
-                            r,
-                            11.0,
-                            if resp.hovered() { egui::Color32::from_rgb(0x47, 0x52, 0xC4) } else { egui::Color32::from_rgb(0x58, 0x65, 0xF2) },
-                        );
+                        ui.painter().rect_filled(r, 11.0, if resp.hovered() { t.accent_text } else { t.accent });
                         icons::paint(
                             ui.painter(),
                             Rect::from_center_size(pos2(r.min.x + 13.0, r.center().y), vec2(14.0, 14.0)),
                             "discord",
-                            egui::Color32::WHITE,
-                            egui::Color32::WHITE,
+                            t.on_accent,
+                            t.on_accent,
                         );
-                        ui.painter().text(
-                            pos2(r.min.x + 24.0, r.center().y),
-                            Align2::LEFT_CENTER,
-                            tl!("Discord"),
-                            medium(11.5),
-                            egui::Color32::WHITE,
-                        );
+                        ui.painter().text(pos2(r.min.x + 24.0, r.center().y), Align2::LEFT_CENTER, tl!("Discord"), medium(11.5), t.on_accent);
                         if resp.on_hover_text(tl!("Join the ArtCraft community on Discord")).clicked() {
                             let _ = app.run("ui.discord", json!({}));
                         }
