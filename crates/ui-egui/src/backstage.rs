@@ -408,6 +408,8 @@ fn options_page(app: &mut WordApp, ui: &mut Ui) {
         let _ = app.run("view.ruler", json!({"value": ruler}));
     }
     ui.add_space(10.0);
+    proofing_options(app, ui);
+    ui.add_space(10.0);
     ui.label(egui::RichText::new(tl!("Customize")).font(semibold(15.0)));
     ui.horizontal(|ui| {
         ui.label(tl!("Keyboard shortcuts:"));
@@ -424,6 +426,64 @@ fn options_page(app: &mut WordApp, ui: &mut Ui) {
     ui.add_space(10.0);
     ui.label(egui::RichText::new(tl!("Agents")).font(semibold(15.0)));
     ui.label(tl!("Every command is available to scripts and AI agents: run `wordcraft-cli mcp` for an MCP server, or start the app with `--control <port>` for the JSON control channel."));
+}
+
+/// File ▸ Options ▸ Proofing: LanguageTool checking (#575). Off by default: when on, paragraph
+/// text goes to the chosen server. The fields edit the settings directly (a half-typed address
+/// only takes effect once it's a web address); the switch and language go through
+/// `ui.languageTool`.
+fn proofing_options(app: &mut WordApp, ui: &mut Ui) {
+    use wordcraft_languagetool::{DEFAULT_SERVER, http};
+    ui.label(egui::RichText::new(tl!("Proofing")).font(semibold(15.0)));
+    let mut on = app.ui.language_tool.enabled;
+    let r = ui.add_enabled(http::available(), egui::Checkbox::new(&mut on, tl!("Check spelling and grammar with LanguageTool")));
+    if !http::available() {
+        r.on_disabled_hover_text(tl!(http::UNSUPPORTED_REASON));
+    } else if r.changed()
+        && let Err(e) = app.run("ui.languageTool", json!({"enabled": on}))
+    {
+        app.status(e);
+    }
+    ui.label(
+        egui::RichText::new(tl!(
+            "Sends the text of your paragraphs to the LanguageTool server below. Off, WordCraft's built-in checker is used and nothing leaves this computer."
+        ))
+        .small()
+        .weak(),
+    );
+    let s = &mut app.ui.language_tool;
+    ui.horizontal(|ui| {
+        ui.label(tl!("Server:"));
+        ui.add(egui::TextEdit::singleline(&mut s.server).hint_text(DEFAULT_SERVER).desired_width(300.0));
+    });
+    ui.label(egui::RichText::new(tl!("Use your own LanguageTool server by entering its address, such as http://localhost:8081.")).small().weak());
+    ui.horizontal(|ui| {
+        ui.label(tl!("Username:"));
+        ui.add(egui::TextEdit::singleline(&mut s.username).desired_width(220.0));
+    });
+    ui.horizontal(|ui| {
+        ui.label(tl!("API key:"));
+        ui.add(egui::TextEdit::singleline(&mut s.api_key).password(true).desired_width(220.0));
+    });
+    let current = s.language.clone();
+    let label = |code: &str| match code {
+        "auto" | "" => tl!("Detect automatically").to_string(),
+        "document" => tl!("Each paragraph's proofing language").to_string(),
+        c => c.to_string(),
+    };
+    ui.horizontal(|ui| {
+        ui.label(tl!("Language:"));
+        egui::ComboBox::from_id_salt("languagetool_language").selected_text(label(&current)).width(260.0).show_ui(ui, |ui| {
+            for code in ["auto", "document"] {
+                if ui.selectable_label(current == code, label(code)).clicked() {
+                    let _ = app.run("ui.languageTool", json!({"language": code}));
+                }
+            }
+        });
+    });
+    if let Some(line) = crate::languagetool::status_line(app) {
+        ui.label(egui::RichText::new(line).small());
+    }
 }
 
 /// File ▸ Options ▸ Interface theme: Light, Dark, or follow the system's appearance (#115).
