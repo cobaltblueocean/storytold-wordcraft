@@ -1441,3 +1441,15 @@
 	Middle	Orta
 	Click the empty text box the text should continue in (Esc cancels)	Metnin devam edeceği boş metin kutusuna tıklayın (Esc iptal eder)
 	Not linked: click a text box	Bağlı değil: bir metin kutusuna tıklayın
+	Location	Konum
+	Endnotes	Son notlar
+	Below text	Metnin altında
+	End of section	Bölüm sonu
+	End of document	Belge sonu
+	Footnotes to endnotes	Dipnotlardan son notlara
+	Endnotes to footnotes	Son notlardan dipnotlara
+	Swap footnotes and endnotes	Dipnotları ve son notları değiştir
+	Custom mark:	Özel işaret:
+	Continuous numbering	Sürekli numaralandırma
+	Apply	Uygula
+	Convert Notes	Notları Dönüştür

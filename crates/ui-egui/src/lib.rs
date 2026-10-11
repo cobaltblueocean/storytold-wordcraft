@@ -22,6 +22,7 @@ pub mod dialogs;
 pub mod dialogs_insert;
 pub mod dialogs_keyboard;
 pub mod dialogs_lists;
+pub mod dialogs_notes;
 pub mod dialogs_para;
 pub mod dialogs_ribbon;
 pub mod equation_tab;
@@ -1190,6 +1191,8 @@ fn input_dialog(id: &str, params: &Value) -> Option<&'static str> {
         "review.wordCount" if params.as_object().is_none_or(|m| m.is_empty()) => Some("wordCount"),
         // Enclose Characters without a shape (null is one: it takes the enclosure away).
         "format.enclose" if params.get("shape").is_none() => Some("enclose"),
+        // Footnote and Endnote without settings shows its dialog (#385).
+        "references.noteOptions" if params.as_object().is_none_or(|m| m.is_empty()) => Some("noteOptions"),
         _ => None,
     }
 }

@@ -300,6 +300,10 @@ pub enum Dialog {
         text: String,
         shape: String,
     },
+    /// References › Footnotes › Footnote and Endnote (#385).
+    NoteOptions {
+        form: Box<crate::dialogs_notes::NoteForm>,
+    },
 }
 
 /// The Table Properties dialog's fields. Lengths are in the interface unit
@@ -719,6 +723,7 @@ impl Dialog {
             Dialog::CustomizeKeyboard { .. } => "customizeKeyboard",
             Dialog::CustomizeRibbon { .. } => "customizeRibbon",
             Dialog::Enclose { .. } => "enclose",
+            Dialog::NoteOptions { .. } => "noteOptions",
         }
     }
 
@@ -918,6 +923,7 @@ impl Dialog {
             "customizeQuickAccess" => {
                 Dialog::CustomizeRibbon { form: Box::new(crate::dialogs_ribbon::RibbonForm::read(app, crate::dialogs_ribbon::Page::QuickAccess)) }
             }
+            "noteOptions" => Dialog::NoteOptions { form: Box::new(crate::dialogs_notes::NoteForm::read(app)) },
             _ => return None,
         })
     }
@@ -1081,6 +1087,7 @@ pub fn show(app: &mut WordApp, ctx: &egui::Context) {
         Dialog::CustomizeKeyboard { .. } => "Customize Keyboard",
         Dialog::CustomizeRibbon { .. } => "Customize Ribbon",
         Dialog::Enclose { .. } => "Enclose Characters",
+        Dialog::NoteOptions { .. } => "Footnote and Endnote",
     };
     let id = egui::Id::new(("dialog", title));
     let shown = place_dialog(ctx, id, egui::Window::new(tl!(title)).id(id).collapsible(false).resizable(false)).open(&mut open).show(ctx, |ui| {
@@ -2067,6 +2074,7 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             }
             cancel
         }
+        Dialog::NoteOptions { form } => crate::dialogs_notes::note_options(app, ui, form),
         Dialog::FindRecipient { text, message } => {
             ui.horizontal(|ui| {
                 ui.label(tl!("Find:"));

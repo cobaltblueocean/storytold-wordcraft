@@ -1822,3 +1822,15 @@ preview	Title	Пример
 	Middle	По центру
 	Click the empty text box the text should continue in (Esc cancels)	Щёлкните пустую надпись, в которой должен продолжиться текст (Esc — отмена)
 	Not linked: click a text box	Не связано: щёлкните надпись
+	Location	Расположение
+	Endnotes	Концевые сноски
+	Below text	Под текстом
+	End of section	Конец раздела
+	End of document	Конец документа
+	Footnotes to endnotes	Сноски в концевые сноски
+	Endnotes to footnotes	Концевые сноски в сноски
+	Swap footnotes and endnotes	Поменять сноски и концевые сноски
+	Custom mark:	Особый знак:
+	Continuous numbering	Сквозная нумерация
+	Apply	Применить
+	Convert Notes	Преобразовать сноски
