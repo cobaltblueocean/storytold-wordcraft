@@ -515,7 +515,9 @@ impl<'a> Builder<'a> {
             let k = st.size / st.face.upem.max(1.0) as f32;
             let hscale = rc.scale / 100.0;
             // Group glyphs by cluster byte offset; graphemes may span several shaper clusters.
-            let bounds: Vec<usize> = unicode_segmentation::UnicodeSegmentation::grapheme_indices(sub, true).map(|(i, _)| i).collect();
+            // Complex-script syllables the graphemes split (Myanmar vowel signs, stacked
+            // consonants) stay one cluster: the caret never stops inside them.
+            let bounds: Vec<usize> = wordcraft_doc::cluster::cluster_starts(sub);
             let mut gi = 0usize;
             for (bi, &gs) in bounds.iter().enumerate() {
                 let ge = bounds.get(bi + 1).copied().unwrap_or(sub.len());
@@ -853,6 +855,12 @@ pub fn layout_para(p: &Paragraph, env: &ParaEnv) -> ParaLayout {
         if (o == unicode_linebreak::BreakOpportunity::Allowed || i < text.len()) && !after_slash {
             found.push(i);
         }
+    }
+    // Myanmar has no spaces between words: it wraps between syllables.
+    if text.chars().any(|c| matches!(u32::from(c), 0x1000..=0x109F | 0xA9E0..=0xA9FF | 0xAA60..=0xAA7F)) {
+        found.extend(wordcraft_doc::cluster::myanmar_breaks(&text));
+        found.sort_unstable();
+        found.dedup();
     }
     // Asian typography: kinsoku and breaking Latin words anywhere.
     crate::kinsoku::apply(&text, &mut found, rp.kinsoku, rp.word_wrap);

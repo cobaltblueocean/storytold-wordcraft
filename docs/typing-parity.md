@@ -1,6 +1,6 @@
 # Typing parity with Word
 
-> **Last reviewed:** 2026-10-11 · **Last updated:** 2026-10-11 · **Change:** minor (Move Paragraph Up/Down, Promote/Demote, Go Back and Alt+X keys, #343) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
+> **Last reviewed:** 2026-10-11 · **Last updated:** 2026-10-11 · **Change:** minor (complex-script caret and Backspace, #604; Move Paragraph Up/Down, Promote/Demote, Go Back and Alt+X keys, #343) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
 
 What Word does when you type, observed black-box (same keystrokes typed into Word and
 WordCraft, results read back paragraph by paragraph) and pinned by tests in
@@ -66,6 +66,16 @@ Applied when a word is finished by a space, punctuation **or Enter** (`enter_fin
 - No line break right after a slash (`and/or`, URLs) unless the word can't fit a line
   (`layout::tests::no_line_break_right_after_a_slash`).
 
+## Complex scripts
+
+- Myanmar, Khmer and the Indic scripts are typed in memory order (consonant, medials, then
+  vowel signs such as ေ, which is drawn before its consonant); the caret steps over whole
+  syllables (Myanmar vowel signs and stacked consonants never split off), Backspace removes one
+  character (vowel sign, medial, stacked consonant), Delete the whole syllable — the platforms'
+  standard behaviour, not yet compared against Word (#604,
+  `myanmar_typing_steps_by_syllable_and_backspaces_by_sign`,
+  `indic_and_khmer_backspace_removes_one_character`).
+
 ## Known gaps
 
 - Word's body font Aptos isn't installed outside Office; our substitute (Carlito, else Helvetica
@@ -91,6 +101,7 @@ Applied when a word is finished by a space, punctuation **or Enter** (`enter_fin
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | minor | Complex scripts: caret by syllable, Backspace by character (#604) |
 | 2026-10-11 | minor | Editing keys: Move Paragraph Up/Down, Promote/Demote, Go Back (Shift+F5), Alt+X (#343) |
 | 2026-10-11 | minor | Hyperlinks: text typed at either end of a link or after Enter stays outside it (#413) |
 | 2026-10-10 | trivial | Status line, revision history and cross-links added (progress-docs standard) |
