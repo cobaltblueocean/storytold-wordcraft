@@ -566,6 +566,7 @@ fn describe(prop: &str, v: &Value) -> String {
         "spaceAfter" => "Space after",
         "lineSpacing" => "Line spacing",
         "contextualSpacing" => "Don't add space between paragraphs of the same style",
+        "mirrorIndents" => "Mirror indents",
         "keepNext" => "Keep with next",
         "keepLines" => "Keep lines together",
         "pageBreakBefore" => "Page break before",

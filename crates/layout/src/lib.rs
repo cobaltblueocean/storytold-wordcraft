@@ -2175,7 +2175,9 @@ fn place_para(ctx: &mut Ctx, pb: &mut PageBuilder, p: &Paragraph, block: usize, 
             // Relative, so a bottom moved down for notes continuing on the next page stays put.
             pb.bottom -= pb.notes_h() - before;
         }
-        let x = pb.col_x();
+        // Mirror indents: on an even (left-hand) page the inside indent is on the right, so the
+        // paragraph's lines (broken for the same width) move over by the indents' difference.
+        let x = pb.col_x() + mirror_shift(&pl.rp, pb.number, pb.web);
         let y = pb.y + lead;
         // Notes that no longer fit below the text (a long one, or the rest of one continued from
         // the page before) get what's left under it and continue on the next page.
@@ -2198,7 +2200,7 @@ fn place_para(ctx: &mut Ctx, pb: &mut PageBuilder, p: &Paragraph, block: usize, 
         let (behind, front) = place_objects(ctx, StoryRef::Body, &[block as u32], p, &pl, (l0, l1), (x, y), &at, &float_rects, 0);
         items.extend(front);
         // Line numbers in the left margin.
-        if let Some(ln) = pb.sect.line_numbers.clone().filter(|_| !pb.web && pl.rp.style != "Header" && p.props.suppress_line_numbers != Some(true))
+        if let Some(ln) = pb.sect.line_numbers.clone().filter(|_| !pb.web && pl.rp.style != "Header" && !pl.rp.suppress_line_numbers)
             && let Some(first) = pl.lines.get(l0)
         {
             for li in l0..l1 {
@@ -2251,6 +2253,16 @@ fn place_para(ctx: &mut Ctx, pb: &mut PageBuilder, p: &Paragraph, block: usize, 
     }
     pb.y += pl.rp.space_after;
     pb.prev = Some((pl.rp.style.clone(), pl.rp.contextual_spacing, pl.rp.space_after));
+}
+
+/// How far a paragraph with mirrored indents (`w:mirrorIndents`) moves right on page `number`:
+/// its left and right indents are the inside and outside ones, which swap sides on even pages.
+fn mirror_shift(rp: &wordcraft_doc::resolve::ResolvedPara, number: u32, web: bool) -> f32 {
+    if !rp.mirror_indents || web || !number.is_multiple_of(2) {
+        return 0.0;
+    }
+    let (left, right) = rp.visual_indents();
+    right - left
 }
 
 /// Height of the first line of the block after `block` (for keep-with-next).

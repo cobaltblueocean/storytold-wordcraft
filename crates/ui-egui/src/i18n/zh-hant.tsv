@@ -82,10 +82,12 @@
 	Enter formatting for number:	輸入編號的格式：
 	Follow number with:	編號之後：
 	Formatting	格式設定
+	Formatting exceptions	格式例外
 	Include level number from:	包含的層級編號來自：
 	Ink	筆跡
 	Insertions and Deletions	插入和刪除
 	Insertions:	插入內容：
+	Inside:	內側：
 	Left border	左框線
 	Left Margin	左邊界
 	Indents and Spacing	縮排和間距
@@ -93,6 +95,7 @@
 	Line breaking	斷行
 	Link level to style:	將層級連結到樣式：
 	List Definition	清單定義
+	Mirror indents	對稱縮排
 	More templates →	更多範本 →
 	No templates match your search.	沒有符合搜尋的範本。
 	Nothing	無
@@ -100,6 +103,7 @@
 	Number format	編號格式
 	Number style for this level:	此層級的編號樣式：
 	Outside border	外側框線
+	Outside:	外側：
 	Reopen	重新開啟
 	Restart list after:	重新開始清單的層級：
 	Right border	右框線

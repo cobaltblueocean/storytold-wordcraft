@@ -81,10 +81,12 @@
 	Enter formatting for number:	番号の書式:
 	Follow number with:	番号に続く文字:
 	Formatting	書式
+	Formatting exceptions	書式の例外
 	Include level number from:	含めるレベルの番号:
 	Ink	インク
 	Insertions and Deletions	挿入と削除
 	Insertions:	挿入された箇所:
+	Inside:	内側:
 	Left border	左罫線
 	Left Margin	左余白
 	Indents and Spacing	インデントと間隔
@@ -92,6 +94,7 @@
 	Line breaking	行の分割
 	Link level to style:	レベルに対応付けるスタイル:
 	List Definition	リストの定義
+	Mirror indents	左右対称のインデント
 	More templates →	その他のテンプレート →
 	No templates match your search.	検索に一致するテンプレートはありません。
 	Nothing	なし
@@ -99,6 +102,7 @@
 	Number format	番号書式
 	Number style for this level:	このレベルの番号の種類:
 	Outside border	外側の罫線
+	Outside:	外側:
 	Reopen	再度開く
 	Restart list after:	リストを振り直すレベル:
 	Right border	右罫線

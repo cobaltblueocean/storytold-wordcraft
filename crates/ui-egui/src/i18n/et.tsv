@@ -276,6 +276,7 @@
 	Format Painter	Vormingupintsel
 	Formatted Text	Vormindatud tekst
 	Formatting at Selection	Valiku vormindus
+	Formatting exceptions	Vormindamise erandid
 	Formula	Valem
 	General	Üldine
 	Go To	Mine
@@ -347,6 +348,7 @@
 	Insert\nCitation	Lisa\nviide
 	Insert\nFootnote	Lisa\nallmärkus
 	Inside Borders	Siseäärised
+	Inside:	Sisemine:
 	Inspect Document	Kontrolli dokumenti
 	Inspect Styles at Selection	Kontrolli valiku stiile
 	Interface language:	Kasutajaliidese keel:
@@ -390,6 +392,7 @@
 	Link to Previous	Seo eelmisega
 	Links	Lingid
 	Location: {path}	Asukoht: {path}
+	Mirror indents	Peegelda taanded
 	MIT OR Apache-2.0. Copyright (c) 2026 ArtCraft Team and the WordCraft contributors.	MIT OR Apache-2.0. Autoriõigus (c) 2026 ArtCrafti meeskond ja WordCrafti kaasautorid.
 	Macros	Makrod
 	Mailings	Postitused
@@ -469,6 +472,7 @@
 	Outline	Liigendus
 	Outline Level	Liigendustase
 	Outside Borders	Välisäärised
+	Outside:	Välimine:
 	Oval	Ovaal
 	PDF document (*.pdf)	PDF-dokument (*.pdf)
 	Page	Leht
