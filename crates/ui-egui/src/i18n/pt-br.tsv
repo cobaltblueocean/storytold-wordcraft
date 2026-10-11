@@ -879,7 +879,6 @@
 	Wide	Ampla
 	Widow/Orphan Control	Controle de viúvas e órfãs
 	Widow/Orphan control	Controle de viúvas e órfãs
-	Wildcards (regex)	Curingas (regex)
 	Window	Janela
 	Word Count	Contagem de palavras
 	Word document (*.docx)	Documento Word (*.docx)
@@ -1431,3 +1430,34 @@
 	Enlarge symbol	Ampliar símbolo
 	Enclosure	Contorno
 	Circle	Círculo
+	Use wildcards	Usar caracteres curinga
+	Special	Especial
+	Match prefix	Coincidir prefixo
+	Match suffix	Coincidir sufixo
+	Ignore punctuation characters	Ignorar sinais de pontuação
+	Ignore white-space characters	Ignorar espaços em branco
+	Regular expressions	Expressões regulares
+	Search Options	Opções de pesquisa
+	Tab Character	Caractere de tabulação
+	Any Character	Qualquer caractere
+	Any Digit	Qualquer dígito
+	Any Letter	Qualquer letra
+	Caret Character	Acento circunflexo
+	Section Character	Símbolo de seção
+	Paragraph Character	Símbolo de parágrafo
+	Graphic	Gráfico
+	Manual Line Break	Quebra de linha manual
+	Manual Page Break	Quebra de página manual
+	Section Break	Quebra de seção
+	White Space	Espaço em branco
+	Clipboard Contents	Conteúdo da área de transferência
+	Find What Text	Texto localizado
+	Find What Expression	Expressão localizada
+	Character in Range	Caractere no intervalo
+	Beginning of Word	Início da palavra
+	End of Word	Fim da palavra
+	Expression	Expressão
+	Not	Não
+	Num Occurrences	Número de ocorrências
+	Previous 1 or More	Anterior 1 ou mais vezes
+	0 or More Characters	0 ou mais caracteres

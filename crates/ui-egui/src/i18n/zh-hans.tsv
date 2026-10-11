@@ -891,7 +891,6 @@
 	Wide	宽
 	Widow/Orphan Control	孤行控制
 	Widow/Orphan control	孤行控制
-	Wildcards (regex)	通配符（正则表达式）
 	Window	窗口
 	Word Count	字数统计
 	Word document (*.docx)	Word 文档 (*.docx)
@@ -1431,3 +1430,34 @@
 	Enlarge symbol	增大圈号
 	Enclosure	圈号
 	Circle	圆形
+	Use wildcards	使用通配符
+	Special	特殊字符
+	Match prefix	匹配前缀
+	Match suffix	匹配后缀
+	Ignore punctuation characters	忽略标点符号
+	Ignore white-space characters	忽略空白字符
+	Regular expressions	正则表达式
+	Search Options	搜索选项
+	Tab Character	制表符字符
+	Any Character	任意字符
+	Any Digit	任意数字
+	Any Letter	任意字母
+	Caret Character	脱字号
+	Section Character	章节号
+	Paragraph Character	段落符号
+	Graphic	图形
+	Manual Line Break	手动换行符
+	Manual Page Break	手动分页符
+	Section Break	分节符
+	White Space	空白
+	Clipboard Contents	剪贴板内容
+	Find What Text	查找到的文本
+	Find What Expression	查找到的表达式
+	Character in Range	范围内的字符
+	Beginning of Word	单词开头
+	End of Word	单词结尾
+	Expression	表达式
+	Not	非
+	Num Occurrences	出现次数
+	Previous 1 or More	前一项 1 次或多次
+	0 or More Characters	0 个或多个字符

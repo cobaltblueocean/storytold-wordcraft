@@ -905,7 +905,6 @@
 	Wide	Широкі
 	Widow/Orphan Control	Не залишати самотні рядки
 	Widow/Orphan control	Не залишати самотні рядки
-	Wildcards (regex)	Шаблони (регулярні вирази)
 	Window	Вікно
 	Word Count	Кількість слів
 	Word document (*.docx)	Документ Word (*.docx)
@@ -1431,3 +1430,34 @@
 	Enlarge symbol	Збільшити символ
 	Enclosure	Обведення
 	Circle	Коло
+	Use wildcards	Використовувати шаблони
+	Special	Спеціальні
+	Match prefix	Збіг префікса
+	Match suffix	Збіг суфікса
+	Ignore punctuation characters	Ігнорувати розділові знаки
+	Ignore white-space characters	Ігнорувати пробільні символи
+	Regular expressions	Регулярні вирази
+	Search Options	Параметри пошуку
+	Tab Character	Символ табуляції
+	Any Character	Будь-який символ
+	Any Digit	Будь-яка цифра
+	Any Letter	Будь-яка літера
+	Caret Character	Символ каретки
+	Section Character	Знак параграфа
+	Paragraph Character	Символ абзацу
+	Graphic	Графіка
+	Manual Line Break	Примусовий розрив рядка
+	Manual Page Break	Примусовий розрив сторінки
+	Section Break	Розрив розділу
+	White Space	Пробіл
+	Clipboard Contents	Вміст буфера обміну
+	Find What Text	Знайдений текст
+	Find What Expression	Знайдений вираз
+	Character in Range	Символ із діапазону
+	Beginning of Word	Початок слова
+	End of Word	Кінець слова
+	Expression	Вираз
+	Not	Не
+	Num Occurrences	Кількість повторень
+	Previous 1 or More	Попередній 1 або більше разів
+	0 or More Characters	0 або більше символів

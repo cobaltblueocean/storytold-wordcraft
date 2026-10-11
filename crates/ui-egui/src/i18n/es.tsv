@@ -903,7 +903,6 @@
 	Wide	Ancho
 	Widow/Orphan Control	Control de líneas viudas y huérfanas
 	Widow/Orphan control	Control de líneas viudas y huérfanas
-	Wildcards (regex)	Comodines (expresión regular)
 	Window	Ventana
 	Word Count	Recuento de palabras
 	Word Left	Palabra a la izquierda
@@ -1435,3 +1434,34 @@
 	Enlarge symbol	Agrandar símbolo
 	Enclosure	Contorno
 	Circle	Círculo
+	Use wildcards	Usar caracteres comodín
+	Special	Especial
+	Match prefix	Coincidir prefijo
+	Match suffix	Coincidir sufijo
+	Ignore punctuation characters	Omitir signos de puntuación
+	Ignore white-space characters	Omitir espacios en blanco
+	Regular expressions	Expresiones regulares
+	Search Options	Opciones de búsqueda
+	Tab Character	Carácter de tabulación
+	Any Character	Cualquier carácter
+	Any Digit	Cualquier dígito
+	Any Letter	Cualquier letra
+	Caret Character	Acento circunflejo
+	Section Character	Símbolo de sección
+	Paragraph Character	Símbolo de párrafo
+	Graphic	Gráfico
+	Manual Line Break	Salto de línea manual
+	Manual Page Break	Salto de página manual
+	Section Break	Salto de sección
+	White Space	Espacio en blanco
+	Clipboard Contents	Contenido del portapapeles
+	Find What Text	Texto buscado
+	Find What Expression	Expresión buscada
+	Character in Range	Carácter del intervalo
+	Beginning of Word	Principio de palabra
+	End of Word	Final de palabra
+	Expression	Expresión
+	Not	No
+	Num Occurrences	Número de repeticiones
+	Previous 1 or More	Anterior 1 o más veces
+	0 or More Characters	0 o más caracteres

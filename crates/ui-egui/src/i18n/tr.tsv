@@ -798,7 +798,6 @@
 	Wide	Geniş
 	Widow/Orphan Control	Tek Kalan Satır Denetimi
 	Widow/Orphan control	Tek kalan satır denetimi
-	Wildcards (regex)	Joker karakterler (regex)
 	Window	Pencere
 	Word Count	Sözcük Sayısı
 	Word Left	Önceki Sözcük
@@ -1428,3 +1427,36 @@
 	Search icons	Simgelerde ara
 	No icons match your search.	Aramanızla eşleşen simge yok.
 	Recolor a one-color picture, such as an icon	Simge gibi tek renkli bir resmi yeniden renklendir
+
+# Find and Replace special characters and wildcards (#543).
+	Use wildcards	Joker karakter kullan
+	Special	Özel
+	Match prefix	Ön eke uy
+	Match suffix	Son eke uy
+	Ignore punctuation characters	Noktalama karakterlerini yoksay
+	Ignore white-space characters	Boşluk karakterlerini yoksay
+	Regular expressions	Düzenli ifadeler
+	Search Options	Arama Seçenekleri
+	Tab Character	Sekme Karakteri
+	Any Character	Herhangi Bir Karakter
+	Any Digit	Herhangi Bir Rakam
+	Any Letter	Herhangi Bir Harf
+	Caret Character	Şapka Karakteri
+	Section Character	Bölüm Karakteri
+	Paragraph Character	Paragraf Karakteri
+	Graphic	Grafik
+	Manual Line Break	El ile Satır Sonu
+	Manual Page Break	El ile Sayfa Sonu
+	Section Break	Bölüm Sonu
+	White Space	Boşluk
+	Clipboard Contents	Pano İçeriği
+	Find What Text	Aranan Metin
+	Find What Expression	Aranan İfade
+	Character in Range	Aralıktaki Karakter
+	Beginning of Word	Sözcük Başı
+	End of Word	Sözcük Sonu
+	Expression	İfade
+	Not	Değil
+	Num Occurrences	Tekrar Sayısı
+	Previous 1 or More	Öncekinin 1 veya Daha Fazlası
+	0 or More Characters	0 veya Daha Fazla Karakter

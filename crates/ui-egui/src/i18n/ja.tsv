@@ -879,7 +879,6 @@
 	Wide	広い
 	Widow/Orphan Control	改ページ時 1 行残して段落を区切らない
 	Widow/Orphan control	改ページ時 1 行残して段落を区切らない
-	Wildcards (regex)	ワイルドカード（正規表現）
 	Window	ウィンドウ
 	Word Count	文字カウント
 	Word document (*.docx)	Word 文書 (*.docx)
@@ -1419,3 +1418,34 @@
 	Enlarge symbol	記号を拡大
 	Enclosure	囲い
 	Circle	円
+	Use wildcards	ワイルドカードを使う
+	Special	特殊文字
+	Match prefix	語頭が一致する
+	Match suffix	語尾が一致する
+	Ignore punctuation characters	句読点を無視する
+	Ignore white-space characters	空白文字を無視する
+	Regular expressions	正規表現
+	Search Options	検索オプション
+	Tab Character	タブ文字
+	Any Character	任意の 1 文字
+	Any Digit	任意の数字
+	Any Letter	任意の英字
+	Caret Character	キャレット記号
+	Section Character	セクション記号
+	Paragraph Character	段落記号文字
+	Graphic	図
+	Manual Line Break	手動の改行
+	Manual Page Break	手動の改ページ
+	Section Break	セクション区切り
+	White Space	空白
+	Clipboard Contents	クリップボードの内容
+	Find What Text	検索した文字列
+	Find What Expression	検索した式
+	Character in Range	範囲内の文字
+	Beginning of Word	単語の先頭
+	End of Word	単語の末尾
+	Expression	式
+	Not	否定
+	Num Occurrences	繰り返し回数
+	Previous 1 or More	直前の 1 回以上の繰り返し
+	0 or More Characters	0 文字以上の文字列
