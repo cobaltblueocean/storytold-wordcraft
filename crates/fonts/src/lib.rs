@@ -9,6 +9,7 @@
 
 mod fontdb;
 pub mod math;
+mod script;
 mod ui_fallback;
 pub mod word;
 
@@ -16,6 +17,7 @@ pub use fontdb::{FALLBACK_FAMILY, FaceRef, FontDb, FontFace, base_style, bundled
 pub use harfrust::Feature;
 use harfrust::{Direction, ShapeOptions, Tag, UnicodeBuffer};
 pub use kurbo::BezPath;
+pub use script::{fallback_rank, needs_layout_tables, script_fallbacks};
 use skrifa::MetadataProvider;
 use skrifa::instance::Size;
 pub use ui_fallback::{SystemUiFont, system_cjk_ui_font, ui_needs_system_cjk};
@@ -180,21 +182,27 @@ fn shape_dir(face: &FontFace, text: &str, features: &[Feature], map: &impl Fn(ch
     let mut out = Vec::with_capacity(text.len());
     let shaped = face.hb().map(|hb| {
         let shaper = face.shaper.shaper(&hb).instance(face.instance.as_ref()).build();
-        let mut buf = UnicodeBuffer::new();
-        for (i, c) in text.char_indices() {
-            buf.add(map(c), i as u32);
-        }
-        buf.guess_segment_properties();
-        buf.set_direction(if rtl { Direction::RightToLeft } else { Direction::LeftToRight });
-        let gb = shaper.shape(buf, ShapeOptions::new().features(features));
-        for (info, pos) in gb.glyph_infos().iter().zip(gb.glyph_positions()) {
-            out.push(ShapedGlyph {
-                gid: info.glyph_id,
-                cluster: info.cluster as usize,
-                x_advance: pos.x_advance,
-                x_offset: pos.x_offset,
-                y_offset: pos.y_offset,
-            });
+        // One script per shaping call: the shaper picks its script engine (Myanmar, Khmer,
+        // Indic, USE reordering…) from the run's script, so "Hi မြန်မာ" in one face must not be
+        // shaped as Latin. Runs come in text order; right-to-left callers regroup by cluster.
+        for r in script::script_runs(text) {
+            let Some(sub) = text.get(r.clone()) else { continue };
+            let mut buf = UnicodeBuffer::new();
+            for (i, c) in sub.char_indices() {
+                buf.add(map(c), (r.start + i) as u32);
+            }
+            buf.guess_segment_properties();
+            buf.set_direction(if rtl { Direction::RightToLeft } else { Direction::LeftToRight });
+            let gb = shaper.shape(buf, ShapeOptions::new().features(features));
+            for (info, pos) in gb.glyph_infos().iter().zip(gb.glyph_positions()) {
+                out.push(ShapedGlyph {
+                    gid: info.glyph_id,
+                    cluster: info.cluster as usize,
+                    x_advance: pos.x_advance,
+                    x_offset: pos.x_offset,
+                    y_offset: pos.y_offset,
+                });
+            }
         }
     });
     if shaped.is_none()

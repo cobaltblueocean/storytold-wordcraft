@@ -301,7 +301,7 @@ fn backspace(s: &mut Session, _: &Value) -> CmdResult {
     let f = s.sel.focus.clone();
     let Some(para) = s.doc.para_at(&f) else { return sel_result(s) };
     if f.off > 0 {
-        let a = Pos { off: para.prev_boundary(f.off), ..f.clone() };
+        let a = Pos { off: para.backspace_from(f.off), ..f.clone() };
         s.sel = Selection { anchor: a, focus: f };
         delete_selection(s)?;
         return sel_result(s);

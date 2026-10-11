@@ -185,6 +185,12 @@ impl FontFace {
         }
         self.skrifa().is_some_and(|f| f.charmap().map(c).is_some())
     }
+    /// Does the face carry OpenType glyph substitution (GSUB)? Complex scripts (Myanmar, Khmer,
+    /// Indic…) need it to reorder and stack; fonts with only Apple's AAT tables draw them unshaped.
+    pub fn has_layout_tables(&self) -> bool {
+        use skrifa::raw::TableProvider;
+        self.skrifa().is_some_and(|f| f.gsub().is_ok())
+    }
     /// Units per em.
     pub fn units_per_em(&self) -> f64 {
         self.upem
@@ -998,7 +1004,11 @@ impl FontDb {
                 0
             }
         };
-        order.sort_by_key(|f| (rank(f), !f.family.eq_ignore_ascii_case(FALLBACK_FAMILY), f.italic, (f.weight - 400.0).abs() as i32));
+        // Complex scripts (Myanmar, Khmer, Indic…): a font with OpenType layout tables, preferring
+        // the script's own families, so syllables reorder and stack (#604).
+        let complex = crate::needs_layout_tables(c);
+        let shaping = |f: &FontFace| if complex { (!f.has_layout_tables(), crate::fallback_rank(c, &f.family)) } else { (false, 0) };
+        order.sort_by_key(|f| (rank(f), shaping(f), !f.family.eq_ignore_ascii_case(FALLBACK_FAMILY), f.italic, (f.weight - 400.0).abs() as i32));
         order.into_iter().find(|f| f.covers(c)).cloned()
     }
 
@@ -1019,7 +1029,7 @@ impl FontDb {
         let cataloged: Vec<String> = self.read_catalog().iter().map(|e| e.family.clone()).collect();
         let rtl = crate::is_rtl(c) || arabic_block(c);
         let preferred = RTL_FALLBACKS.iter().filter(|_| rtl);
-        for fam in preferred.chain(SYSTEM_FALLBACKS.iter()) {
+        for fam in crate::script_fallbacks(c).iter().chain(preferred).chain(SYSTEM_FALLBACKS.iter()) {
             if !self.is_loaded(fam) && cataloged.iter().any(|f| f.eq_ignore_ascii_case(fam)) {
                 self.load_cataloged(fam);
                 if covered(self) {
@@ -1027,16 +1037,31 @@ impl FontDb {
                 }
             }
         }
-        let mut paths: Vec<std::path::PathBuf> = self.catalog.read().unwrap_or_else(|e| e.into_inner()).iter().map(|e| e.path.clone()).collect();
+        // Then any cataloged file, families named after a complex script first ("Noto Sans
+        // Myanmar" for Myanmar), each file's whole family loaded on a hit so the regular weight is
+        // found rather than whichever style sorts first (Black, Thin…).
+        let mut paths: Vec<(usize, std::path::PathBuf, String)> = self
+            .catalog
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .map(|e| (crate::fallback_rank(c, &e.family), e.path.clone(), e.family.clone()))
+            .collect();
         paths.sort();
-        paths.dedup();
-        for p in paths {
+        paths.dedup_by(|a, b| a.1 == b.1);
+        for (_, p, family) in paths {
             if std::fs::metadata(&p).map(|m| m.len() > 40 << 20).unwrap_or(true) {
                 continue;
             }
             let Ok(data) = std::fs::read(&p) else { continue };
             let hit = enumerate_faces(&data).iter().any(|f| skrifa::FontRef::from_index(&data, f.index).is_ok_and(|f| f.charmap().map(c).is_some()));
-            if hit && self.add_font(data) > 0 && covered(self) {
+            if !hit {
+                continue;
+            }
+            if !self.is_loaded(&family) {
+                self.load_cataloged(&family);
+            }
+            if covered(self) || (self.add_font(data) > 0 && covered(self)) {
                 return true;
             }
         }

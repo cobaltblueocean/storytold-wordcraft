@@ -377,3 +377,44 @@ fn typing_at_either_end_of_a_link_is_not_linked() {
     assert_eq!(texts(&s), ["see a sixte", "more! now"]);
     assert_eq!(links(&s), [("sixte".into(), false), (String::new(), false)]);
 }
+
+/// Myanmar (#604): typed in memory order (consonant, medial, then the prevowel ေ that is drawn
+/// before it), the caret steps over whole syllables and Backspace removes one sign at a time.
+#[test]
+fn myanmar_typing_steps_by_syllable_and_backspaces_by_sign() {
+    // ကြေး ("money"): က + ြ + ေ + း, then မြန်မာ.
+    let word = "\u{1000}\u{103C}\u{1031}\u{1038}";
+    let mut s = typed(word);
+    assert_eq!(paras(&s), vec![para(word, None)]);
+    // Backspace takes the visarga, then the vowel sign: the consonant and medial stay.
+    typ(&mut s, "\u{8}");
+    assert_eq!(paras(&s)[0].0, "\u{1000}\u{103C}\u{1031}");
+    typ(&mut s, "\u{8}\u{1031}\u{1038}");
+    assert_eq!(paras(&s)[0].0, word, "retyped");
+    // Left from the end skips the whole syllable (the visarga and aa signs aren't grapheme
+    // extenders, so a grapheme step would stop inside it).
+    let mut s = typed("\u{1019}\u{102C}\u{1005}\u{102C}"); // မာစာ
+    run(&mut s, "caret.left", json!({}));
+    assert_eq!(s.sel.focus.off, 6);
+    run(&mut s, "caret.left", json!({}));
+    assert_eq!(s.sel.focus.off, 0);
+    run(&mut s, "caret.right", json!({}));
+    assert_eq!(s.sel.focus.off, 6);
+    // Delete removes the whole syllable after the caret.
+    run(&mut s, "text.delete", json!({}));
+    assert_eq!(paras(&s)[0].0, "\u{1019}\u{102C}");
+}
+
+/// Devanagari and Khmer: Backspace removes the last character (a matra), not the conjunct.
+#[test]
+fn indic_and_khmer_backspace_removes_one_character() {
+    let mut s = typed("\u{0915}\u{094D}\u{0937}\u{093F}\u{8}"); // क्षि ⌫
+    assert_eq!(paras(&s)[0].0, "\u{0915}\u{094D}\u{0937}");
+    typ(&mut s, "\u{8}");
+    assert_eq!(paras(&s)[0].0, "\u{0915}\u{094D}");
+    let s = typed("\u{1781}\u{17D2}\u{1798}\u{17C2}\u{8}"); // ខ្មែ ⌫
+    assert_eq!(paras(&s)[0].0, "\u{1781}\u{17D2}\u{1798}");
+    // Latin keeps grapheme Backspace: e + combining acute goes as one.
+    let s = typed("ae\u{301}\u{8}");
+    assert_eq!(paras(&s)[0].0, "a");
+}

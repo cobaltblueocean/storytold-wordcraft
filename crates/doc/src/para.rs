@@ -885,19 +885,24 @@ impl Paragraph {
         self.touch();
     }
 
-    /// Previous grapheme boundary before `off` (0 at start).
+    /// Previous caret stop before `off` (0 at start): a grapheme boundary that doesn't split a
+    /// complex-script syllable ([`crate::cluster`]).
     pub fn prev_boundary(&self, off: usize) -> usize {
-        use unicode_segmentation::GraphemeCursor;
-        let off = self.clamp(off);
-        let mut c = GraphemeCursor::new(off, self.text.len(), true);
-        c.prev_boundary(&self.text, 0).ok().flatten().unwrap_or(0)
+        crate::cluster::prev_cluster(&self.text, self.clamp(off))
     }
-    /// Next grapheme boundary after `off` (len at end).
+    /// Next caret stop after `off` (len at end), see [`Self::prev_boundary`].
     pub fn next_boundary(&self, off: usize) -> usize {
-        use unicode_segmentation::GraphemeCursor;
+        crate::cluster::next_cluster(&self.text, self.clamp(off))
+    }
+    /// Where Backspace at `off` deletes from: the previous character in the Brahmic scripts
+    /// (Myanmar, Khmer, Devanagari, Thai…), where it removes one vowel sign or stacked consonant
+    /// at a time, otherwise the previous caret stop.
+    pub fn backspace_from(&self, off: usize) -> usize {
         let off = self.clamp(off);
-        let mut c = GraphemeCursor::new(off, self.text.len(), true);
-        c.next_boundary(&self.text, 0).ok().flatten().unwrap_or(self.text.len())
+        match self.text.get(..off).and_then(|t| t.char_indices().next_back()) {
+            Some((i, c)) if crate::cluster::backspaces_by_char(c) => i,
+            _ => self.prev_boundary(off),
+        }
     }
     /// Start of the word at or before `off` (Ctrl+Left).
     pub fn word_start(&self, off: usize) -> usize {
