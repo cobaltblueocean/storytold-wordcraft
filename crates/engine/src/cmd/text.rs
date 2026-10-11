@@ -3,7 +3,7 @@
 use serde_json::Value;
 use wordcraft_doc::para::{COLUMN_BREAK, NB_HYPHEN, NBSP, PAGE_BREAK, SOFT_HYPHEN};
 use wordcraft_doc::props::{Border, BorderStyle, NumRef};
-use wordcraft_doc::{Block, ListKind, Pos};
+use wordcraft_doc::{Block, ListKind, Path, Pos, StoryRef, Table};
 
 use super::{delete_selection, non_mac, sel_result, split_para, type_text};
 use crate::{CmdError, CmdResult, CommandSpec, Selection, Session, p};
@@ -90,7 +90,7 @@ fn insert(s: &mut Session, v: &Value) -> CmdResult {
     sel_result(s)
 }
 
-/// "* " / "- " → bullets, "1. " / "a) " → numbering, typed at the start of a paragraph.
+/// "* " / "- " / "> " → bullets, "1. " / "a) " → numbering, typed at the start of a paragraph.
 fn list_autoformat(s: &mut Session) -> Result<bool, CmdError> {
     let f = s.sel.focus.clone();
     let Some(para) = s.doc.para_at(&f) else { return Ok(false) };
@@ -98,8 +98,12 @@ fn list_autoformat(s: &mut Session) -> Result<bool, CmdError> {
         return Ok(false);
     }
     let kind = match para.text.as_str() {
-        "* " | "> " => ListKind::Bullet,
+        "* " => ListKind::Bullet,
         "- " => ListKind::BulletChar('-'),
+        // Arrow bullets (Word draws these from a symbol font; we use the Unicode arrows).
+        "> " => ListKind::BulletChar('\u{27A2}'),
+        "-> " => ListKind::BulletChar('\u{2794}'),
+        "=> " => ListKind::BulletChar('\u{21E8}'),
         "1. " => ListKind::Numbered,
         "1) " => ListKind::NumberedParen,
         "a. " => ListKind::LowerLetterDot,
@@ -160,19 +164,26 @@ fn dash_autoformat(s: &mut Session) -> Result<(), CmdError> {
     Ok(())
 }
 
-/// AutoFormat border lines: Enter after "---", "___", "===", "***", "~~~" or "###" turns the
-/// characters into a bottom border on the paragraph above (or this one at the top of a story).
-fn border_line_autoformat(s: &mut Session, at: &Pos) -> Result<bool, CmdError> {
-    let Some(para) = s.doc.para_at(at) else { return Ok(false) };
+/// An AutoFormat that Enter applies to the paragraph just finished.
+enum EnterAutoFormat {
+    /// "---" and friends: a bottom border.
+    Border(Border),
+    /// "+---+-----+": a one-row table; the dash count of each column.
+    Table(Vec<usize>),
+}
+
+/// AutoFormat border lines: Enter after "---", "___", "===", "***", "~~~" or "###".
+fn border_line(s: &Session, at: &Pos) -> Option<Border> {
+    let para = s.doc.para_at(at)?;
     let text = para.text.as_str();
-    let Some(c) = text.chars().next() else { return Ok(false) };
+    let c = text.chars().next()?;
     if !s.autocorrect_on
         || at.off != text.len()
         || text.len() < 3
         || !text.chars().all(|x| x == c)
         || para.props.numbering.is_some_and(|n| n.num != 0)
     {
-        return Ok(false);
+        return None;
     }
     let (style, width) = match c {
         '-' => (BorderStyle::Single, 0.75),
@@ -181,9 +192,39 @@ fn border_line_autoformat(s: &mut Session, at: &Pos) -> Result<bool, CmdError> {
         '*' => (BorderStyle::Dotted, 2.25),
         '~' => (BorderStyle::Wave, 0.75),
         '#' => (BorderStyle::Triple, 0.75),
-        _ => return Ok(false),
+        _ => return None,
     };
-    let line = Border { style, width, color: None, space: 1.0 };
+    Some(Border { style, width, color: None, space: 1.0 })
+}
+
+/// AutoFormat tables: a body paragraph that is exactly "+---+-----+" (plus signs around runs
+/// of hyphens). Returns the hyphen count of each column; more columns than a table can hold
+/// leave the text alone.
+fn table_line(s: &Session, at: &Pos) -> Option<Vec<usize>> {
+    let para = s.doc.para_at(at)?;
+    let text = para.text.as_str();
+    if !s.autocorrect_on
+        || at.story != StoryRef::Body
+        || at.path.0.len() != 1
+        || at.off != text.len()
+        || para.props.numbering.is_some_and(|n| n.num != 0)
+    {
+        return None;
+    }
+    let inner = text.strip_prefix('+')?.strip_suffix('+')?;
+    let mut cols = Vec::new();
+    for run in inner.split('+') {
+        if run.is_empty() || !run.bytes().all(|b| b == b'-') || cols.len() >= wordcraft_doc::table::MAX_COLS {
+            return None;
+        }
+        cols.push(run.len());
+    }
+    Some(cols)
+}
+
+/// Turn the border-line characters into a bottom border on the paragraph above (or this one
+/// at the top of a story).
+fn apply_border_line(s: &mut Session, at: &Pos, line: Border) -> Result<(), CmdError> {
     let set_bottom = |p: &mut wordcraft_doc::Paragraph| {
         let mut b = p.props.borders.unwrap_or_default();
         b.bottom = Some(line);
@@ -192,8 +233,8 @@ fn border_line_autoformat(s: &mut Session, at: &Pos) -> Result<bool, CmdError> {
     };
     let i = at.path.last();
     let prev = if i > 0 { Some(at.path.with_last(i - 1)) } else { None };
-    let len = text.len();
     let cur = s.doc.para_mut(at.story, &at.path)?;
+    let len = cur.len();
     cur.delete(0, len)?;
     let start = Pos { off: 0, ..at.clone() };
     match prev.filter(|q| matches!(s.doc.block(at.story, q), Some(Block::Para(_)))) {
@@ -211,8 +252,34 @@ fn border_line_autoformat(s: &mut Session, at: &Pos) -> Result<bool, CmdError> {
             s.sel = Selection::caret(new);
         }
     }
-    s.goal_x = None;
-    Ok(true)
+    Ok(())
+}
+
+/// Replace the "+---+" characters with a one-row table across the text width, each column as
+/// wide as its share of the hyphens; the emptied paragraph stays after the table and the caret
+/// goes into the first cell.
+fn apply_table_line(s: &mut Session, at: &Pos, cols: &[usize]) -> Result<(), CmdError> {
+    let total = cols.iter().sum::<usize>().max(1) as f32;
+    let block = at.path.0.first().copied().unwrap_or(0) as usize;
+    let width = s.doc.sections().get(s.doc.section_index_of(block)).map(|(_, sp)| sp.text_width()).unwrap_or(468.0).max(36.0);
+    let mut t = Table::new(1, cols.len(), width);
+    for (i, d) in cols.iter().enumerate() {
+        let w = (width * *d as f32 / total).max(6.0);
+        if let Some(g) = t.grid.get_mut(i) {
+            *g = w;
+        }
+        if let Some(c) = t.rows.get_mut(0).and_then(|r| r.cells.get_mut(i)) {
+            c.props.width = Some(w);
+        }
+    }
+    let p = s.doc.para_mut(at.story, &at.path)?;
+    let len = p.len();
+    p.delete(0, len)?;
+    s.doc.insert_block(at.story, &at.path, Block::Table(t))?;
+    let mut first = at.path.0.clone();
+    first.extend([0, 0, 0]);
+    s.sel = Selection::caret(Pos { story: at.story, path: Path(first), off: 0 });
+    Ok(())
 }
 
 /// Toggle Unicode Character (Alt+X): the hex code before the caret (up to six digits, `U+`
@@ -286,7 +353,21 @@ fn ins_char(s: &mut Session, c: char) -> CmdResult {
 
 fn new_paragraph(s: &mut Session, _: &Value) -> CmdResult {
     let mut at = delete_selection(s)?;
-    if border_line_autoformat(s, &at)? {
+    let auto = border_line(s, &at).map(EnterAutoFormat::Border).or_else(|| table_line(s, &at).map(EnterAutoFormat::Table));
+    if let Some(auto) = auto {
+        // Word: Undo right after reverts only the AutoFormat, so the typed characters come back
+        // and the Enter stays. Record that plain Enter as its own undo step.
+        let (doc, sel) = (s.doc.clone(), s.sel.clone());
+        let new = split_para(s, &at)?;
+        s.sel = Selection::caret(new);
+        let plain_doc = std::mem::replace(&mut s.doc, doc);
+        let plain_sel = std::mem::replace(&mut s.sel, sel);
+        match auto {
+            EnterAutoFormat::Border(line) => apply_border_line(s, &at, line)?,
+            EnterAutoFormat::Table(cols) => apply_table_line(s, &at, &cols)?,
+        }
+        s.goal_x = None;
+        s.push_undo("AutoFormat", plain_doc, plain_sel);
         return sel_result(s);
     }
     // Enter finishes a word like a space does ("teh" → "the", sentence capitals, links).

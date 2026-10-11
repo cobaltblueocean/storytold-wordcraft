@@ -9,6 +9,9 @@ use wordcraft_doc::{Block, Document, Paragraph, Pos, RevisionKind, StoryRef, par
 use super::{delete_selection, sel_result};
 use crate::{CmdError, CmdResult, CommandSpec, Selection, Session, p};
 
+/// Smileys replaced even when typed straight after a word ("ok:)"), as Word does.
+const SMILEYS: &[&str] = &[":-)", ":-(", ":)", ":(", ":|"];
+
 /// Built-in AutoCorrect replacements (our own list of common typos and symbols).
 pub const AUTOCORRECT: &[(&str, &str)] = &[
     ("teh", "the"),
@@ -45,6 +48,10 @@ pub const AUTOCORRECT: &[(&str, &str)] = &[
     ("<-", "←"),
     ("=>", "⇒"),
     (":)", "☺"),
+    (":-)", "☺"),
+    (":(", "☹"),
+    (":-(", "☹"),
+    (":|", "\u{1F610}"),
     ("1/2", "½"),
     ("1/4", "¼"),
     ("3/4", "¾"),
@@ -484,7 +491,11 @@ pub fn autocorrect_word(s: &mut Session, on_enter: bool) -> Result<(), CmdError>
     let (from, rep) = match user.or(builtin) {
         Some(r) => (start, Some(r)),
         None if word.len() > 3 && word.ends_with("...") => (start + word.len() - 3, Some("…".to_string())),
-        None => (start, None),
+        None => match SMILEYS.iter().find(|m| word.len() > m.len() && word.ends_with(**m)) {
+            // "ok:)" → "ok☺": only the smiley at the end of the word is replaced.
+            Some(m) => (start + word.len() - m.len(), AUTOCORRECT.iter().find(|(a, _)| a == m).map(|(_, b)| b.to_string())),
+            None => (start, None),
+        },
     };
     let mut caret = f.off;
     if let Some(rep) = rep {
