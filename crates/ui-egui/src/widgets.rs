@@ -8,7 +8,17 @@ use crate::{WordApp, icons};
 
 /// Height of the ribbon content area (without group labels).
 pub const CONTENT_H: f32 = 66.0;
-pub const LABEL_H: f32 = 16.0;
+/// Height of the group title row under the content.
+pub const LABEL_H: f32 = 18.0;
+/// Large buttons: centre of the 32 px icon, top of the first label line, and the pitch and
+/// height of a label line (`regular(11.5)`; a test checks the font's real line height).
+pub const BIG_ICON_Y: f32 = 18.0;
+pub const BIG_LABEL_Y: f32 = 36.0;
+pub const LABEL_PITCH: f32 = 13.0;
+pub const LABEL_LINE_H: f32 = 14.0;
+// #653: a two-line label ends inside the content, above the group title row.
+const _: () = assert!(BIG_LABEL_Y + LABEL_PITCH + LABEL_LINE_H <= CONTENT_H);
+const _: () = assert!(BIG_ICON_Y + 16.0 <= BIG_LABEL_Y);
 
 /// Shortcut text for a command (`⌘B` on macOS, `Ctrl+B` elsewhere): its first key in effect,
 /// custom keys included (Customize Keyboard).
@@ -143,14 +153,14 @@ fn big_button(ui: &mut Ui, app: &mut WordApp, icon: &str, label: &str, id: &str,
     keytip_badge(ui, r, id, &label.replace('\n', " "));
     let on = enabled(app, id);
     bg(ui, r, &resp, checked, &t);
-    let ic = Rect::from_center_size(pos2(r.center().x, r.min.y + 20.0), vec2(32.0, 32.0));
+    let ic = Rect::from_center_size(pos2(r.center().x, r.min.y + BIG_ICON_Y), vec2(32.0, 32.0));
     let (c, a) = if on { (t.icon, t.accent) } else { (t.text_disabled, t.text_disabled) };
     icons::paint(ui.painter(), ic, icon, c, a);
-    let mut y = r.min.y + 43.0;
+    let mut y = r.min.y + BIG_LABEL_Y;
     let lines: Vec<&str> = label.split('\n').collect();
     for (i, l) in lines.iter().enumerate() {
         label_line(ui, r.center().x, y, l, regular(11.5), if on { t.text } else { t.text_disabled }, menu && i + 1 == lines.len());
-        y += 13.0;
+        y += LABEL_PITCH;
     }
     let resp = tooltip(app, resp, &label.replace('\n', " "), id);
     command_menu(&resp, app, id);
@@ -251,12 +261,12 @@ pub fn menu_button(
         let (r, resp) = ui.allocate_exact_size(vec2(w, CONTENT_H), Sense::click());
         keytip_badge(ui, r, "menu", tip);
         bg(ui, r, &resp, false, &t);
-        icons::paint(ui.painter(), Rect::from_center_size(pos2(r.center().x, r.min.y + 20.0), vec2(32.0, 32.0)), icon, c, a);
+        icons::paint(ui.painter(), Rect::from_center_size(pos2(r.center().x, r.min.y + BIG_ICON_Y), vec2(32.0, 32.0)), icon, c, a);
         let lines: Vec<&str> = label.unwrap_or("").split('\n').collect();
-        let mut y = r.min.y + 43.0;
+        let mut y = r.min.y + BIG_LABEL_Y;
         for (i, l) in lines.iter().enumerate() {
             label_line(ui, r.center().x, y, l, regular(11.5), text, i + 1 == lines.len());
-            y += 13.0;
+            y += LABEL_PITCH;
         }
         resp
     } else {
@@ -301,9 +311,10 @@ pub fn group_titled(ui: &mut Ui, id_title: &str, title: &str, launcher: Option<&
     });
     let r = inner.response.rect;
     let r = Rect::from_min_max(start, pos2(r.max.x, start.y + CONTENT_H + LABEL_H));
-    ui.painter().text(pos2(r.center().x, r.max.y - 8.0), Align2::CENTER_CENTER, title, regular(11.0), t.group_label);
+    let title_y = r.max.y - LABEL_H / 2.0;
+    ui.painter().text(pos2(r.center().x, title_y), Align2::CENTER_CENTER, title, regular(11.0), t.group_label);
     if let Some(cmd) = launcher {
-        let lr = Rect::from_center_size(pos2(r.max.x - 6.0, r.max.y - 8.0), vec2(11.0, 11.0));
+        let lr = Rect::from_center_size(pos2(r.max.x - 6.0, title_y), vec2(11.0, 11.0));
         let resp = ui.interact(lr, ui.id().with(("launch", id_title)), Sense::click());
         if resp.hovered() {
             ui.painter().rect_filled(lr.expand(2.0), 2.0, t.hover);
@@ -789,6 +800,17 @@ fn icon_text_button_with(ui: &mut Ui, icon: &str, text: &str, font: egui::FontId
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// #653: a large button's label line is no taller than `LABEL_LINE_H` in the interface font, so
+    /// two lines (checked at compile time) end above the group title row.
+    #[test]
+    fn big_button_label_lines_fit_their_slot() {
+        let ctx = egui::Context::default();
+        ctx.set_fonts(crate::theme::font_definitions(false, false));
+        ctx.run_ui(egui::RawInput::default(), |_| {}).drop_without_applying_deltas();
+        let h = ctx.fonts_mut(|f| f.layout_no_wrap("Page Number Mail Merge gjpqy".into(), crate::theme::regular(11.5), Color32::WHITE).size().y);
+        assert!(h <= LABEL_LINE_H, "label line is {h} px tall");
+    }
 
     #[test]
     fn drawn_buttons_fade_in_on_hover_and_darken_while_pressed() {
