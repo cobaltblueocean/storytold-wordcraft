@@ -231,7 +231,7 @@ pub fn t(s: &str) -> &str {
     tr(current(), s)
 }
 
-/// `s` in the current language as worded for `context` (one of [`catalog::CONTEXTS`]), falling
+/// `s` in the current language as worded for `context` (one of `catalog::CONTEXTS`), falling
 /// back to the plain translation and then to English.
 pub fn tc<'a>(context: &str, s: &'a str) -> &'a str {
     trc(current(), context, s)

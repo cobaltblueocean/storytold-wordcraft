@@ -151,7 +151,7 @@ pub enum Dialog {
         name: String,
         /// Style id.
         based_on: String,
-        /// Index into `regions` (see [`REGION_LABELS`]).
+        /// Index into `regions` (see `REGION_LABELS`).
         region: usize,
         regions: Box<[TableRegion; 7]>,
         /// What the regions showed when the dialog opened (or the base style changed): only
