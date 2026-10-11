@@ -809,6 +809,23 @@ fn lines(
                 _ => {}
             }
         }
+        // Enclosed characters' shapes, in the text's colour.
+        for (k, e) in &pl.enclosures {
+            if *k < line.c0 || *k >= line.c1 {
+                continue;
+            }
+            let (Some(c), Some(left)) = (pl.clusters.get(*k), line.cl_left(*k)) else { continue };
+            let Some(st) = pl.styles.get(c.style as usize) else { continue };
+            let rect = Rect::new(x + left + e.x, base - st.shift - e.top, e.w, e.h);
+            out.push(Draw::Shape {
+                rect,
+                kind: e.kind,
+                fill: None,
+                stroke: Some(text_color(&st.rc.color, None)),
+                stroke_width: e.stroke,
+                effects: Default::default(),
+            });
+        }
         // Ruby (Phonetic Guide) text over its base text, in runs of one style.
         for r in pl.rubies.iter().filter(|r| (line.c0..line.c1).contains(&r.cluster)) {
             let Some(bst) = pl.clusters.get(r.cluster).and_then(|c| pl.styles.get(c.style as usize)) else { continue };
