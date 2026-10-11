@@ -27,7 +27,7 @@ first (`gh pr list`), and update this file and the parity doc when a gap closes.
 | 14 | **`.doc` can't be written; metafile pictures and Word 6/95 files refused** | | `crates/docbin` is read-only | Users exchanging files with old Word or legacy systems | 25–40 | [file-format-parity.md](file-format-parity.md) |
 | 15 | **References depth**: sources not saved in DOCX (#169 open); no EndNote/Mendeley desktop integration | | Sources live only in the session (#169 open) | Students and researchers | 6–10 | [target-app-parity.md](target-app-parity.md) |
 | 16 | **Right-to-left completeness**: RTL sections and tables, kashida, RTL in HTML/ODT/RTF; eight older RTL bug reports to re-verify after #207 (#215, #211, #199, #66, #63, #48, #19) | | [layout-parity.md](layout-parity.md) | Arabic, Persian, Hebrew writers | 10–15 | [layout-parity.md](layout-parity.md) |
-| 17 | **East Asian typography**: vertical text, Enclose Characters, document grid, Asian Typography options (Phonetic Guide landed, #288) | | Catalog misses `format.enclose`, `para.asianTypography` | Chinese, Japanese and Korean documents | 18–27 | [layout-parity.md](layout-parity.md) |
+| 17 | **East Asian typography**: vertical text, document grid, Asian Typography options (Phonetic Guide landed, #288; Enclose Characters landed, #297) | | Catalog misses `para.asianTypography` | Chinese, Japanese and Korean documents | 16–24 | [layout-parity.md](layout-parity.md) |
 | 18 | **Screen-reader access** to the document canvas untested | | AccessKit enabled; no tests | Blind and low-vision users; public-sector procurement | 10–15 | [ui-parity.md](ui-parity.md) |
 | 19 | **RTF and ODT depth**: notes, comments, revisions, sections, RTL | | ~1,500 lines each in `crates/formats` | Users exchanging with LibreOffice or older tools | 18–27 | [file-format-parity.md](file-format-parity.md) |
 | 20 | **Performance on large real-world documents** unmeasured (500+ pages, many pictures) | | Only the 188-page sample benchmark | Thesis and book authors | 10–20 | [layout-parity.md](layout-parity.md) |
@@ -77,6 +77,7 @@ The same gaps grouped the way the parity documents are, for agents working in on
 | 2026-10-10 | trivial | #2 narrowed: charts and SmartArt drawn (#292), and with OLE objects kept on save (#319); group shapes landed (#267); ink and drawing canvases remain |
 | 2026-10-10 | trivial | #4: long footnotes continue onto the next page (#352) |
 | 2026-10-10 | trivial | Define New Multilevel List and Track Changes Options dialogs landed (#328); removed from the dialog-depth list |
+| 2026-10-11 | trivial | Enclose Characters landed (#297); removed from the East Asian typography gap |
 | 2026-10-11 | trivial | Phonetic Guide (ruby) landed (#288): gap 17 narrowed |
 | 2026-10-10 | trivial | #10: wrap side (both sides, left, right, largest) for Square, Tight and Through objects (#354) |
 | 2026-10-10 | trivial | #10: Tight and Through wrapping follow the object's outline (#354) |

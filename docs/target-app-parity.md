@@ -13,7 +13,7 @@ The generated ribbon checklist is [`parity-checklist.md`](parity-checklist.md).
 
 | Number | Value | Kind |
 |---|---|---|
-| Ribbon/menu catalog coverage | **402 / 434 (92.6%)** | **measured**: `cargo xtask parity` (re-derived this pass from `crates/engine/src/catalog.rs` against every `CommandSpec::new` id in the source; identical to the checked-in `parity-checklist.md`) |
+| Ribbon/menu catalog coverage | **403 / 434 (92.9%)** | **measured**: `cargo xtask parity` (re-derived this pass from `crates/engine/src/catalog.rs` against every `CommandSpec::new` id in the source; identical to the checked-in `parity-checklist.md`) |
 | Feature breadth (weighted, beyond the ribbon: dialog options, citation styles, proofing languages, chart types, UI languages) | **~80%** | estimated |
 | Feature depth (weighted by use, table below) | **~68%** | estimated |
 | **Ready for real work** (full target) | **~60%** (range 55–63%) | estimated: weighted sum over the dimension table ([By dimension](#by-dimension)) |
@@ -57,7 +57,7 @@ full parity for the area.
 | Area | Weight | Parity | Was (2026-10-06) | Hours | Evidence and what's missing |
 |---|---|---|---|---|---|
 | Typing, selection, clipboard, undo, find/replace | 12 | 85% | 85% | 8–12 | Typing parity pinned by `tests_typing.rs` ([typing-parity.md](typing-parity.md)). Paste Special (#235), Advanced Find (#234) and Column Selection (#237) landed; Clipboard pane still missing (PR #264 open). |
-| Character and paragraph formatting | 11 | 82% | 85% | 8–12 | Nearly every property, Font/Paragraph dialogs, character border, Phonetic Guide (#288). Missing: Enclose Characters, Asian Typography, kerning/ligature/stylistic-set options in the Font dialog's Advanced tab. |
+| Character and paragraph formatting | 11 | 82% | 85% | 8–12 | Nearly every property, Font/Paragraph dialogs, character border, Phonetic Guide (#288), Enclose Characters (#297). Missing: Asian Typography, kerning/ligature/stylistic-set options in the Font dialog's Advanced tab. |
 | Styles and themes | 8 | 74% | 75% | 8–12 | Gallery, pane, create/modify, style sets, themes. Style Inspector landed (#236). Missing: Manage Styles (#270 open), style separators, linked-style edge cases; Word ships 11 Quick Style sets plus dozens of themes, we ship our own smaller set. |
 | Lists | 6 | 78% | 75% | 5–8 | Bullets, numbering, multilevel, restart, `w:lvlOverride` levels (#134), Word's list AutoFormat and Enter/Backspace behaviour. Missing: Define New Multilevel List dialog depth, list styles, legal numbering edge cases. |
 | Tables | 8 | 76% | 72% | 10–16 | Merge/split, styles (cell text takes style formatting, #104), custom table styles saved in the .docx (#256), Word 2013 edge, floating tables, rows split across pages, sort, formula, cell gridlines (#243), Draw Table and Eraser (#303). Missing: splitting or erasing around vertically merged cells, nested-table polish, interactive column resize (#49 open, #217). Cell text direction landed (#245). |
@@ -249,6 +249,7 @@ can be used without committing Word output.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | trivial | Enclose Characters (#297): catalog 402/434 → 403/434 (92.9%) |
 | 2026-10-11 | trivial | Phonetic Guide (ruby) landed (#288): catalog +1 feature |
 | 2026-10-11 | trivial | Shortcut count 101 → 125 (#330) |
 | 2026-10-11 | trivial | Equation fixes: removing numbers keeps every row (#444), caret moves keep imported OMML (#446), build-up on a caret move is an undoable edit (#447), LaTeX `\text{}` keeps its spaces (#448); no percentage change |
