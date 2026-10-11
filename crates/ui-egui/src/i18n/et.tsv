@@ -1349,6 +1349,9 @@
 	Formatted	Vormindatud
 	Interface size:	Kasutajaliidese suurus:
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	Muudab menüülindi, menüüd ja dialoogid suuremaks või väiksemaks, lisaks süsteemi ekraani skaleerimisele. Dokumendi suum on eraldi.
+	Animation	Animatsioon
+	Animate the caret (it glides and fades)	Animeeri tekstikursorit (libiseb ja hajub)
+	On: the caret glides to its new place when you type or use the arrow keys, and its blink fades. Off: it jumps and blinks on and off.	Sees: tekstikursor libiseb tippimisel või nooleklahvide kasutamisel uude kohta ja selle vilkumine hajub sujuvalt. Väljas: kursor hüppab ja vilgub järsult.
 	In Line with Text	Tekstiga reas
 	Square	Ruudukujuline
 	Through	Läbiv

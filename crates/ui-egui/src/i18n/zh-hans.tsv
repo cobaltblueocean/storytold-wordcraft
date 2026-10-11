@@ -1351,6 +1351,9 @@
 	Formatted	已设置格式
 	Interface size:	界面大小：
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	在系统显示缩放的基础上放大或缩小功能区、菜单和对话框。文档缩放单独设置。
+	Animation	动画
+	Animate the caret (it glides and fades)	为光标添加动画（平滑移动并淡入淡出）
+	On: the caret glides to its new place when you type or use the arrow keys, and its blink fades. Off: it jumps and blinks on and off.	开启：输入或使用方向键时，光标平滑移动到新位置，闪烁时淡入淡出。关闭：光标直接跳转，闪烁时直接显示和隐藏。
 	In Line with Text	与文字同行
 	Square	四周型
 	Through	穿越型

@@ -600,8 +600,11 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
                 let y0 = pr.min.y + (base - slot.y - slot.a) * s;
                 let y1 = pr.min.y + (base - slot.y + slot.d) * s;
                 let since = crate::now_ms() - app.canvas.caret_visible_since;
-                if ((since / 530.0) as u64).is_multiple_of(2) && focused {
-                    painter.line_segment([pos2(x, y0), pos2(x, y1)], Stroke::new(1.5, t.caret));
+                // The caret glides and fades like Word's (`caret_glide`).
+                let on = ((since / 530.0) as u64).is_multiple_of(2);
+                let look = crate::caret_glide::look(app, ui, content_origin, &geo, [pos2(x, y0), pos2(x, y1)], focused, since, on);
+                if look.opacity > 0.0 && focused {
+                    painter.line_segment(look.bar, Stroke::new(1.5, t.caret.gamma_multiply(look.opacity)));
                 }
                 if focused {
                     ui.ctx().request_repaint_after(std::time::Duration::from_millis(530 - (since as u64 % 530)));
@@ -627,14 +630,17 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
             let y1 = y0 + c.height * scale;
             let since = crate::now_ms() - app.canvas.caret_visible_since;
             let on = ((since / 530.0) as u64).is_multiple_of(2);
-            if app.session.sel.is_collapsed() && on && focused {
-                let bar = if c.width > 0.0 {
-                    // Turned text (a table cell's text direction): the caret lies across the page.
-                    [pos2(x, y0.round() + 0.5), pos2(x + c.width * scale, y0.round() + 0.5)]
-                } else {
-                    [pos2(x.round() + 0.5, y0), pos2(x.round() + 0.5, y1)]
-                };
-                painter.line_segment(bar, Stroke::new(1.5, caret_color));
+            let bar = if c.width > 0.0 {
+                // Turned text (a table cell's text direction): the caret lies across the page.
+                [pos2(x, y0.round() + 0.5), pos2(x + c.width * scale, y0.round() + 0.5)]
+            } else {
+                [pos2(x.round() + 0.5, y0), pos2(x.round() + 0.5, y1)]
+            };
+            // The caret glides and fades like Word's (`caret_glide`).
+            let shown = app.session.sel.is_collapsed() && focused;
+            let look = crate::caret_glide::look(app, ui, content_origin, &geo, bar, shown, since, on);
+            if shown && look.opacity > 0.0 {
+                painter.line_segment(look.bar, Stroke::new(1.5, caret_color.gamma_multiply(look.opacity)));
             }
             if focused {
                 ui.ctx().request_repaint_after(std::time::Duration::from_millis(530 - (since as u64 % 530)));

@@ -1353,6 +1353,9 @@
 	Formatted	Форматирано
 	Interface size:	Величина интерфејса:
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	Повећава или смањује траку, меније и дијалоге, поврх скалирања екрана у систему. Зумирање документа је засебно.
+	Animation	Анимација
+	Animate the caret (it glides and fades)	Анимирај курсор (клизи и постепено се гаси)
+	On: the caret glides to its new place when you type or use the arrow keys, and its blink fades. Off: it jumps and blinks on and off.	Укључено: курсор клизи на ново место док куцате или користите стрелице, а његово трептање се постепено гаси. Искључено: скаче и трепће нагло.
 	In Line with Text	У равни са текстом
 	Square	Квадратно
 	Through	Кроз

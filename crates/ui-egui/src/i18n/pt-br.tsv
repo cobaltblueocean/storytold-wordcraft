@@ -1351,6 +1351,9 @@
 	Formatted	Formatado
 	Interface size:	Tamanho da interface:
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	Aumenta ou diminui a faixa de opções, os menus e as caixas de diálogo, além da escala de exibição do sistema. O zoom do documento é separado.
+	Animation	Animação
+	Animate the caret (it glides and fades)	Animar o ponto de inserção (desliza e esmaece)
+	On: the caret glides to its new place when you type or use the arrow keys, and its blink fades. Off: it jumps and blinks on and off.	Ativado: o ponto de inserção desliza até a nova posição quando você digita ou usa as setas, e o piscar é suave. Desativado: ele salta e pisca de forma brusca.
 	In Line with Text	Alinhado ao texto
 	Square	Quadrado
 	Through	Através

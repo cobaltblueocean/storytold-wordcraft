@@ -408,6 +408,18 @@ fn options_page(app: &mut WordApp, ui: &mut Ui) {
         let _ = app.run("view.ruler", json!({"value": ruler}));
     }
     ui.add_space(10.0);
+    ui.label(egui::RichText::new(tl!("Animation")).font(semibold(15.0)));
+    let mut caret = app.ui.caret_animation;
+    if ui
+        .checkbox(&mut caret, tl!("Animate the caret (it glides and fades)"))
+        .on_hover_text(tl!(
+            "On: the caret glides to its new place when you type or use the arrow keys, and its blink fades. Off: it jumps and blinks on and off."
+        ))
+        .changed()
+    {
+        let _ = app.run("ui.caretAnimation", json!({"value": caret}));
+    }
+    ui.add_space(10.0);
     ui.label(egui::RichText::new(tl!("Customize")).font(semibold(15.0)));
     ui.horizontal(|ui| {
         ui.label(tl!("Keyboard shortcuts:"));
@@ -504,6 +516,33 @@ mod tests {
         assert_eq!(ids("re"), ["resume", "report"]);
         assert_eq!(ids("résumé"), ["resume"]);
         assert!(ids("no such template").is_empty());
+    }
+
+    /// File › Options › Animation: the checkbox is the `ui.caretAnimation` setting, and the
+    /// section is translated.
+    #[test]
+    fn options_animation_section_turns_the_caret_animation_off_and_on() {
+        let mut a = WordApp::new(wordcraft_engine::Session::new(wordcraft_doc::Document::new()), Services::default());
+        a.run("ui.backstage", json!({"value": true, "page": "options"})).unwrap();
+        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
+            |ui, app: &mut WordApp| {
+                let ctx = ui.ctx().clone();
+                app.logic(&ctx);
+                app.ui(ui);
+            },
+            a,
+        );
+        h.run_steps(4);
+        assert!(h.query_by_label("Animation").is_some(), "the section is there");
+        h.get_by_label("Animate the caret (it glides and fades)").click();
+        h.run_steps(4);
+        assert!(!h.state().ui.caret_animation, "the checkbox turns it off");
+        h.get_by_label("Animate the caret (it glides and fades)").click();
+        h.run_steps(4);
+        assert!(h.state().ui.caret_animation, "and on again");
+        h.state_mut().run("ui.language", json!({"value": "es"})).unwrap();
+        h.run_steps(4);
+        assert!(h.query_by_label("Animación").is_some() && h.query_by_label("Animation").is_none());
     }
 
     /// Home and New are different pages (#141): Home has the short template row, the link to New
