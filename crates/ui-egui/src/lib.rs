@@ -972,8 +972,10 @@ impl WordApp {
         for (name, bytes) in files {
             let lower = name.to_ascii_lowercase();
             let img = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"].iter().any(|e| lower.ends_with(e));
-            let list =
-                lower.ends_with(".csv") || lower.ends_with(".tsv") || (lower.ends_with(".txt") && std::mem::take(&mut self.recipient_list_pending));
+            // Any recipient file ends the pending picker request, so a later .txt drop opens normally.
+            let asked = std::mem::take(&mut self.recipient_list_pending);
+            let list = lower.ends_with(".csv") || lower.ends_with(".tsv") || (lower.ends_with(".txt") && asked);
+            self.recipient_list_pending = asked && !list;
             let r = if list {
                 self.load_recipients(json!({"csv": wordcraft_engine::io::decode_text(&bytes)}))
             } else if img {
@@ -2585,6 +2587,17 @@ mod tests {
         inbox.lock().unwrap().push(("more.csv".into(), b"Name\nBo\nCy\n".to_vec()));
         a.drain_inbox();
         assert_eq!(a.session.merge.rows.len(), 2);
+        // A CSV picked through the picker must not turn the next .txt drop into recipients.
+        a.run("ui.openRecipientList", json!({})).unwrap();
+        inbox.lock().unwrap().push(("people.csv".into(), b"Name,City\nAda,London\n".to_vec()));
+        a.drain_inbox();
+        assert!(!a.recipient_list_pending);
+        inbox.lock().unwrap().push(("notes.txt".into(), b"A plain text document.\nAnother line.\n".to_vec()));
+        a.drain_inbox();
+        assert_eq!(prompt(&a), Some("saveChanges"), "the TXT opens like any document");
+        a.run("ui.saveChanges", json!({"answer": "dontSave"})).unwrap();
+        assert_eq!(a.session.merge.headers, vec!["Name", "City"], "the recipients stay");
+        assert!(body_text(&a).contains("A plain text document."), "the TXT opened as a document");
         // A cancelled picker leaves nothing pending once the user does something else.
         a.run("ui.openRecipientList", json!({})).unwrap();
         a.run("format.bold", json!({})).unwrap();
