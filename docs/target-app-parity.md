@@ -13,7 +13,7 @@ The generated ribbon checklist is [`parity-checklist.md`](parity-checklist.md).
 
 | Number | Value | Kind |
 |---|---|---|
-| Ribbon/menu catalog coverage | **428 / 450 (95.1%)** | **measured**: `cargo xtask parity` (re-derived this pass from `crates/engine/src/catalog.rs` against every `CommandSpec::new` id in the source; identical to the checked-in `parity-checklist.md`) |
+| Ribbon/menu catalog coverage | **432 / 450 (96.0%)** | **measured**: `cargo xtask parity` (re-derived this pass from `crates/engine/src/catalog.rs` against every `CommandSpec::new` id in the source; identical to the checked-in `parity-checklist.md`) |
 | Feature breadth (weighted, beyond the ribbon: dialog options, citation styles, proofing languages, chart types, UI languages) | **~80%** | estimated |
 | Feature depth (weighted by use, table below) | **~68%** | estimated |
 | **Ready for real work** (full target) | **~60%** (range 55–63%) | estimated: weighted sum over the dimension table ([By dimension](#by-dimension)) |
@@ -71,7 +71,7 @@ full parity for the area.
 | Pictures, shapes, text boxes, WordArt | 6 | 60% | 60% | 20–30 | Insert, crop, recolour, styles, floating placement like Word (#136), wrap (square/top-bottom/behind/front), text boxes edit and overflow (#46), VML text boxes (#242), free rotation and flips with a rotation handle (#332), text-box text direction (90°, 270°, stacked), Align Text and linked text boxes (#369), Icons: an original icon library drawn in code with a searchable picker, inserted as pictures and recoloured with Icon Color (#309), Drawing Canvas with Fit/Expand/Scale and DOCX `wpc:wpc` (#344; members edited by command, not yet dragged inside the canvas; the canvas rotates and flips as a whole). Missing: tight/through contour wrap, text in a freely rotated text box, group (#267 open), shape effects, WordArt, connectors, online pictures, screenshot. |
 | Equations | 1 | 75% | 20% (with Draw) | 4–8 | OMML read/write, OpenType MATH layout, in-place editor with an Equation tab (#191). Missing: line breaking of long display equations, ink equations. |
 | Charts, SmartArt, Draw/ink, 3D models, icons | 4 | 3% | (20% with equations) | 70–110 | Icons landed (#309; an original library drawn in code). Draw: pens, pencil, highlighter, stroke eraser and Hide Ink (#307), ink saved as DrawingML freeforms; lasso, ink to shape/math and replay missing; charts and SmartArt are dropped on DOCX read (no `c:chart`/`dgm` handling in `crates/docx`). |
-| View (modes, zoom, panes, windows) | 3 | 72% | 70% | 6–10 | Print/web/draft/read/focus, dark page (#194), pages side by side when zoomed out (#251), navigation pane. Missing: View Side by Side, Synchronous Scrolling, Arrange All, Switch Windows, Outline view depth, Immersive Reader depth. |
+| View (modes, zoom, panes, windows) | 3 | 72% | 70% | 6–10 | Print/web/draft/read/focus, dark page (#194), pages side by side when zoomed out (#251), navigation pane; Switch Windows, Arrange All, View Side by Side and Synchronous Scrolling across WordCraft windows (#322). Missing: New Window on the same document, Split, Outline view depth, Immersive Reader depth. |
 | Backstage, printing, options | 3 | 58% | 55% | 12–20 | New/Home pages (#254), save prompts (#151), web printing via the browser (#209). Desktop printing still goes through PDF; Options has a fraction of Word's panes. |
 | Right-to-left and complex scripts | 1 | 50% | 55% | 15–25 | UAX #9, Arabic shaping, RTL paragraphs (#207). No RTL sections/tables, kashida justification or mirrored UI; open bug reports (#215, #211, #199, #66, #63, #48, #19) need re-testing against #207. |
 | East Asian typography | 1 | 15% | not rated | 18–27 | IME input works (winit fixes pending, #155–#164). Ruby/Phonetic Guide with DOCX round trip (#288). No vertical text, document grid, `w:eastAsianLayout`, enclose characters, Asian line-break options. |
@@ -249,6 +249,7 @@ can be used without committing Word output.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | trivial | View › Window across WordCraft windows (#322): catalog 402/434 → 406/434 (93.5%); View row text only, percentages unchanged |
 | 2026-10-11 | trivial | Pictures, shapes, text boxes: text direction, Align Text and linked text boxes (Create Link / Break Link), DOCX `bodyPr` `vert`/`anchor` and `wps:linkedTxbx` (#369); no percentage change |
 | 2026-10-10 | trivial | Drawing Canvas (#344): Insert › Shapes › New Drawing Canvas and Draw › Drawing Canvas live; catalog 402/434 → 404/434 (93.1%) |
 | 2026-10-11 | trivial | Mailings: Excel and OpenDocument spreadsheets as recipient lists (#334); score unchanged |

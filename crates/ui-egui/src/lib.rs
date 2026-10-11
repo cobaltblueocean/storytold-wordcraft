@@ -44,6 +44,7 @@ pub mod table_pen;
 pub mod theme;
 pub mod widgets;
 pub mod window_geometry;
+pub mod windows;
 pub mod zotero;
 
 use serde::{Deserialize, Serialize};
@@ -82,6 +83,8 @@ pub struct Services {
     /// Desktop: the picture on the system clipboard, if any — egui's paste only carries text
     /// (#45). Read when Paste finds no text; see [`paste_picture`].
     pub clipboard_picture: Option<Box<dyn Fn() -> Option<paste_picture::ClipboardPicture>>>,
+    /// Desktop: the other WordCraft windows and a channel to them, for View › Window (#322).
+    pub windows: Option<Box<dyn windows::WindowHost>>,
 }
 
 /// Files delivered asynchronously.
@@ -576,6 +579,7 @@ impl WordApp {
         if req.get("close").is_some() {
             self.quit_requested = true;
         }
+        windows::request(self, req);
     }
 
     /// Whether the interface theme setting currently resolves to dark (`System` asks the OS).
@@ -856,6 +860,7 @@ impl WordApp {
         self.drain_control(ctx);
         zotero::poll(self, ctx);
         read_aloud::poll(self, ctx);
+        windows::poll(self, ctx);
         self.clear_stale_change_picture();
         let _ = self.poll_file_dialog();
         self.drain_inbox();
