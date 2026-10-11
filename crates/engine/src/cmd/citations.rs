@@ -328,10 +328,11 @@ pub fn specs() -> Vec<CommandSpec> {
                 return Err(CmdError::Params("select a word or give `entry`".into()));
             }
             let (_, b) = s.sel.ordered();
-            s.doc.insert_object(&b, InlineObject::Field { instr: format!("XE \"{}\"", entry.replace('"', "")), result: String::new(), locked: false }, &CharProps { hidden: Some(true), ..Default::default() })?;
+            s.doc.insert_object(&b, InlineObject::Field { instr: format!("XE \"{}\"", entry.replace('"', "")), result: String::new(), locked: false, code: false }, &CharProps { hidden: Some(true), ..Default::default() })?;
             Ok(json!({"entry": entry}))
         })
-        .params(r#"{"entry"?: string}"#),
+        .params(r#"{"entry"?: string}"#)
+        .key(super::non_mac("Alt+Shift+X")),
         CommandSpec::new("references.index", "Insert Index", "References › Index", |s, _| {
             generated_list(s, "INDEX", "Index")?;
             sel_result(s)
@@ -346,10 +347,11 @@ pub fn specs() -> Vec<CommandSpec> {
                 return Err(CmdError::Params("select a citation or give `entry`".into()));
             }
             let (_, b) = s.sel.ordered();
-            s.doc.insert_object(&b, InlineObject::Field { instr: format!("TA \\l \"{}\"", entry.replace('"', "")), result: String::new(), locked: false }, &CharProps { hidden: Some(true), ..Default::default() })?;
+            s.doc.insert_object(&b, InlineObject::Field { instr: format!("TA \\l \"{}\"", entry.replace('"', "")), result: String::new(), locked: false, code: false }, &CharProps { hidden: Some(true), ..Default::default() })?;
             Ok(json!({"entry": entry}))
         })
-        .params(r#"{"entry"?: string}"#),
+        .params(r#"{"entry"?: string}"#)
+        .key(super::non_mac("Alt+Shift+I")),
         CommandSpec::new("references.tableOfAuthorities", "Insert Table of Authorities", "References › Table of Authorities", |s, _| {
             generated_list(s, "TOA", "Table of Authorities")?;
             sel_result(s)
@@ -580,7 +582,7 @@ fn citation(s: &mut Session, v: &Value) -> CmdResult {
     let props = s.typing_props();
     let at = delete_selection(s)?;
     let instr = if pages.is_empty() { format!("CITATION {tag}") } else { format!("CITATION {tag} \\p {pages}") };
-    let end = s.doc.insert_object(&at, InlineObject::Field { instr, result: cite(&src, st.name, n, &pages), locked: false }, &props)?;
+    let end = s.doc.insert_object(&at, InlineObject::Field { instr, result: cite(&src, st.name, n, &pages), locked: false, code: false }, &props)?;
     s.sel = Selection::caret(end);
     // A new citation can renumber the others (numbered styles count in order of first citation).
     if st.numbered() {
@@ -697,7 +699,11 @@ fn generated_list(s: &mut Session, instr: &str, title: &str) -> Result<(), CmdEr
     }
     let mut head = if title.is_empty() { Paragraph::new() } else { Paragraph::with_text(title, CharProps::default()).styled("Heading1") };
     let end = head.len();
-    head.insert_object(end, InlineObject::Field { instr: instr.to_string(), result: String::new(), locked: false }, &CharProps::default())?;
+    head.insert_object(
+        end,
+        InlineObject::Field { instr: instr.to_string(), result: String::new(), locked: false, code: false },
+        &CharProps::default(),
+    )?;
     let i = if s.doc.para_at(&at).is_some_and(|p| p.is_empty()) { at.path.last() } else { s.doc.split_paragraph(&at)?.path.last() };
     s.doc.insert_block(StoryRef::Body, &Path::top(i), Block::Para(head))?;
     update_generated(s)
@@ -886,7 +892,7 @@ fn cross_ref(s: &mut Session, v: &Value) -> CmdResult {
         ref_bookmark(s, &pos, show == "number", at)?
     };
     let instr = format!("{} {name} \\h", if show == "page" { "PAGEREF" } else { "REF" });
-    let end = s.doc.insert_object(&at, InlineObject::Field { instr, result: result.clone(), locked: false }, &props)?;
+    let end = s.doc.insert_object(&at, InlineObject::Field { instr, result: result.clone(), locked: false, code: false }, &props)?;
     s.sel = Selection::caret(end);
     Ok(json!({"inserted": result}))
 }

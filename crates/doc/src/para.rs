@@ -58,6 +58,49 @@ pub enum Wrap {
     InFrontOfText,
 }
 
+/// Which sides of a Square, Tight or Through object text may flow on (`@wrapText`, ECMA-376
+/// Part 1, §20.4.3.7 `ST_WrapText`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub enum WrapText {
+    /// Both sides of the object.
+    #[default]
+    BothSides,
+    /// Only the left side: the band to the object's right stays empty.
+    Left,
+    /// Only the right side.
+    Right,
+    /// Only whichever side has more room, decided per line.
+    Largest,
+}
+
+impl WrapText {
+    /// From the OOXML value (`bothSides`, `left`, `right`, `largest`).
+    pub fn from_ooxml(v: &str) -> Option<WrapText> {
+        match v {
+            "bothSides" => Some(WrapText::BothSides),
+            "left" => Some(WrapText::Left),
+            "right" => Some(WrapText::Right),
+            "largest" => Some(WrapText::Largest),
+            _ => None,
+        }
+    }
+
+    /// The OOXML value.
+    pub fn ooxml(self) -> &'static str {
+        match self {
+            WrapText::BothSides => "bothSides",
+            WrapText::Left => "left",
+            WrapText::Right => "right",
+            WrapText::Largest => "largest",
+        }
+    }
+
+    pub fn is_both(&self) -> bool {
+        *self == WrapText::BothSides
+    }
+}
+
 /// What a floating object's offset is relative to.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
@@ -126,10 +169,13 @@ impl FloatAlign {
 }
 
 /// Floating placement (ignored when `wrap` is `Inline`).
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Float {
     pub wrap: Wrap,
+    /// The sides text wraps on (Square, Tight and Through).
+    #[serde(skip_serializing_if = "WrapText::is_both")]
+    pub wrap_text: WrapText,
     pub h_rel: Anchor,
     pub v_rel: Anchor,
     /// Offsets, points (used when the matching alignment is `None`).
@@ -158,6 +204,10 @@ pub struct Float {
     pub flip_h: bool,
     #[serde(skip_serializing_if = "is_false")]
     pub flip_v: bool,
+    /// The outline Tight and Through wrapping follow (`wp:wrapPolygon`), in the object's own
+    /// (unrotated) frame; `None` = derived from the object (see [`crate::wrap`]).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wrap_polygon: Option<std::sync::Arc<crate::wrap::WrapPolygon>>,
 }
 
 fn is_zero(v: &f32) -> bool {
@@ -286,13 +336,18 @@ pub enum InlineObject {
         children: Vec<GroupChild>,
     },
     /// A field: `instr` is the field code (`PAGE`, `NUMPAGES`, `DATE \@ "M/d/yyyy"`, `TOC \o "1-3"`…);
-    /// `result` the cached display text.
+    /// `result` the cached display text. A `locked` field keeps its result when fields update.
     Field {
         instr: String,
         #[serde(default)]
         result: String,
         #[serde(default)]
         locked: bool,
+        /// Shows its code (`{ PAGE }`) instead of its result, the other way round from the
+        /// document-wide View › Field Codes setting (`fields.toggleCode`, Shift+F9). A view
+        /// toggle: never written to files.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        code: bool,
     },
     /// The start of a field whose result is ordinary content — formatted, possibly spanning
     /// paragraphs — up to the matching [`InlineObject::FieldEnd`]. Citation managers' `ADDIN`
@@ -586,7 +641,7 @@ impl Paragraph {
         for (i, c) in self.text.char_indices() {
             // By start: once the ranges that end by `i` are skipped, `i` is dropped if the next has begun.
             while next.next_if(|r| r.end <= i).is_some() {}
-            let keep = !next.peek().is_some_and(|r| r.start <= i);
+            let keep = next.peek().is_none_or(|r| r.start > i);
             if c == OBJ {
                 if keep && let Some(o) = self.objects.get(k) {
                     out.push_str(o.plain_text());
@@ -1016,7 +1071,8 @@ mod tests {
     fn text_without_takes_ranges_in_any_order() {
         // Multi-byte chars at range edges, an object, and ranges unsorted, overlapping, nested and empty.
         let mut p = Paragraph::with_text("añb€c", CharProps::default());
-        p.insert_object(3, InlineObject::Field { instr: "PAGE".into(), result: "7".into(), locked: false }, &CharProps::default()).unwrap();
+        p.insert_object(3, InlineObject::Field { instr: "PAGE".into(), result: "7".into(), locked: false, code: false }, &CharProps::default())
+            .unwrap();
         let text = p.text.clone();
         let naive = |dropped: &[std::ops::Range<usize>]| {
             let mut out = String::new();
@@ -1085,7 +1141,8 @@ mod tests {
     #[test]
     fn objects_track_text() {
         let mut p = Paragraph::with_text("ab", CharProps::default());
-        p.insert_object(1, InlineObject::Field { instr: "PAGE".into(), result: "1".into(), locked: false }, &CharProps::default()).unwrap();
+        p.insert_object(1, InlineObject::Field { instr: "PAGE".into(), result: "1".into(), locked: false, code: false }, &CharProps::default())
+            .unwrap();
         p.insert_object(0, InlineObject::BookmarkStart { name: "x".into() }, &CharProps::default()).unwrap();
         assert_eq!(p.objects.len(), 2);
         assert!(matches!(p.object_at(0), Some(InlineObject::BookmarkStart { .. })));
