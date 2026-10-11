@@ -60,7 +60,7 @@ fn cell_boxes(l: &DocLayout, page: usize) -> Vec<CellBox> {
     pg.items
         .iter()
         .filter_map(|it| match it {
-            Placed::Cell { rect, table, row, cell, story } => {
+            Placed::Cell { rect, table, row, cell, story, .. } => {
                 Some(CellBox { rect: *rect, table: table.clone(), story: *story, row: *row, cell: *cell })
             }
             _ => None,
@@ -525,6 +525,29 @@ mod tests {
         assert!(s.run("table.draw", &json!({"page": 0, "x0": x0, "y0": y0, "x1": x0 + 5.0, "y1": y0 + 5.0})).is_err());
         assert!(s.run("table.draw", &json!({"page": 9, "x0": 1, "y0": 1, "x1": 100, "y1": 100})).is_err());
         assert!(s.run("table.draw", &json!({})).is_err());
+    }
+
+    /// Erasing a horizontal border merges the cells into one laid-out cell (#640): the lower
+    /// row's box is `covered`, the merged cell's box spans both rows, and erasing the border
+    /// below the merge extends it.
+    #[test]
+    fn erasing_a_horizontal_border_lays_the_merge_out_as_one_cell() {
+        let mut s = Session::new(wordcraft_doc::Document::new());
+        s.run("insert.table", &json!({"rows": 3, "cols": 2})).unwrap();
+        let (a, b) = (cell_rect(&mut s, 0, 0), cell_rect(&mut s, 1, 0));
+        s.run("table.eraser", &json!({"page": 0, "x": a.x + a.w / 2.0, "y": a.bottom() + 0.5})).unwrap();
+        let t = first_table(&s);
+        assert_eq!((t.rows[0].cells[0].props.vmerge, t.rows[1].cells[0].props.vmerge), (VMerge::Restart, VMerge::Continue));
+        let merged = cell_rect(&mut s, 0, 0);
+        assert!((merged.bottom() - b.bottom()).abs() < 0.5 && merged.h > a.h * 1.9, "{merged:?}");
+        let covered = s.layout().pages[0].items.iter().any(|it| matches!(it, Placed::Cell { row: 1, cell: 0, covered: true, .. }));
+        assert!(covered, "the continuation row's box is covered");
+        let hit = s.layout().cell_at(0, merged.x + 3.0, b.y + b.h / 2.0).map(|c| (c.2, c.3));
+        assert_eq!(hit, Some((0, 0)), "a click in the lower half is in the merged cell");
+        // The border below the merge: the merge grows to three rows.
+        s.run("table.eraser", &json!({"page": 0, "x": merged.x + merged.w / 2.0, "y": merged.bottom() + 0.5})).unwrap();
+        let t = first_table(&s);
+        assert_eq!(t.rows[2].cells[0].props.vmerge, VMerge::Continue);
     }
 
     /// A vertical line through a cell splits it into two columns; a horizontal one splits a row;
