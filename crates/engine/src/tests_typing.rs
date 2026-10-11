@@ -241,6 +241,59 @@ fn border_line_autoformat() {
 }
 
 #[test]
+fn undo_right_after_a_border_line_brings_the_characters_back() {
+    let mut s = typed("Above\n---\n");
+    assert_eq!(s.doc.plain_text(StoryRef::Body), "Above\n");
+    run(&mut s, "edit.undo", json!({}));
+    // The AutoFormat is undone on its own: the characters are back, the Enter stays.
+    assert_eq!(s.doc.plain_text(StoryRef::Body), "Above\n---\n");
+    assert!(s.doc.body.iter().filter_map(|b| b.as_para()).all(|p| p.props.borders.is_none()));
+    assert_eq!(s.sel.focus, Pos::body(2, 0));
+    run(&mut s, "edit.undo", json!({}));
+    assert_eq!(s.doc.plain_text(StoryRef::Body), "Above\n---");
+}
+
+#[test]
+fn plus_and_hyphen_line_becomes_a_table() {
+    let mut s = typed("+--+------+\nA");
+    let Some(wordcraft_doc::Block::Table(t)) = s.doc.body.first().map(|b| &**b) else { panic!("no table: {:?}", paras(&s)) };
+    assert_eq!(t.rows.len(), 1);
+    assert_eq!(t.grid.len(), 2);
+    assert!((t.grid[1] / t.grid[0] - 3.0).abs() < 0.01, "widths follow the hyphens: {:?}", t.grid);
+    assert_eq!(t.rows[0].cells[0].blocks[0].as_para().map(|p| p.text.as_str()), Some("A"), "the caret is in the first cell");
+    assert!(s.doc.body.get(1).and_then(|b| b.as_para()).is_some_and(|p| p.is_empty()), "a paragraph follows the table");
+    // Undo right after brings the typed characters back, the Enter stays.
+    run(&mut s, "edit.undo", json!({}));
+    run(&mut s, "edit.undo", json!({}));
+    assert_eq!(s.doc.plain_text(StoryRef::Body), "+--+------+\n");
+    assert!(s.doc.body.iter().all(|b| b.as_para().is_some()));
+    // Not a table: text around it, or more columns than a table can hold.
+    let s = typed("x +--+--+\n");
+    assert_eq!(s.doc.plain_text(StoryRef::Body), "X +--+--+\n");
+    let s = typed(&format!("+{}\n", "-+".repeat(64)));
+    assert!(s.doc.body.iter().all(|b| b.as_para().is_some()));
+}
+
+#[test]
+fn arrow_bullets() {
+    for (keys, bullet) in [("> ", "\u{27A2}"), ("-> ", "\u{2794}"), ("=> ", "\u{21E8}")] {
+        let s = typed(&format!("{keys}item\nnext"));
+        assert_eq!(paras(&s), vec![para("Item", Some(0)), para("next", Some(0))], "{keys}");
+        assert_eq!(label_at(&s, 0), bullet, "{keys}");
+    }
+    // An arrow list doesn't join a plain bullet list.
+    let s = typed("* a\n\n> b");
+    assert_eq!(label_at(&s, 0), "\u{2022}");
+    assert_eq!(label_at(&s, 1), "\u{27A2}");
+}
+
+#[test]
+fn smileys_are_replaced_inside_words_too() {
+    let s = typed("so ok:) sad:( meh:| :) fine:-) ");
+    assert_eq!(s.doc.plain_text(StoryRef::Body), "So ok\u{263A} sad\u{2639} meh\u{1F610} \u{263A} fine\u{263A} ");
+}
+
+#[test]
 fn a_large_mixed_document_types_like_word() {
     // The corpus typed into Word and WordCraft side by side; the paragraph structure must match.
     let mut s = s();

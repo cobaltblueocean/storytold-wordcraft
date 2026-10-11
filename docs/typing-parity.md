@@ -1,6 +1,6 @@
 # Typing parity with Word
 
-> **Last reviewed:** 2026-10-11 · **Last updated:** 2026-10-11 · **Change:** minor (Move Paragraph Up/Down, Promote/Demote, Go Back and Alt+X keys, #343) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
+> **Last reviewed:** 2026-10-11 · **Last updated:** 2026-10-11 · **Change:** minor (AutoFormat tables, arrow bullets, smileys inside words, undo after a border line, #546; previously minor: Move Paragraph Up/Down, Promote/Demote, Go Back and Alt+X keys, #343) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
 
 What Word does when you type, observed black-box (same keystrokes typed into Word and
 WordCraft, results read back paragraph by paragraph) and pinned by tests in
@@ -21,6 +21,7 @@ overall picture is in [`target-app-parity.md`](target-app-parity.md).
 | Enter mid-item / at item start | splits the item / inserts an empty item above | `enter_in_the_middle_or_at_the_start_of_an_item` |
 | Shift+Enter in an item | line break inside the same item | `shift_enter_stays_inside_the_list_item` |
 | `* ` `- ` `1. ` `1) ` `a. ` `a) ` `A. ` `i. ` `I. ` + text | bullet, dash bullet, 1. 1) a. a) A. i. I. lists | `list_autoformat_triggers` |
+| `> ` `-> ` `=> ` + text | bulleted list with an arrow bullet (➢ ➔ ⇨; Word takes them from a symbol font, we use the Unicode arrows) ¹ | `arrow_bullets` |
 | `1. ` after other text | a new list restarting at 1 (never continues an earlier list) | `typing_1_dot_starts_numbering_again` |
 | ⌘Z right after an AutoFormat | undoes only the AutoFormat (`* ` comes back as text) | `undo_right_after_autoformat_undoes_only_the_autoformat` |
 
@@ -59,7 +60,18 @@ Applied when a word is finished by a space, punctuation **or Enter** (`enter_fin
   paragraphs Enter makes from it aren't links (#413; `a_link_covers_only_its_own_text`,
   `typing_at_either_end_of_a_link_is_not_linked`).
 - Enter after `---` `===` `***` `___` `~~~` `###` → a bottom border on the paragraph above
-  (single, double, dotted, thick, wave, triple) (`border_line_autoformat`).
+  (single, double, dotted, thick, wave, triple) (`border_line_autoformat`). ⌘Z right after brings the
+  characters back and removes the border; the Enter stays (one undo step) ¹
+  (`undo_right_after_a_border_line_brings_the_characters_back`).
+- `+---+------+` Enter (plus signs around runs of hyphens, the whole paragraph) → a one-row
+  table across the text width, each column as wide as its share of the hyphens; the caret goes
+  into the first cell. ⌘Z right after brings the characters back. More than 63 columns stay
+  text ¹ (`plus_and_hyphen_line_becomes_a_table`).
+- Smileys `:)` `:-)` `:(` `:-(` `:|` → ☺ ☹ 😐, also straight after a word (`ok:)` → `ok☺`) ¹
+  (`smileys_are_replaced_inside_words_too`).
+
+¹ From Word's documented AutoFormat and AutoCorrect options; not yet keystroke-compared with
+Word.
 
 ## Layout
 
@@ -70,12 +82,10 @@ Applied when a word is finished by a space, punctuation **or Enter** (`enter_fin
 
 - Word's body font Aptos isn't installed outside Office; our substitute (Carlito, else Helvetica
   Neue) is wider, so lines wrap earlier than in Word. Needs a metric-matched open substitute.
-- `:)` inside a word (`ok:)`) isn't replaced (Word replaces it).
 - Moving paragraphs with Track Changes on isn't recorded as a tracked move; whole table rows
   don't move yet (a selection across cells is refused). Go Back's places aren't mapped through
   later edits (they are clamped to the document).
-- Not yet compared: `+---+---+` Enter (table AutoFormat), `> ` arrow bullets, undo after a
-  border line, Correct TWo INitial CApitals.
+- Not yet compared: Correct TWo INitial CApitals; the rows marked ¹ above.
 
 ## How to compare
 
@@ -91,6 +101,7 @@ Applied when a word is finished by a space, punctuation **or Enter** (`enter_fin
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | minor | AutoFormat tables from `+---+`, arrow bullets, smileys inside words, undo after a border line (#546) |
 | 2026-10-11 | minor | Editing keys: Move Paragraph Up/Down, Promote/Demote, Go Back (Shift+F5), Alt+X (#343) |
 | 2026-10-11 | minor | Hyperlinks: text typed at either end of a link or after Enter stays outside it (#413) |
 | 2026-10-10 | trivial | Status line, revision history and cross-links added (progress-docs standard) |
