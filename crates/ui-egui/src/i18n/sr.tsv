@@ -1427,3 +1427,19 @@
 	Enlarge symbol	Увећај симбол
 	Enclosure	Оквир
 	Circle	Круг
+
+# Built-in file browser when the system file dialog is unavailable (#576)
+	Documents	Документи
+	Word document	Word документ
+	All files	Све датотеке
+	Recipient lists	Листе прималаца
+	The system file dialog isn't available, so WordCraft shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Системски дијалог за датотеке није доступан, па WordCraft приказује свој. Да бисте добили системски дијалог, инсталирајте портал за избор датотека (на пример xdg-desktop-portal-gtk) или zenity.
+	Up one level	Један ниво горе
+	Home folder	Лична фасцикла
+	{name} wasn't found.	{name} није пронађен.
+	{name} already exists. Choose Save again to replace it.	{name} већ постоји. Изаберите Сачувај поново да бисте заменили датотеку.
+	This folder can't be read: {error}	Ова фасцикла не може да се прочита: {error}
+	Showing the first {count} items.	Приказане су само прве ставке: {count}.
+	File name:	Име датотеке:
+	Browse in WordCraft…	Потражи у WordCraft-у…
+	Open a file with WordCraft's own browser when the system file dialog doesn't appear.	Отворите датотеку помоћу WordCraft-овог прегледача када се системски дијалог за датотеке не појави.

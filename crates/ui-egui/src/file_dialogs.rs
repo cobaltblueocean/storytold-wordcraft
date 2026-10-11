@@ -6,6 +6,10 @@
 //! pending New/Open/Close, export, insert the picture). A host with only the blocking
 //! `pick_open` / `pick_save` gets the same follow-up straight away. One dialog at a time: asking
 //! for another while one is open does nothing.
+//!
+//! When the host can't show a system dialog at all (a Linux desktop with neither a file chooser
+//! portal nor zenity, #576) it answers with an error, and the app finishes the job in its own
+//! [`file_browser`](crate::file_browser) instead.
 
 use std::sync::mpsc::{Receiver, TryRecvError};
 
@@ -21,6 +25,24 @@ pub enum FileDialogRequest {
     Open { purpose: String },
     /// Pick a path to save to, given a suggested file name.
     Save { name: String },
+}
+
+/// The host's answer to a [`FileDialogRequest`]: the picked path, `Ok(None)` when the user
+/// cancelled, or an error when no system dialog could be shown (the app then shows its own).
+pub type FileDialogAnswer = Result<Option<String>, String>;
+
+const PICTURES: &[&str] = &["png", "jpg", "jpeg", "gif", "webp", "bmp"];
+const DOCUMENTS: &[&str] = &["docx", "docm", "dotx", "dotm", "doc", "dot", "odt", "rtf", "txt", "md", "html", "htm", "tex", "json"];
+
+/// The file types Open offers, as (label, extensions; `*` is any file): pictures for Insert/Change
+/// Picture, recipient lists for Select Recipients › Use an Existing List…, documents otherwise.
+/// The host's system dialog and the built-in browser offer the same.
+pub fn open_filters(purpose: &str) -> &'static [(&'static str, &'static [&'static str])] {
+    match purpose {
+        "picture" => &[("Pictures", PICTURES)],
+        "recipients" => &[("Recipient lists", &["csv", "tsv", "txt"]), ("All files", &["*"])],
+        _ => &[("Documents", DOCUMENTS), ("Word document", &["docx"]), ("All files", &["*"])],
+    }
 }
 
 /// What to do with the path picked in a dialog.
@@ -53,7 +75,8 @@ pub(crate) enum AfterSave {
 
 /// A dialog the host is showing; the answer arrives on `rx` (`None`: cancelled).
 pub(crate) struct PendingDialog {
-    rx: Receiver<Option<String>>,
+    rx: Receiver<FileDialogAnswer>,
+    req: FileDialogRequest,
     after: AfterPick,
 }
 
@@ -68,22 +91,32 @@ pub(crate) enum Asked {
 }
 
 impl WordApp {
-    /// Whether a file dialog is open (its answer hasn't arrived yet).
+    /// Whether a file dialog is open (its answer hasn't arrived yet), the host's or the built-in one.
     pub fn file_dialog_open(&self) -> bool {
-        self.file_dialog.is_some()
+        self.file_dialog.is_some() || self.file_browser_open()
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn file_browser_open(&self) -> bool {
+        self.file_browser.open.is_some()
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn file_browser_open(&self) -> bool {
+        false
     }
 
     /// Ask the host for a file and do `after` with the answer: now for a blocking dialog, on a
     /// later frame for an asynchronous one. Ignored while another dialog is open.
     pub(crate) fn ask_file(&mut self, req: FileDialogRequest, after: AfterPick) -> Asked {
-        if self.file_dialog.is_some() {
+        if self.file_dialog_open() {
             log::debug!("file dialog already open; ignoring {req:?}");
             self.status(tl!("A file dialog is already open."));
             return Asked::Busy;
         }
         if let Some(show) = &self.services.file_dialog {
-            let rx = show(req);
-            self.file_dialog = Some(PendingDialog { rx, after });
+            let rx = show(req.clone());
+            self.file_dialog = Some(PendingDialog { rx, req, after });
             // A host that answered at once (or failed to show anything) is handled right away.
             return self.poll_file_dialog().map_or(Asked::Pending, Asked::Done);
         }
@@ -97,18 +130,46 @@ impl WordApp {
     /// Pick up the answer of an open file dialog, if it has arrived (every frame, from `logic`),
     /// and finish what it was for. `None` while there is nothing to finish.
     pub(crate) fn poll_file_dialog(&mut self) -> Option<Result<Value, String>> {
-        let picked = match self.file_dialog.as_ref().map(|d| d.rx.try_recv()) {
+        let answer = match self.file_dialog.as_ref().map(|d| d.rx.try_recv()) {
             None | Some(Err(TryRecvError::Empty)) => return None,
-            Some(Ok(picked)) => picked,
+            Some(Ok(answer)) => answer,
             // The host dropped the dialog without an answer: as good as cancelled.
-            Some(Err(TryRecvError::Disconnected)) => None,
+            Some(Err(TryRecvError::Disconnected)) => Ok(None),
         };
         let d = self.file_dialog.take()?;
-        Some(self.finish_pick(d.after, picked))
+        match answer {
+            Ok(picked) => Some(self.finish_pick(d.after, picked)),
+            Err(reason) => {
+                log::warn!("no system file dialog ({reason}); showing the built-in file browser");
+                self.dialog_unavailable(d.req, d.after)
+            }
+        }
+    }
+
+    /// Treat the system dialog the host is showing as cancelled, e.g. one that never showed up.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn give_up_file_dialog(&mut self) {
+        if let Some(d) = self.file_dialog.take() {
+            let _ = self.finish_pick(d.after, None);
+        }
+    }
+
+    /// The host couldn't show a system dialog (#576): ask in the built-in browser instead, which
+    /// finishes the job later. `None` while it is open.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn dialog_unavailable(&mut self, req: FileDialogRequest, after: AfterPick) -> Option<Result<Value, String>> {
+        self.show_file_browser(req, after, true);
+        None
+    }
+
+    /// The browser has no built-in file browser (it can't list the user's folders): cancelled.
+    #[cfg(target_arch = "wasm32")]
+    fn dialog_unavailable(&mut self, _req: FileDialogRequest, after: AfterPick) -> Option<Result<Value, String>> {
+        Some(self.finish_pick(after, None))
     }
 
     /// Do what the dialog was for with the picked path (`None`: the user cancelled).
-    fn finish_pick(&mut self, after: AfterPick, picked: Option<String>) -> Result<Value, String> {
+    pub(crate) fn finish_pick(&mut self, after: AfterPick, picked: Option<String>) -> Result<Value, String> {
         match after {
             AfterPick::OpenDocument => {
                 let Some(path) = picked else { return Ok(json!({"cancelled": true})) };
@@ -205,7 +266,7 @@ mod tests {
     const UNSAVED: &str = "My unsaved novel chapter";
 
     /// Dialogs the fake host was asked to show, each with the channel its answer goes through.
-    type Shown = Rc<RefCell<Vec<(FileDialogRequest, Sender<Option<String>>)>>>;
+    type Shown = Rc<RefCell<Vec<(FileDialogRequest, Sender<FileDialogAnswer>)>>>;
 
     /// An app whose host shows dialogs asynchronously: nothing is answered until the test does.
     fn async_app() -> (WordApp, Shown) {
@@ -225,7 +286,7 @@ mod tests {
     /// Answer the dialog the host is showing (the last one asked for).
     fn answer(shown: &Shown, picked: Option<&str>) {
         let (_, tx) = shown.borrow_mut().pop().unwrap();
-        tx.send(picked.map(str::to_string)).unwrap();
+        tx.send(Ok(picked.map(str::to_string))).unwrap();
     }
 
     fn typed(a: &mut WordApp) {

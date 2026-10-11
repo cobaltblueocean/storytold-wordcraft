@@ -6,19 +6,25 @@
 //! is queued; the frame (which has the window) builds an `rfd::AsyncFileDialog` parented to the
 //! window, and a background thread waits for the answer, hands it to the app and wakes the UI.
 //!
+//! On Linux and the BSDs rfd asks the xdg-desktop-portal FileChooser and, failing that, runs
+//! `zenity`; with neither (a minimal Wayland compositor such as labwc with only
+//! xdg-desktop-portal-wlr, #576) it answers "cancelled" and nothing ever shows. So the waiting
+//! thread first checks that one of them is there and otherwise answers with an error, and the app
+//! shows its built-in file browser. `WORDCRAFT_FILE_DIALOG=builtin` always uses the built-in one.
+//!
 //! [`Services::file_dialog`]: wordcraft_ui_egui::Services::file_dialog
 
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::mpsc::{Receiver, Sender, channel};
 
-use wordcraft_ui_egui::FileDialogRequest;
+use wordcraft_ui_egui::{FileDialogAnswer, FileDialogRequest};
 
 /// A dialog the app asked for, with the channel its answer goes back through.
-type Request = (FileDialogRequest, Sender<Option<String>>);
+type Request = (FileDialogRequest, Sender<FileDialogAnswer>);
 
 /// The `Services::file_dialog` hook.
-pub type Hook = Box<dyn Fn(FileDialogRequest) -> Receiver<Option<String>>>;
+pub type Hook = Box<dyn Fn(FileDialogRequest) -> Receiver<FileDialogAnswer>>;
 
 /// A picker's answer, waited for off the UI thread.
 type Picking = Pin<Box<dyn Future<Output = Option<rfd::FileHandle>> + Send>>;
@@ -55,7 +61,11 @@ impl Launcher {
             };
             let ctx = self.ctx.clone();
             let waiting = std::thread::Builder::new().name("file dialog".into()).spawn(move || {
-                let picked = pollster::block_on(picking).map(|f| f.path().to_string_lossy().to_string());
+                // The picker only starts when first polled: without a system dialog it never does.
+                let picked = match no_system_dialog() {
+                    Some(reason) => Err(reason),
+                    None => Ok(pollster::block_on(picking).map(|f| f.path().to_string_lossy().to_string())),
+                };
                 let _ = answer.send(picked);
                 ctx.request_repaint();
             });
@@ -67,6 +77,51 @@ impl Launcher {
     }
 }
 
+/// The file types Open offers (shared with the built-in browser).
+fn open_filters(mut d: rfd::AsyncFileDialog, purpose: &str) -> rfd::AsyncFileDialog {
+    for (name, exts) in wordcraft_ui_egui::open_filters(purpose) {
+        d = d.add_filter(*name, exts);
+    }
+    d
+}
+
+/// Why no system file dialog can be shown, if it can't (#576); run off the UI thread.
+fn no_system_dialog() -> Option<String> {
+    if std::env::var_os("WORDCRAFT_FILE_DIALOG").is_some_and(|v| v == "builtin") {
+        return Some("WORDCRAFT_FILE_DIALOG=builtin".into());
+    }
+    portal_or_zenity_missing()
+}
+
+/// Linux and the BSDs: rfd needs a file chooser portal or zenity. When `dbus-send` can't ask
+/// the session bus, the answer is unknown and rfd gets to try.
+#[cfg(all(unix, not(target_os = "macos")))]
+fn portal_or_zenity_missing() -> Option<String> {
+    if on_path("zenity") {
+        return None;
+    }
+    let portal = std::process::Command::new("dbus-send")
+        .args([
+            "--session",
+            "--print-reply=literal",
+            "--reply-timeout=10000",
+            "--dest=org.freedesktop.portal.Desktop",
+            "/org/freedesktop/portal/desktop",
+            "org.freedesktop.DBus.Properties.Get",
+            "string:org.freedesktop.portal.FileChooser",
+            "string:version",
+        ])
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status();
+    match portal {
+        Ok(status) if !status.success() => Some("no xdg-desktop-portal FileChooser on the session bus and no zenity".into()),
+        Ok(_) => None,
+        Err(e) => {
+            log::debug!("couldn't ask D-Bus for the file chooser portal: {e}");
+            None
+        }
 /// The file types Open offers: pictures for Insert/Change Picture, recipient lists for Select
 /// Recipients › Use an Existing List…, documents otherwise.
 fn open_filters(d: rfd::AsyncFileDialog, purpose: &str) -> rfd::AsyncFileDialog {
@@ -79,4 +134,16 @@ fn open_filters(d: rfd::AsyncFileDialog, purpose: &str) -> rfd::AsyncFileDialog 
             .add_filter("Word document", &["docx"])
             .add_filter("All files", &["*"])
     }
+}
+
+/// Windows and macOS always have their system dialog.
+#[cfg(not(all(unix, not(target_os = "macos"))))]
+fn portal_or_zenity_missing() -> Option<String> {
+    None
+}
+
+/// Whether an executable named `program` is in a `PATH` folder.
+#[cfg(all(unix, not(target_os = "macos")))]
+fn on_path(program: &str) -> bool {
+    std::env::var_os("PATH").is_some_and(|paths| std::env::split_paths(&paths).any(|dir| dir.join(program).is_file()))
 }

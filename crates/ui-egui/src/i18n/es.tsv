@@ -1429,3 +1429,19 @@
 	Enlarge symbol	Agrandar símbolo
 	Enclosure	Contorno
 	Circle	Círculo
+
+# Built-in file browser when the system file dialog is unavailable (#576)
+	Documents	Documentos
+	Word document	Documento de Word
+	All files	Todos los archivos
+	Recipient lists	Listas de destinatarios
+	The system file dialog isn't available, so WordCraft shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	El cuadro de diálogo de archivos del sistema no está disponible, así que WordCraft muestra el suyo. Para usar el del sistema, instala un portal selector de archivos (como xdg-desktop-portal-gtk) o zenity.
+	Up one level	Subir un nivel
+	Home folder	Carpeta personal
+	{name} wasn't found.	No se encontró {name}.
+	{name} already exists. Choose Save again to replace it.	{name} ya existe. Elige Guardar otra vez para reemplazarlo.
+	This folder can't be read: {error}	No se puede leer esta carpeta: {error}
+	Showing the first {count} items.	Se muestran los primeros {count} elementos.
+	File name:	Nombre de archivo:
+	Browse in WordCraft…	Examinar en WordCraft…
+	Open a file with WordCraft's own browser when the system file dialog doesn't appear.	Abre un archivo con el explorador propio de WordCraft cuando no aparece el cuadro de diálogo de archivos del sistema.

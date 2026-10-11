@@ -1423,3 +1423,19 @@
 	Right (vertical)	Paremal (vertikaalne)
 	Ruby text:	Ruby-tekst:
 	Size (pt):	Suurus (pt):
+
+# Built-in file browser when the system file dialog is unavailable (#576)
+	Documents	Dokumendid
+	Word document	Wordi dokument
+	All files	Kõik failid
+	Recipient lists	Adressaatide loendid
+	The system file dialog isn't available, so WordCraft shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Süsteemi failidialoog pole saadaval, seega näitab WordCraft enda oma. Süsteemi dialoogi saamiseks paigalda failivalija portaal (näiteks xdg-desktop-portal-gtk) või zenity.
+	Up one level	Taseme võrra üles
+	Home folder	Kodukaust
+	{name} wasn't found.	{name} ei leitud.
+	{name} already exists. Choose Save again to replace it.	{name} on juba olemas. Selle asendamiseks vali uuesti Salvesta.
+	This folder can't be read: {error}	Seda kausta ei saa lugeda: {error}
+	Showing the first {count} items.	Kuvatud on ainult esimesed kirjed: {count}.
+	File name:	Faili nimi:
+	Browse in WordCraft…	Sirvi WordCraftis…
+	Open a file with WordCraft's own browser when the system file dialog doesn't appear.	Ava fail WordCrafti enda failisirvijaga, kui süsteemi failidialoog ei ilmu.

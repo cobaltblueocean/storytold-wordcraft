@@ -51,7 +51,8 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
                 );
                 resp
             };
-            if back.clicked() || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+            // Escape in the built-in file browser closes only the browser.
+            if back.clicked() || (!app.file_dialog_open() && ui.input(|i| i.key_pressed(egui::Key::Escape))) {
                 app.ui.backstage = false;
                 app.canvas.want_focus = true;
             }
@@ -261,6 +262,16 @@ fn open_page(app: &mut WordApp, ui: &mut Ui) {
     heading(ui, "Open");
     if ui.button(egui::RichText::new(tl!("Browse…")).font(medium(14.0))).clicked() {
         let _ = app.run("ui.openFileDialog", json!({}));
+    }
+    // Linux and the BSDs (#576): the system dialog needs a file chooser portal or zenity; when it
+    // doesn't show up, WordCraft's own browser is always one click away.
+    #[cfg(all(unix, not(target_os = "macos"), not(target_arch = "wasm32")))]
+    if ui
+        .button(egui::RichText::new(tl!("Browse in WordCraft…")).font(medium(14.0)))
+        .on_hover_text(tl!("Open a file with WordCraft's own browser when the system file dialog doesn't appear."))
+        .clicked()
+    {
+        let _ = app.run("ui.fileBrowser", json!({}));
     }
     ui.add_space(18.0);
     open_list(app, ui);

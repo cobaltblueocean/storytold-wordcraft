@@ -1413,3 +1413,19 @@
 	Enlarge symbol	記号を拡大
 	Enclosure	囲い
 	Circle	円
+
+# Built-in file browser when the system file dialog is unavailable (#576)
+	Documents	ドキュメント
+	Word document	Word 文書
+	All files	すべてのファイル
+	Recipient lists	宛先リスト
+	The system file dialog isn't available, so WordCraft shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	システムのファイル ダイアログを利用できないため、WordCraft 独自のダイアログを表示しています。システムのダイアログを使うには、ファイル選択ポータル (xdg-desktop-portal-gtk など) または zenity をインストールしてください。
+	Up one level	1 つ上のフォルダー
+	Home folder	ホーム フォルダー
+	{name} wasn't found.	{name} が見つかりません。
+	{name} already exists. Choose Save again to replace it.	{name} は既に存在します。置き換えるには、もう一度 [保存] を選んでください。
+	This folder can't be read: {error}	このフォルダーを読み取れません: {error}
+	Showing the first {count} items.	最初の {count} 項目を表示しています。
+	File name:	ファイル名:
+	Browse in WordCraft…	WordCraft で参照…
+	Open a file with WordCraft's own browser when the system file dialog doesn't appear.	システムのファイル ダイアログが表示されないときに、WordCraft 独自のブラウザーでファイルを開きます。
