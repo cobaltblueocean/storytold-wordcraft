@@ -31,6 +31,13 @@ fn has_floating(s: &Session) -> Option<&'static str> {
 /// Charts and diagrams are not written back on save yet, so their size, position and wrapping stay
 /// as imported: they can be selected and deleted, not moved, resized or arranged.
 const FROZEN: &str = "charts and diagrams can't be moved or resized yet";
+/// `has_movable` for Size: charts WordCraft can edit are drawn again at their new size.
+fn has_sizable(s: &Session) -> Option<&'static str> {
+    match selected(s) {
+        Some((_, InlineObject::Graphic { graphic, .. })) if graphic.chart.is_some() => None,
+        _ => has_movable(s),
+    }
+}
 /// `has_object` for the geometry commands: a chart or diagram is frozen.
 fn has_movable(s: &Session) -> Option<&'static str> {
     match selected(s) {
@@ -64,7 +71,7 @@ fn has_shape(s: &Session) -> Option<&'static str> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        CommandSpec::new("picture.size", "Size", "Picture Format › Size", size).params(r#"{"width"?: pt, "height"?: pt, "lockAspect"?: bool, "scale"?: percent}"#).when(has_movable),
+        CommandSpec::new("picture.size", "Size", "Picture Format › Size", size).params(r#"{"width"?: pt, "height"?: pt, "lockAspect"?: bool, "scale"?: percent}"#).when(has_sizable),
         CommandSpec::new("picture.crop", "Crop", "Picture Format › Size", |s, v| {
             let c = [p::f32(v, "left"), p::f32(v, "top"), p::f32(v, "right"), p::f32(v, "bottom")].map(|x| x.unwrap_or(0.0).clamp(0.0, 0.45));
             with_obj(s, |o| {
@@ -856,8 +863,13 @@ fn size(s: &mut Session, v: &Value) -> CmdResult {
         _ => {}
     }
     let (w, h) = (w.clamp(1.0, 4000.0), h.clamp(1.0, 4000.0));
-    // Any drawing: a group's members scale with its frame (its child space is kept).
-    with_obj(s, |o| o.set_size(w, h))
+    // Any drawing: a group's members scale with its frame (its child space is kept);
+    // a chart is redrawn at its new size.
+    let theme = s.doc.settings.theme_colors.clone();
+    with_obj(s, |o| {
+        o.set_size(w, h);
+        super::chart::redraw(o, &theme);
+    })
 }
 
 /// Apply an image operation to the selected picture's bitmap (stored as a new PNG).

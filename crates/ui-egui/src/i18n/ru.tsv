@@ -1813,6 +1813,37 @@ preview	Title	Пример
 	Search icons	Поиск значков
 	No icons match your search.	Нет значков, соответствующих поиску.
 	Recolor a one-color picture, such as an icon	Перекрасить одноцветный рисунок, например значок
+	Change Chart Type	Изменить тип диаграммы
+	Chart Design	Конструктор диаграмм
+	Type	Тип
+	Edit Data	Изменить данные
+	Chart Title	Название диаграммы
+	Chart Layouts	Макеты диаграмм
+	Add Chart Element	Добавить элемент диаграммы
+	Legend	Легенда
+	Data Labels	Подписи данных
+	Above Chart	Над диаграммой
+	Insert Chart	Вставка диаграммы
+	Clustered Column	Гистограмма с группировкой
+	Stacked Column	Гистограмма с накоплением
+	Clustered Bar	Линейчатая с группировкой
+	Stacked Bar	Линейчатая с накоплением
+	Area	С областями
+	Pie	Круговая
+	Doughnut	Кольцевая
+	Scatter	Точечная
+	“{text}” ({row}, {series}) isn't a number.	«{text}» ({row}, {series}) — не число.
+	Category {n}	Категория {n}
+	Series {n}	Ряд {n}
+	Type the categories down the side and a column of values per series.	Введите категории по вертикали и столбец значений для каждого ряда.
+	Categories	Категории
+	Series name	Имя ряда
+	Remove series	Удалить ряд
+	Remove row	Удалить строку
+	Add Row	Добавить строку
+	Add Series	Добавить ряд
+	Edit\nData	Изменить\nданные
+	Change\nChart Type	Изменить\nтип диаграммы
 	Align Text	Выравнивание текста
 	Create Link	Создать связь
 	Break Link	Разорвать связь
