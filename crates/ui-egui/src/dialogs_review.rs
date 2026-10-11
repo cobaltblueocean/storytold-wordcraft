@@ -750,12 +750,12 @@ fn stop(app: &mut WordApp, st: &mut RestrictPane) {
     let r = app.run("review.restrict", json!({"stop": true, "password": st.password.as_str()}));
     st.password = Password::default();
     match r {
-        Ok(v) => {
+        Ok(_) => {
             st.asking = false;
             st.message.clear();
-            if v.get("verified") == Some(&json!(false)) {
-                app.status(tl!("Protection stopped. The document's password uses an older form WordCraft can't check."));
-            }
+        }
+        Err(e) if e.contains(wordcraft_engine::cmd::protect::UNSUPPORTED_PASSWORD) => {
+            st.message = tl!("This password type isn't supported.").to_string();
         }
         Err(e) => st.message = e,
     }

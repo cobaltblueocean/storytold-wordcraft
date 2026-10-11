@@ -110,25 +110,30 @@ fn restrict(s: &mut Session, v: &Value) -> CmdResult {
     Ok(state(s))
 }
 
-/// Stop Protection: with the document's password when it has one. A password in the older form
-/// WordCraft can't check is accepted, and the result says so (`verified: false`).
+/// The error Stop Protection reports when the document's password hash uses an algorithm or form
+/// WordCraft can't check; the protection stays on.
+pub const UNSUPPORTED_PASSWORD: &str = "This password type isn't supported";
+
+/// Stop Protection: with the document's password when it has one. The password is checked like
+/// Word checks it — the current hash form and the legacy one (ECMA-376 Part 4 §14.8.1); a hash
+/// WordCraft can't check refuses ([`UNSUPPORTED_PASSWORD`]) rather than unlocking.
 fn stop_protection(s: &mut Session, password: &str) -> CmdResult {
-    let mut verified = true;
-    if enforced(&s.doc) && !s.doc.settings.protect_hash.is_empty() {
+    if enforced(&s.doc) {
+        use wordcraft_docx::PasswordCheck;
         match wordcraft_docx::check_protection_password(&s.doc.settings.protect_hash, password) {
-            Some(true) => {}
-            Some(false) => return Err(CmdError::Params("the password is incorrect".into())),
-            None if password.is_empty() => return Err(CmdError::Params("type the document's password to stop protection".into())),
-            None => verified = false,
+            PasswordCheck::NoPassword | PasswordCheck::Correct => {}
+            PasswordCheck::Incorrect if password.is_empty() => {
+                return Err(CmdError::Params("type the document's password to stop protection".into()));
+            }
+            PasswordCheck::Incorrect => return Err(CmdError::Params("the password is incorrect".into())),
+            PasswordCheck::Unsupported => return Err(CmdError::Disabled(UNSUPPORTED_PASSWORD.into())),
         }
     }
     let st = &mut s.doc.settings;
     st.protection = None;
     st.protect_formatting = false;
     st.protect_hash.clear();
-    let mut r = state(s);
-    r["verified"] = json!(verified);
-    Ok(r)
+    Ok(state(s))
 }
 
 /// Make the selection an exception everyone may edit.
@@ -380,10 +385,44 @@ mod tests {
         assert!(t.run("review.restrict", &json!({"stop": true, "password": "wrong"})).is_err());
         assert!(t.run("review.restrict", &json!({"mode": "none"})).is_err());
         assert!(t.run("para.heading1", &json!({})).is_err(), "locked style");
-        let v = t.run("review.restrict", &json!({"stop": true, "password": "pw1"})).unwrap();
-        assert_eq!(v["verified"], true);
+        t.run("review.restrict", &json!({"stop": true, "password": "pw1"})).unwrap();
         assert!(t.doc.settings.protection.is_none());
         // The password isn't kept for Repeat or macros.
         assert!(t.last_command.as_ref().is_none_or(|(_, p)| p.get("password").is_none()));
+    }
+
+    /// A Word file with the legacy hash (`w:cryptAlgorithmSid`): a wrong password is rejected, the
+    /// right one unlocks; a hash WordCraft can't check never unlocks.
+    #[test]
+    fn legacy_password_is_verified_and_unknown_forms_refused() {
+        let protected = |sid: &str| {
+            let mut doc = Document::from_text("Locked.");
+            doc.settings.protection = Some("readOnly".into());
+            doc.settings.protect_hash = [
+                ("w:cryptProviderType", "rsaFull"),
+                ("w:cryptAlgorithmClass", "hash"),
+                ("w:cryptAlgorithmType", "typeAny"),
+                ("w:cryptAlgorithmSid", sid),
+                ("w:cryptSpinCount", "100000"),
+                // SHA-1 of salt 00…0F + Word's legacy key for "Example" (ECMA-376 Part 4 §14.8.1).
+                ("w:hash", "pEWelKoH6SVpvMmyPAJ8bHA/g/s="),
+                ("w:salt", "AAECAwQFBgcICQoLDA0ODw=="),
+            ]
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect();
+            Session::new(doc)
+        };
+        let mut s = protected("4");
+        assert!(s.run("review.restrict", &json!({"stop": true, "password": "wrong"})).is_err());
+        assert!(s.run("review.restrict", &json!({"stop": true, "password": ""})).is_err());
+        assert!(super::enforced(&s.doc));
+        s.run("review.restrict", &json!({"stop": true, "password": "Example"})).unwrap();
+        assert!(!super::enforced(&s.doc));
+        // MD2 isn't supported: refused whatever the password.
+        let mut s = protected("1");
+        let e = s.run("review.restrict", &json!({"stop": true, "password": "anything"})).unwrap_err();
+        assert!(e.to_string().contains(super::UNSUPPORTED_PASSWORD));
+        assert!(super::enforced(&s.doc));
     }
 }

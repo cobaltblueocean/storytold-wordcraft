@@ -1404,7 +1404,7 @@
 	Only the allowed styles can be applied.	Rakendada saab ainult lubatud laade.
 	Ordinals (1st) as superscript	Järgarvud (1st) ülaindeksina
 	Original document	Algdokument
-	Protection stopped. The document's password uses an older form WordCraft can't check.	Kaitse lõpetati. Dokumendi parool kasutab vanemat vormi, mida WordCraft ei saa kontrollida.
+	This password type isn't supported.	Seda paroolitüüpi ei toetata.
 	Replace as you type	Asenda tippimise ajal
 	Replace text as you type	Asenda tekst tippimise ajal
 	Replace:	Asenda:

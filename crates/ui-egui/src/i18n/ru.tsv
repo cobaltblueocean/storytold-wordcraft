@@ -1813,6 +1813,78 @@ preview	Title	Пример
 	Search icons	Поиск значков
 	No icons match your search.	Нет значков, соответствующих поиску.
 	Recolor a one-color picture, such as an icon	Перекрасить одноцветный рисунок, например значок
+	1. Formatting restrictions	1. Ограничения форматирования
+	2. Editing restrictions	2. Ограничения редактирования
+	3. Start enforcement	3. Включение защиты
+	<< Less	<< Меньше
+	Another file	Другой файл
+	Apply as you type	Применять при вводе
+	AutoCorrect	Автозамена
+	AutoFormat As You Type	Автоформат при вводе
+	Automatic bulleted lists	Автоматические маркированные списки
+	Automatic numbered lists	Автоматические нумерованные списки
+	Border lines	Линии границ
+	Capitalize first letter of sentences	Делать первые буквы предложений прописными
+	Capitalize first letter of table cells	Делать первые буквы ячеек таблиц прописными
+	Capitalize names of days	Названия дней с прописной буквы
+	Case changes	Изменения регистра
+	Character level	На уровне символов
+	Checked styles are allowed:	Разрешённые стили (отмечены):
+	Combine Documents	Объединение документов
+	Compare Documents	Сравнение документов
+	Compared: {changes} changes	Сравнение завершено: изменений — {changes}
+	Comparing with another file needs the desktop app.	Для сравнения с другим файлом нужно настольное приложение.
+	Comparison settings	Параметры сравнения
+	Don't capitalize after:	Не делать прописной после:
+	Editing in this document is restricted.	Редактирование этого документа ограничено.
+	Every change is recorded as a tracked change.	Каждое изменение записывается как исправление.
+	Everyone	Все
+	Exceptions (optional)	Исключения (необязательно)
+	Exceptions…	Исключения…
+	Fields	Поля
+	Filling in forms	Заполнение форм
+	Find Next Editable Region	Найти следующую область для редактирования
+	Footnotes and endnotes	Сноски и концевые сноски
+	Formatting, case changes, white space and tables are compared; the other settings are kept for later.	Сравниваются форматирование, регистр, пробелы и таблицы; остальные параметры сохраняются на будущее.
+	Fractions (1/2) as fraction characters (½)	Дроби (1/2) как символы дробей (½)
+	Headers and footers	Колонтитулы
+	Hyphens (--) as dashes (—)	Дефисы (--) как тире (—)
+	In equations, typing a name after a backslash replaces it with its symbol.	В формулах имя после обратной косой черты заменяется символом.
+	Internet addresses as links	Адреса в Интернете как ссылки
+	Label changes with:	Подписывать изменения:
+	Limit formatting to a selection of styles	Ограничить форматирование выбранными стилями
+	Math AutoCorrect	Автозамена математическими символами
+	More >>	Больше >>
+	Moves	Перемещения
+	New document	Новый документ
+	No changes (read only)	Без изменений (только чтение)
+	Only allow this kind of editing:	Разрешить только такой способ редактирования:
+	Only comments can be added, except in regions marked editable.	Можно только добавлять примечания, кроме областей, помеченных как редактируемые.
+	Only form fields can be filled in.	Можно заполнять только поля форм.
+	Only the allowed styles can be applied.	Можно применять только разрешённые стили.
+	Ordinals (1st) as superscript	Порядковые числительные (1st) как надстрочные
+	Original document	Исходный документ
+	This password type isn't supported.	Этот тип пароля не поддерживается.
+	Replace as you type	Заменять при вводе
+	Replace text as you type	Заменять текст при вводе
+	Replace:	Заменить:
+	Revised document	Изменённый документ
+	Select text, then tick who can still edit it.	Выделите текст и отметьте, кто может его редактировать.
+	Settings…	Параметры…
+	Show changes at:	Показывать изменения:
+	Show changes in:	Показывать изменения в:
+	Smart quotes instead of straight quotes	«Умные» кавычки вместо прямых
+	Start Enforcing Protection	Включить защиту
+	Stop Protection	Отключить защиту
+	Text boxes	Надписи
+	The document is read only, except for regions marked editable.	Документ доступен только для чтения, кроме областей, помеченных как редактируемые.
+	The password is optional; without it anyone can stop the protection.	Пароль необязателен; без него любой может отключить защиту.
+	This document	Этот документ
+	Tracked changes	Исправления
+	Type the password to stop the protection.	Введите пароль, чтобы отключить защиту.
+	White space	Пробелы
+	With:	На:
+	Word level	На уровне слов
 	Align Text	Выравнивание текста
 	Create Link	Создать связь
 	Break Link	Разорвать связь

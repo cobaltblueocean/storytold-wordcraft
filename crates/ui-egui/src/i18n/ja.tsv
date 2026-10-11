@@ -1403,7 +1403,7 @@
 	Only the allowed styles can be applied.	使用を許可されたスタイルだけを適用できます。
 	Ordinals (1st) as superscript	序数 (1st) を上付き文字に
 	Original document	元の文書
-	Protection stopped. The document's password uses an older form WordCraft can't check.	保護を停止しました。この文書のパスワードは WordCraft で確認できない古い形式です。
+	This password type isn't supported.	この種類のパスワードはサポートされていません。
 	Replace as you type	入力中に自動で変更
 	Replace text as you type	入力中に自動修正する
 	Replace:	修正文字列:

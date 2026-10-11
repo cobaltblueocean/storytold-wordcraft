@@ -16,8 +16,8 @@ mod write;
 mod xml;
 
 pub use crypt::{
-    DEFAULT_SPIN_COUNT, MAX_PASSWORD_CHARS, check_password, check_protection_password, decrypt, encrypt, encrypt_with_spin_count, is_encrypted,
-    protection_hash,
+    DEFAULT_SPIN_COUNT, MAX_PASSWORD_CHARS, PasswordCheck, check_password, check_protection_password, decrypt, encrypt, encrypt_with_spin_count,
+    is_encrypted, protection_hash,
 };
 pub use read::read;
 pub use write::{write, write_as};

@@ -287,8 +287,6 @@ pub enum Dialog {
     },
     /// Compare / Combine Documents and AutoCorrect Options ([`crate::dialogs_review`], #412).
     Review(Box<crate::dialogs_review::ReviewDialog>),
-}
-
     /// Tools › Customize Keyboard (#368).
     CustomizeKeyboard {
         form: Box<crate::dialogs_keyboard::KeyboardForm>,
