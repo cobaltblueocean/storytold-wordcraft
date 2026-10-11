@@ -1126,3 +1126,51 @@ fn note_separators_and_continuation_notice_round_trip() {
     assert!(settings.contains(r#"<w:footnote w:id="-1"/><w:footnote w:id="0"/><w:footnote w:id="1"/>"#), "{settings}");
     check(&wordcraft_docx::read(&out).unwrap());
 }
+
+/// Issue #534: East Asian number formats are read, labelled and written back as they were; a
+/// value the format doesn't define is decimal, and a level without `w:ind` has no indent.
+#[test]
+fn east_asian_number_formats_read_label_and_round_trip() {
+    use wordcraft_doc::numbering::Counters;
+    use wordcraft_doc::section::NumFormat;
+    let lvl = |i: u8, fmt: &str, text: &str| {
+        format!(r#"<w:lvl w:ilvl="{i}"><w:start w:val="1"/><w:numFmt w:val="{fmt}"/><w:suff w:val="nothing"/><w:lvlText w:val="{text}"/></w:lvl>"#)
+    };
+    let levels = [
+        lvl(0, "chineseCounting", "%1、"),
+        lvl(1, "chineseCountingThousand", "第%2章"),
+        lvl(2, "japaneseLegal", "（%3）"),
+        lvl(3, "decimalEnclosedCircle", "%4"),
+        lvl(4, "hebrew1", "%5."),
+        lvl(5, "notAFormat", "%6."),
+    ]
+    .concat();
+    let numbering = format!(
+        r#"<w:numbering {W_NS}><w:abstractNum w:abstractNumId="0">{levels}</w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>"#
+    );
+    let item = |lv: u8| format!(r#"<w:p><w:pPr><w:numPr><w:ilvl w:val="{lv}"/><w:numId w:val="1"/></w:numPr></w:pPr><w:r><w:t>x</w:t></w:r></w:p>"#);
+    let body: String = [0, 0, 0, 1, 2, 3, 4, 5].map(item).concat();
+    let bytes = docx(&body, &[("rId1", "numbering", "numbering.xml")], &[("word/numbering.xml", &numbering)]);
+    let d = wordcraft_docx::read(&bytes).unwrap();
+    let formats = |d: &Document| (0..6).map(|i| d.numbering.level(1, i).map(|l| l.format)).collect::<Vec<_>>();
+    let want = [
+        NumFormat::ChineseCounting,
+        NumFormat::ChineseCountingThousand,
+        NumFormat::JapaneseLegal,
+        NumFormat::DecimalEnclosedCircle,
+        NumFormat::Hebrew1,
+        NumFormat::Decimal,
+    ]
+    .map(Some);
+    assert_eq!(formats(&d), want);
+    assert_eq!(d.numbering.level(1, 0).map(|l| (l.indent, l.hanging)), Some((0.0, 0.0)));
+    let mut c = Counters::default();
+    let labels: Vec<String> =
+        paras(&d).iter().filter_map(|p| p.props.numbering).filter_map(|n| c.next_label(&d.numbering, n.num, n.level)).map(|l| l.0).collect();
+    assert_eq!(labels, ["一、", "二、", "三、", "第一章", "（壱）", "①", "1.", "1."]);
+    // Saved and read again, every format is the one the file had (hebrew1 too, which shows as
+    // decimal for now).
+    let out = wordcraft_docx::write(&d).unwrap();
+    let back = wordcraft_docx::read(&out).unwrap();
+    assert_eq!(formats(&back), want);
+}

@@ -47,21 +47,27 @@ fn bullet_char(c: u16) -> char {
     }
 }
 
-/// MSONFC → model number format ([MS-OSHARED] §2.2.1.3; 0x17 = bullets, 0xFF = none).
+/// MSONFC → model number format ([MS-OSHARED] §2.2.1.3; 0x17 = bullets, 0xFF = none). Codes
+/// 0x00 to 0x27 run in the order of ST_NumberFormat (decimal, upperRoman … 0x16 decimalZero, 0x17
+/// bullet … 0x25 chineseCounting, 0x26 chineseLegalSimplified, 0x27 chineseCountingThousand);
+/// later codes are drawn as decimal.
 fn num_format(nfc: u8) -> NumFormat {
     match nfc {
-        0x01 => NumFormat::UpperRoman,
-        0x02 => NumFormat::LowerRoman,
-        0x03 => NumFormat::UpperLetter,
-        0x04 => NumFormat::LowerLetter,
-        0x05 => NumFormat::Ordinal,
-        0x06 => NumFormat::CardinalText,
-        0x07 => NumFormat::OrdinalText,
-        0x0A | 0x0B => NumFormat::DecimalZero,
-        0x17 => NumFormat::Bullet,
         0xFF => NumFormat::None,
+        0x00..=0x27 => NumFormat::ALL.get(nfc as usize).copied().unwrap_or(NumFormat::Decimal),
         _ => NumFormat::Decimal,
     }
+}
+
+#[cfg(test)]
+#[test]
+fn number_format_codes() {
+    assert_eq!(num_format(0x04), NumFormat::LowerLetter);
+    assert_eq!(num_format(0x16), NumFormat::DecimalZero);
+    assert_eq!(num_format(0x17), NumFormat::Bullet);
+    assert_eq!(num_format(0x25), NumFormat::ChineseCounting);
+    assert_eq!(num_format(0x27), NumFormat::ChineseCountingThousand);
+    assert_eq!(num_format(0x60), NumFormat::Decimal);
 }
 
 /// Read the lists of a document; empty when the FIB carries none (or they are unreadable).

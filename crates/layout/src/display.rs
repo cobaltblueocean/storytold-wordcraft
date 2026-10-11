@@ -529,21 +529,24 @@ fn lines(
         // Label.
         if li == 0
             && let Some(lab) = &pl.label
-            && let Some(st) = pl.styles.get(lab.style as usize)
         {
             let gx = x + lab.x;
-            out.push(Draw::Glyphs {
-                face: st.face,
-                size: st.size,
-                glyphs: lab.glyphs.iter().map(|g| (g.gid, gx + g.dx, base - st.shift - g.dy)).collect(),
-                color: text_color(&st.rc.color, None),
-                alpha,
-                synth_bold: st.synth_bold,
-                synth_italic: st.synth_italic,
-                text: lab.text.clone(),
-                link: None,
-                ranges: Vec::new(),
-            });
+            // One draw per font run: a glyph id only means something in its own face.
+            for run in &lab.runs {
+                let Some(st) = pl.styles.get(run.style as usize) else { continue };
+                out.push(Draw::Glyphs {
+                    face: st.face,
+                    size: st.size,
+                    glyphs: lab.glyphs.get(run.glyphs.clone()).into_iter().flatten().map(|g| (g.gid, gx + g.dx, base - st.shift - g.dy)).collect(),
+                    color: text_color(&st.rc.color, None),
+                    alpha,
+                    synth_bold: st.synth_bold,
+                    synth_italic: st.synth_italic,
+                    text: run.text.clone(),
+                    link: None,
+                    ranges: Vec::new(),
+                });
+            }
         }
         // Hyphen at a hyphenated line end.
         if let Some((si, gid, adv)) = line.hyphen

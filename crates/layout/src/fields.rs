@@ -54,6 +54,10 @@ fn format_switch(instr: &str) -> Option<NumFormat> {
                 "OrdText" | "ordtext" => NumFormat::OrdinalText,
                 "Ordinal" | "ordinal" => NumFormat::Ordinal,
                 "Arabic" | "arabic" => NumFormat::Decimal,
+                // Chinese numerals: counting (一百零一), legal (壹佰零壹), digit by digit (一〇一).
+                v if v.eq_ignore_ascii_case("ChineseNum1") => NumFormat::ChineseCountingThousand,
+                v if v.eq_ignore_ascii_case("ChineseNum2") => NumFormat::ChineseLegalSimplified,
+                v if v.eq_ignore_ascii_case("ChineseNum3") => NumFormat::IdeographDigital,
                 _ => continue,
             });
         }
@@ -95,6 +99,8 @@ mod tests {
         assert_eq!(field_text("PAGE", "", &ctx), ("4".into(), true));
         assert_eq!(field_text(" PAGE \\* ROMAN ", "", &ctx).0, "IV");
         assert_eq!(field_text("NUMPAGES \\* CardText", "", &ctx).0, "Twelve");
+        assert_eq!(field_text("NUMPAGES \\* CHINESENUM1", "", &ctx).0, "十二");
+        assert_eq!(field_text("PAGE \\* ChineseNum2", "", &ctx).0, "肆");
         assert_eq!(field_text("DATE \\@ \"M/d/yyyy\"", "1/2/2026", &ctx), ("1/2/2026".into(), false));
         assert_eq!(field_name("=SUM(ABOVE)"), "SUM(ABOVE)");
         assert_eq!(field_code_text(" PAGE \\* ROMAN "), "{ PAGE \\* ROMAN }");

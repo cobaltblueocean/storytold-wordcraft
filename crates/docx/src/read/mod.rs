@@ -869,6 +869,8 @@ impl Reader<'_> {
     }
 }
 
-fn default_level(i: usize) -> Level {
-    Level { indent: 36.0 * (i as f32 + 1.0), text: String::new(), ..Level::default() }
+/// A level as the file defines it before its own elements: no indents (a level without `w:ind`
+/// leaves the label at the paragraph's left edge, as Word shows it), no text.
+fn default_level(_i: usize) -> Level {
+    Level { indent: 0.0, hanging: 0.0, text: String::new(), ..Level::default() }
 }

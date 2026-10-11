@@ -300,7 +300,13 @@ impl Counters {
                 let k = (d as usize).saturating_sub(1).min(8);
                 let val = vals.get(k).copied().unwrap_or(0);
                 let val = if val == 0 { level_def(k).map(|l| l.start).unwrap_or(1) } else { val };
-                let fmt = if def.legal && k != lv { NumFormat::Decimal } else { level_def(k).map(|l| l.format).unwrap_or(NumFormat::Decimal) };
+                // Legal numbering (w:isLgl) shows every level in Arabic digits, whatever its own
+                // format (二 of a Chinese outline becomes 2 in "2.1").
+                let fmt = match level_def(k).map(|l| l.format).unwrap_or(NumFormat::Decimal) {
+                    NumFormat::DecimalZero => NumFormat::DecimalZero,
+                    _ if def.legal => NumFormat::Decimal,
+                    f => f,
+                };
                 label.push_str(&fmt.format(val));
             } else {
                 label.push(c);
@@ -369,6 +375,32 @@ mod tests {
         assert_eq!(c.next_label(&n, id, 0).unwrap().0, "3.");
         assert_eq!(c.next_label(&n, id, 1).unwrap().0, "a.");
         assert!(c.next_label(&n, 999, 0).is_none());
+    }
+
+    #[test]
+    fn east_asian_labels_and_legal_numbering() {
+        // A Chinese outline: 第一章, then "一、" items, and a legal level showing 1.1.
+        let mut n = Numbering::default();
+        let id = n.add_list(ListKind::Numbered);
+        if let Some(a) = n.abstracts.first_mut() {
+            a.levels[0] = Level { format: NumFormat::ChineseCounting, text: "第%1章".into(), ..Level::default() };
+            a.levels[1] = Level { format: NumFormat::ChineseCounting, text: "%2、".into(), ..Level::default() };
+            a.levels[2] = Level { format: NumFormat::ChineseCounting, text: "%1.%2.%3".into(), legal: true, ..Level::default() };
+            a.levels[3] = Level { format: NumFormat::ChineseCounting, text: "（%4）".into(), ..Level::default() };
+        }
+        let mut c = Counters::default();
+        let mut l = |lv| c.next_label(&n, id, lv).unwrap().0;
+        assert_eq!(l(0), "第一章");
+        assert_eq!(l(1), "一、");
+        assert_eq!(l(1), "二、");
+        assert_eq!(l(1), "三、");
+        assert_eq!(l(2), "1.3.1", "legal numbering is decimal on every level");
+        assert_eq!(l(3), "（一）");
+        for _ in 0..9 {
+            l(3);
+        }
+        assert_eq!(l(3), "（十一）");
+        assert_eq!(l(0), "第二章");
     }
 
     #[test]

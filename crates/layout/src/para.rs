@@ -215,8 +215,13 @@ impl Line {
 #[derive(Clone, Debug)]
 pub struct Label {
     pub text: String,
+    /// Style of the label's last run (the suffix space and the bidi tests measure with it).
     pub style: u16,
     pub glyphs: Vec<Glyph>,
+    /// Font runs over `glyphs`, in drawing order: font fallback can split a label ("1、" takes
+    /// the digit from the Latin face and the comma from a CJK one), and each glyph id only means
+    /// something in the face it was shaped with.
+    pub runs: Vec<LabelRun>,
     pub x: f32,
     pub width: f32,
 }
@@ -234,6 +239,17 @@ pub struct RubyLayout {
     pub ranges: Vec<std::ops::Range<usize>>,
     /// The ruby's baseline above the base text's, points.
     pub raise: f32,
+}
+
+/// One font run of a list label.
+#[derive(Clone, Debug)]
+pub struct LabelRun {
+    /// Index into `ParaLayout::styles`.
+    pub style: u16,
+    /// Glyph range in `Label::glyphs`.
+    pub glyphs: std::ops::Range<usize>,
+    /// The run's characters (for the PDF text layer).
+    pub text: String,
 }
 
 /// A laid-out paragraph.
@@ -1141,17 +1157,27 @@ pub fn layout_para(p: &Paragraph, env: &ParaEnv) -> ParaLayout {
             cl = order.iter().filter_map(|&i| cl.get(i).cloned()).collect();
         }
         let mut glyphs = Vec::new();
+        let mut runs: Vec<LabelRun> = Vec::new();
         let mut x = 0.0;
         let mut style = mark_style;
         for c in &cl {
             style = c.style;
+            let g0 = glyphs.len();
             for g in b.glyphs.get(c.g0 as usize..c.g1 as usize).into_iter().flatten() {
                 glyphs.push(Glyph { dx: g.dx + x, ..*g });
+            }
+            let chars = text.get(c.start..c.end).unwrap_or("");
+            match runs.last_mut() {
+                Some(r) if r.style == c.style => {
+                    r.glyphs.end = glyphs.len();
+                    r.text.push_str(chars);
+                }
+                _ => runs.push(LabelRun { style: c.style, glyphs: g0..glyphs.len(), text: chars.to_string() }),
             }
             x += c.adv;
         }
         b.glyphs.truncate(before_g);
-        Label { text, style, glyphs, x: 0.0, width: x }
+        Label { text, style, glyphs, runs, x: 0.0, width: x }
     });
 
     let mut pl = ParaLayout {
@@ -1546,12 +1572,11 @@ fn break_lines(pl: &mut ParaLayout, env: &ParaEnv, mark_style: u16, level: Optio
             asc = st.ascent;
             desc = st.descent;
         }
-        if first
-            && let Some(lab) = &pl.label
-            && let Some(st) = pl.styles.get(lab.style as usize)
-        {
-            asc = asc.max(st.ascent);
-            desc = desc.max(st.descent);
+        if first && let Some(lab) = &pl.label {
+            for st in lab.runs.iter().filter_map(|r| pl.styles.get(r.style as usize)) {
+                asc = asc.max(st.ascent);
+                desc = desc.max(st.descent);
+            }
         }
         // Line spacing scales the text's height, never a picture's: a line is at least as tall
         // as its tallest picture plus the descent below the baseline.
