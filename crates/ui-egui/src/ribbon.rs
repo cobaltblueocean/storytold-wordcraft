@@ -317,6 +317,37 @@ fn mi_check(ui: &mut Ui, app: &mut WordApp, label: &str, checked: bool, id: &str
     }
 }
 
+/// Word's text wrapping styles in menu order: label, model value, `arrange.wrap` parameter.
+pub(crate) const WRAP_STYLES: [(&str, wordcraft_doc::para::Wrap, &str); 7] = {
+    use wordcraft_doc::para::Wrap;
+    [
+        ("In Line with Text", Wrap::Inline, "inline"),
+        ("Square", Wrap::Square, "square"),
+        ("Tight", Wrap::Tight, "tight"),
+        ("Through", Wrap::Through, "through"),
+        ("Top and Bottom", Wrap::TopAndBottom, "topAndBottom"),
+        ("Behind Text", Wrap::BehindText, "behindText"),
+        ("In Front of Text", Wrap::InFrontOfText, "inFrontOfText"),
+    ]
+};
+
+/// The Wrap Text menu for the selected picture, shape or text box: the seven styles (the
+/// current one checked), then Move with Text / Fix Position on Page for a floating one. The
+/// canvas context menu shows it; the ribbon's Wrap Text button can share it.
+pub(crate) fn wrap_text_items(ui: &mut Ui, app: &mut WordApp) {
+    use wordcraft_engine::cmd::objects::{moves_with_text, selected};
+    let state = selected(&app.session).and_then(|(_, o)| o.frame().map(|(_, _, f)| (f.wrap, moves_with_text(f))));
+    let wrap = state.map(|(w, _)| w);
+    for (label, w, v) in WRAP_STYLES {
+        mi_check(ui, app, label, wrap == Some(w), "arrange.wrap", json!({"wrap": v}));
+    }
+    ui.separator();
+    // An inline object is neither: it's part of the text.
+    let with_text = state.filter(|(w, _)| *w != wordcraft_doc::para::Wrap::Inline).map(|(_, m)| m);
+    mi_check(ui, app, "Move with Text", with_text == Some(true), "arrange.moveWithText", json!({"value": true}));
+    mi_check(ui, app, "Fix Position on Page", with_text == Some(false), "arrange.moveWithText", json!({"value": false}));
+}
+
 fn home(app: &mut WordApp, ui: &mut Ui) {
     let st = app.session.run("format.state", &json!({})).unwrap_or_default();
     let flag = |k: &str| st.get(k).and_then(Value::as_bool).unwrap_or(false);

@@ -697,18 +697,23 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
             None => {}
         }
     }
+    // Right-click on a picture, shape or text box selects it (its menu offers Wrap Text).
     if resp.secondary_clicked()
         && app.session.math.is_none()
         && let Some(p) = resp.interact_pointer_pos()
         && let Some((page, x, y)) = page_at(&rects, &layout, geo.scale, p)
-        && let Some(pos) = layout.hit(page, x, y, app.session.sel.focus.story)
     {
-        let (a, b) = app.session.sel.ordered();
-        if !(a <= pos && pos <= b) || app.session.sel.is_collapsed() {
-            app.session.sel = wordcraft_engine::Selection::caret(pos);
+        if crate::objects::select_at(app, &layout, &rects, geo.scale, p) {
+            app.canvas.context_issue = None;
+            app.canvas.context_synonyms = None;
+        } else if let Some(pos) = layout.hit(page, x, y, app.session.sel.focus.story) {
+            let (a, b) = app.session.sel.ordered();
+            if !(a <= pos && pos <= b) || app.session.sel.is_collapsed() {
+                app.session.sel = wordcraft_engine::Selection::caret(pos);
+            }
+            app.canvas.context_issue = app.session.run("review.suggestions", &json!({})).ok().filter(|v| !v.is_null());
+            app.canvas.context_synonyms = app.session.run("review.thesaurus", &json!({})).ok().and_then(|v| v.get("synonyms").cloned());
         }
-        app.canvas.context_issue = app.session.run("review.suggestions", &json!({})).ok().filter(|v| !v.is_null());
-        app.canvas.context_synonyms = app.session.run("review.thesaurus", &json!({})).ok().and_then(|v| v.get("synonyms").cloned());
     }
     resp.context_menu(|ui| context_menu(app, ui));
     // Stand down while the context menu owns the pointer so the two never double up;
@@ -1627,11 +1632,19 @@ fn context_menu(app: &mut WordApp, ui: &mut Ui) {
         item(ui, app, tl!("Edit Field…"), "fields.setCode", json!({}));
         item(ui, app, tl!("Toggle Field Codes"), "fields.toggleCode", json!({}));
     }
-    if crate::ribbon::has_picture_selected(&app.session) {
+    // A selected picture, shape, text box or chart: its own items, then Wrap Text (#513).
+    let picture = crate::ribbon::has_picture_selected(&app.session);
+    let object = wordcraft_engine::cmd::objects::object_selection(&app.session).is_some();
+    if picture || object {
         ui.separator();
+    }
+    if picture {
         item(ui, app, "Change Picture…", "ui.changePicture", json!({}));
         item(ui, app, "Reset Picture", "picture.reset", json!({}));
         item(ui, app, "Size and Crop…", "ui.tab", json!({"tab": "Picture Format"}));
+    }
+    if object {
+        ui.menu_button(tl!("Wrap Text"), |ui| crate::ribbon::wrap_text_items(ui, app));
     }
     if app.session.sel.focus.path.cell().is_some() {
         ui.separator();
@@ -1777,6 +1790,53 @@ mod tests {
         assert_eq!(h.state().session.undo_depth(), depth + 1, "one undo step for the edit");
         assert!(h.state_mut().session.undo());
         assert_eq!(h.state().session.doc.plain_text(StoryRef::Part(part)), "Original");
+    }
+
+    /// #513: right-clicking a picture selects it and offers Wrap Text, as in Word; choosing
+    /// Square there wraps text around it.
+    #[test]
+    fn right_click_on_a_picture_offers_wrap_text() {
+        use egui_kittest::kittest::Queryable;
+        let mut a = WordApp::new(wordcraft_engine::Session::new(wordcraft_doc::Document::new()), Default::default());
+        a.run("text.insert", json!({"text": "Text before the picture "})).unwrap();
+        let mut png = Vec::new();
+        let img = image::RgbaImage::from_pixel(40, 20, image::Rgba([200, 30, 30, 255]));
+        image::DynamicImage::ImageRgba8(img).write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
+        a.run("insert.picture", json!({"data": wordcraft_engine::cmd::insert::base64_encode(&png), "width": 160})).unwrap();
+        let pos = wordcraft_engine::cmd::objects::selected(&a.session).unwrap().0;
+        a.session.sel = wordcraft_engine::Selection::caret(Pos::body(0, 0));
+        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
+            |ui, app: &mut WordApp| {
+                let ctx = ui.ctx().clone();
+                app.logic(&ctx);
+                app.ui(ui);
+            },
+            a,
+        );
+        for _ in 0..6 {
+            h.step();
+        }
+        let rect = h.state_mut().session.layout().object(&pos, 0).expect("the picture is laid out").rect;
+        let at = crate::frame::to_screen(h.state().canvas.page_rects[0], h.state().canvas.scale, rect).center();
+        h.event(egui::Event::PointerMoved(at));
+        for pressed in [true, false] {
+            h.event(egui::Event::PointerButton { pos: at, button: egui::PointerButton::Secondary, pressed, modifiers: Default::default() });
+            h.step();
+        }
+        h.step();
+        let picked = wordcraft_engine::cmd::objects::object_selection(&h.state().session).map(|(p, _)| p);
+        assert_eq!(picked, Some(pos.clone()), "the right-click selected the picture");
+        h.get_by_label_contains("Wrap Text").hover();
+        for _ in 0..3 {
+            h.step();
+        }
+        assert!(h.query_by_label_contains("Fix Position on Page").is_some(), "the anchoring choices are offered");
+        h.get_by_label_contains("Square").click();
+        for _ in 0..3 {
+            h.step();
+        }
+        let o = wordcraft_engine::cmd::objects::selected(&h.state().session).unwrap().1;
+        assert_eq!(o.frame().unwrap().2.wrap, wordcraft_doc::para::Wrap::Square);
     }
 
     #[test]

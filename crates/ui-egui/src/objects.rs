@@ -121,6 +121,22 @@ pub fn pointer(app: &mut WordApp, ui: &Ui, resp: &egui::Response, pages: &[Rect]
     true
 }
 
+/// Right-click at `at`: the picture, shape or text box under it becomes the selection (as a click
+/// would, without a drag), so the context menu acts on it. Returns whether there was one.
+pub fn select_at(app: &mut WordApp, layout: &DocLayout, pages: &[Rect], scale: f32, at: Pos2) -> bool {
+    if crate::canvas::editing_header_footer(app, layout) {
+        return false;
+    }
+    let Some((object, _)) = grab_at(app, layout, pages, scale, at) else { return false };
+    let pos = object.pos();
+    // Already selected (alone or among several picked for Group): keep the selection.
+    if !wordcraft_engine::cmd::objects::picked_objects(&app.session).contains(&pos) {
+        let end = Pos { off: pos.off + OBJ.len_utf8(), ..pos.clone() };
+        let _ = app.run("select.range", json!({"anchor": pos, "focus": end}));
+    }
+    true
+}
+
 /// What a press at `at` would grab: a handle of the shown frame, else an object.
 fn grab_at(app: &WordApp, layout: &DocLayout, pages: &[Rect], scale: f32, at: Pos2) -> Option<(ObjectHit, Grab)> {
     let handle = active(app, layout).filter(|(o, _)| o.story == StoryRef::Body && !fixed(app, o)).and_then(|(o, _)| {
