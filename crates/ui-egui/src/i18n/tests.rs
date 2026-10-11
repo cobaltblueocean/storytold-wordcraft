@@ -614,3 +614,60 @@ fn bundled_interface_fonts_cover_turkish_without_system_fallbacks() {
     }
     assert!(!lang("tr").uses_cjk());
 }
+
+#[test]
+fn italian_locales_and_saved_preference_keep_document_content() {
+    let it = lang("it");
+    for tag in ["it", "it-IT", "it_IT.UTF-8", "it-CH", "it_IT.UTF-8@euro"] {
+        assert_eq!(lang_from_tag(tag), Some(it), "{tag}");
+    }
+    assert_eq!(first_supported(["fr-FR", "it-IT", "en-US"]), Some(it));
+    assert_eq!(normalize_pref("IT"), Some("it"));
+    assert_eq!(it.name(), "Italiano");
+    let mut app = crate::WordApp::new(wordcraft_engine::Session::new(wordcraft_engine::sample::sample_document()), Default::default());
+    let before = serde_json::to_value(&app.session.doc).unwrap();
+    let result = app.run("ui.language", serde_json::json!({"value": "IT"})).unwrap();
+    assert_eq!(result["effective"], "it");
+    assert_eq!(app.ui.language, "it");
+    assert_eq!(serde_json::to_value(&app.session.doc).unwrap(), before);
+    let saved = serde_json::to_string(&app.ui).unwrap();
+    let restored: crate::UiState = serde_json::from_str(&saved).unwrap();
+    assert_eq!(Lang::from_pref(&restored.language), it);
+}
+
+#[test]
+fn italian_covers_the_entire_existing_interface_catalog_and_keeps_count_labels_neutral() {
+    use std::collections::HashSet;
+    let keys = |source| parse_entries(source).0.into_iter().map(|e| e.source).collect::<HashSet<_>>();
+    let it = lang("it");
+    for other in ["es", "tr", "et", "zh-hans"] {
+        assert!(keys(lang(other).0.source).is_subset(&keys(it.0.source)), "{other} has keys Italian lacks");
+    }
+    assert_eq!(tr(it, "Good morning"), "Buongiorno");
+    assert_eq!(tr(it, "Save"), "Salva");
+    assert_eq!(tr(it, "Insert"), "Inserisci");
+    assert_eq!(tr(it, "Spelling & Grammar"), "Ortografia e grammatica");
+    assert_eq!(tr(it, "unknown future label"), "unknown future label");
+    // The Review tab's group and its toggle keep different names.
+    assert_ne!(tr(it, "Changes"), tr(it, "Track Changes"));
+    // Italian nouns agree with the number, so count labels put the noun first and read right at 1.
+    for count in [0, 1, 2, 11, 21, 101] {
+        let n = count.to_string();
+        assert_eq!(fmt(tr(it, "{words} words"), &[("words", &n)]), format!("Parole: {count}"));
+        assert_eq!(fmt(tr(it, "{selected} of {words} words"), &[("selected", "1"), ("words", &n)]), format!("Parole: {count}; selezionate: 1"));
+        assert_eq!(fmt(tr(it, "{n} lines"), &[("n", &n)]), format!("Righe: {count}"));
+        assert_eq!(fmt(tr(it, "{count} items highlighted"), &[("count", &n)]), format!("Elementi evidenziati: {count}"));
+    }
+}
+
+#[test]
+fn bundled_interface_fonts_cover_italian_letters() {
+    let db = wordcraft_fonts::FontDb::with_font_dirs(Vec::new());
+    for (family, style) in [("Inter", "Regular"), ("Inter", "Medium"), ("Inter", "SemiBold"), ("JetBrains Mono", "Regular")] {
+        let face = db.face(family, style);
+        assert_eq!(face.family, family, "must use the bundled interface face");
+        for ch in "ÀàÈèÉéÌìÒòÙù".chars() {
+            assert_ne!(face.glyph_for(ch), 0, "{family} {style} lacks {ch}");
+        }
+    }
+}
