@@ -1809,3 +1809,39 @@ preview	Title	Пример
 	Search icons	Поиск значков
 	No icons match your search.	Нет значков, соответствующих поиску.
 	Recolor a one-color picture, such as an icon	Перекрасить одноцветный рисунок, например значок
+
+# WordArt and connectors (#416).
+	WordArt Styles	Стили WordArt
+	Text Fill	Заливка текста
+	Text Outline	Контур текста
+	Transform	Трансформация
+	No Fill	Нет заливки
+	No Outline	Нет контура
+	Reflection	Отражение
+	No Reflection	Без отражения
+	No Transform	Без трансформации
+	Connect Shapes	Соединить фигуры
+	Straight Connector	Прямая соединительная линия
+	Straight Arrow Connector	Прямая соединительная линия со стрелкой
+	Elbow Connector	Уголковая соединительная линия
+	Elbow Arrow Connector	Уголковая линия со стрелкой
+	Curved Connector	Кривая соединительная линия
+	Curved Arrow Connector	Кривая линия со стрелкой
+	Arch Up	Арка вверх
+	Arch Down	Арка вниз
+	Slant Up	Наклон вверх
+	Slant Down	Наклон вниз
+	Inflate	Раздувание
+	Deflate	Сжатие
+	Chevron Up	Шеврон вверх
+	Chevron Down	Шеврон вниз
+	Triangle Up	Треугольник вверх
+	Triangle Down	Треугольник вниз
+	Solid Accent	Сплошной акцент
+	Light with Outline	Светлый с контуром
+	Hollow	Полый
+	Accent Gradient	Градиент акцента
+	Dark with Shadow	Тёмный с тенью
+	Soft Glow	Мягкое свечение
+	Accent with Reflection	Акцент с отражением
+	Warm Gradient with Outline	Тёплый градиент с контуром

@@ -79,6 +79,27 @@ fn every_char_prop_round_trips() {
         shadow: Some(true),
         emboss: Some(false),
         engrave: Some(true),
+        // WordArt effects ([MS-DOCX] w14 run properties).
+        text_effects: Some(Box::new(wordcraft_doc::wordart::TextEffects {
+            fill: Some(wordcraft_doc::wordart::TextFill::Gradient {
+                stops: vec![
+                    wordcraft_doc::wordart::GradStop { pos: 0.0, color: Rgb(0x15, 0x60, 0x82), transparency: 0.0 },
+                    wordcraft_doc::wordart::GradStop { pos: 100.0, color: Rgb(0xE9, 0x71, 0x32), transparency: 25.0 },
+                ],
+                angle: 90.0,
+            }),
+            outline: Some(wordcraft_doc::wordart::TextOutline { color: Some(Rgb(0x0E, 0x28, 0x41)), width: 1.5, transparency: 0.0 }),
+            shadow: Some(wordcraft_doc::effects::Shadow {
+                color: Rgb::BLACK,
+                transparency: 60.0,
+                blur: 4.0,
+                distance: 3.0,
+                angle: 45.0,
+                rot_with_shape: false,
+            }),
+            glow: Some(wordcraft_doc::effects::Glow { color: Rgb(0x0F, 0x9E, 0xD5), size: 5.0, transparency: 40.0 }),
+            reflection: Some(wordcraft_doc::wordart::Reflection::default()),
+        })),
         lang: Some("fr-FR".into()),
         no_proof: Some(true),
         rtl: Some(false),
@@ -695,6 +716,7 @@ fn toc_field_skips_nested_stories() {
             story: Some(story),
             freeform: None,
             effects: Default::default(),
+            extra: Default::default(),
         }
     };
     let mut head = Paragraph::with_text("Contents", CharProps::default()).styled("TOCHeading");
@@ -818,6 +840,7 @@ fn shapes_textboxes_equations_dropcaps_round_trip() {
         story: Some(story),
         freeform: None,
         effects: Default::default(),
+        extra: Default::default(),
     };
     let star = InlineObject::Shape {
         kind: ShapeKind::Star,
@@ -830,6 +853,7 @@ fn shapes_textboxes_equations_dropcaps_round_trip() {
         story: None,
         freeform: None,
         effects: Default::default(),
+        extra: Default::default(),
     };
     let eq = InlineObject::Equation { linear: "x=(-b±√(b^2-4ac))/2a".into(), display: false, math: Default::default() };
     let mut p = Paragraph::with_text("shapes ", CharProps::default());
@@ -901,6 +925,7 @@ fn groups_round_trip() {
             glow: None,
             soft_edge: Some(2.5),
         },
+        extra: Default::default(),
     };
     let tb = InlineObject::Shape {
         kind: ShapeKind::TextBox,
@@ -913,6 +938,7 @@ fn groups_round_trip() {
         story: Some(story),
         freeform: None,
         effects: Default::default(),
+        extra: Default::default(),
     };
     let float = Float { wrap: Wrap::Square, h_rel: Anchor::Column, v_rel: Anchor::Paragraph, x: 20.0, y: 10.0, dist: 9.0, ..Default::default() };
     let group = InlineObject::Group {
@@ -974,6 +1000,7 @@ fn drawing_canvas_round_trips() {
         story: None,
         effects: Default::default(),
         freeform: None,
+        extra: Default::default(),
     };
     let style = CanvasStyle { fill: Some(Rgb(0xF0, 0xF4, 0xFF)), stroke: Some(Rgb(0x20, 0x40, 0x80)), stroke_width: 1.5 };
     let canvas = InlineObject::Group {
@@ -1021,6 +1048,7 @@ fn rotated_drawing_canvas_round_trips() {
         story: None,
         effects: Default::default(),
         freeform: None,
+        extra: Default::default(),
     };
     let canvas = |float: Float| InlineObject::Group {
         w: 200.0,
@@ -1250,6 +1278,7 @@ fn self_showing_text_box_saves_bounded() {
         story: Some(id),
         freeform: None,
         effects: Default::default(),
+        extra: Default::default(),
     };
     for _ in 0..30 {
         d.insert_object(
@@ -1347,6 +1376,7 @@ fn ink_and_freeforms_round_trip_as_custom_geometry() {
         story: None,
         freeform: Some(Arc::new(f)),
         effects: Default::default(),
+        extra: Default::default(),
     };
     let pen = shape(None, 2.0, Wrap::InFrontOfText, Freeform::ink(InkTool::Pen, 60.0, 20.0, vec![[1.0, 1.0], [30.0, 19.0], [59.0, 4.0]]));
     let marker = shape(None, 12.0, Wrap::BehindText, Freeform::ink(InkTool::Highlighter, 80.0, 12.0, vec![[6.0, 6.0], [74.0, 6.0]]));
@@ -1400,6 +1430,7 @@ fn shape_effects_round_trip() {
         story: None,
         freeform: None,
         effects,
+        extra: Default::default(),
     };
     let mut p = Paragraph::with_text("x", CharProps::default());
     p.insert_object(1, shape, &CharProps::default()).unwrap();
@@ -1475,6 +1506,7 @@ fn rotation_and_flips_round_trip() {
         story: None,
         freeform: None,
         effects: Default::default(),
+        extra: Default::default(),
     };
     let square = Float { wrap: Wrap::Square, ..Default::default() };
     let tri = shape(ShapeKind::Triangle, Float { rot: 90.0, flip_h: true, ..square.clone() });
@@ -1531,6 +1563,7 @@ fn rotated_group_and_shadow_rotation_round_trip() {
         story: None,
         freeform: None,
         effects: ShapeEffects { shadow: Some(Shadow { rot_with_shape, ..Default::default() }), ..Default::default() },
+        extra: Default::default(),
     };
     let group = InlineObject::Group {
         w: 120.0,
@@ -1580,6 +1613,7 @@ fn wrap_polygons_round_trip() {
         story: None,
         effects: Default::default(),
         freeform: None,
+        extra: Default::default(),
     };
     // A hand-edited polygon, including points outside the frame.
     let poly = WrapPolygon::new(true, [(-300, 0), (21_600, 1200), (18_000, 21_900), (0, 21_600)]).map(Arc::new);
@@ -1703,6 +1737,7 @@ fn wrap_text_sides_round_trip() {
         story: None,
         effects: Default::default(),
         freeform: None,
+        extra: Default::default(),
     };
     let sides =
         [(Wrap::Square, WrapText::Left), (Wrap::Tight, WrapText::Right), (Wrap::Through, WrapText::Largest), (Wrap::Square, WrapText::BothSides)];
@@ -1729,4 +1764,88 @@ fn wrap_text_sides_round_trip() {
     assert_eq!(got, sides);
     // A value outside the schema is no side (read as both sides).
     assert_eq!(WrapText::from_ooxml("middle"), None);
+}
+
+/// WordArt's warp (`a:prstTxWarp` with its adjust value) and connectors glued to shapes
+/// (`a:stCxn`/`a:endCxn`, with arrowheads) come back as saved; a shape no connector is glued to
+/// loses its drawing id, and hostile values are reduced.
+#[test]
+fn warps_and_glued_connectors_round_trip() {
+    use wordcraft_doc::connector::{ConnEnd, ShapeExtra};
+    use wordcraft_doc::wordart::TextWarp;
+    let mut d = Document::new();
+    let story = d.add_part(PartKind::TextBox, vec![para_block(Paragraph::with_text("Bent", CharProps::default()))]);
+    let float = |x: f32| Float { wrap: Wrap::InFrontOfText, h_rel: Anchor::Column, v_rel: Anchor::Paragraph, x, y: 10.0, ..Default::default() };
+    let shape = |kind, story, extra| InlineObject::Shape {
+        kind,
+        w: 72.0,
+        h: 36.0,
+        fill: None,
+        stroke: Some(Rgb(0, 0, 0)),
+        stroke_width: 1.0,
+        float: float(0.0),
+        story,
+        freeform: None,
+        effects: Default::default(),
+        extra,
+    };
+    let mut warp = TextWarp::new("textArchUp").unwrap();
+    warp.set_adj("adj", 9_000_000);
+    let art = shape(ShapeKind::TextBox, Some(story), ShapeExtra { id: 5, warp: Some(warp), ..Default::default() });
+    let target = shape(ShapeKind::Ellipse, None, ShapeExtra { id: 7, ..Default::default() });
+    let lonely = shape(ShapeKind::Rectangle, None, ShapeExtra { id: 9, ..Default::default() });
+    let link = ShapeExtra { start: Some(ConnEnd { id: 5, site: 3 }), end: Some(ConnEnd { id: 7, site: 2 }), arrow_end: true, ..Default::default() };
+    let mut conn = shape(ShapeKind::ElbowConnector, None, link);
+    if let InlineObject::Shape { float: f, .. } = &mut conn {
+        *f = Float { flip_v: true, ..float(80.0) };
+    }
+    let mut p = Paragraph::with_text("", CharProps::default());
+    for o in [art.clone(), conn.clone(), target.clone(), lonely] {
+        let end = p.len();
+        p.insert_object(end, o, &CharProps::default()).unwrap();
+    }
+    d.body = vec![para_block(p)];
+    let r = rt(&d);
+    let got = &paras(&r)[0].objects;
+    // The glued-to shapes keep their ids, the connector its ends, arrowhead and flip.
+    let extra = |o: &InlineObject| match o {
+        InlineObject::Shape { extra, .. } => extra.clone(),
+        _ => panic!("{o:?}"),
+    };
+    assert_eq!(extra(&got[0]), extra(&art));
+    assert_eq!(extra(&got[1]), extra(&conn));
+    assert!(matches!(&got[1], InlineObject::Shape { kind: ShapeKind::ElbowConnector, float, .. } if float.flip_v));
+    assert_eq!(extra(&got[2]), extra(&target));
+    assert_eq!(extra(&got[3]).id, 0, "nothing is glued to it");
+
+    // Hostile: an unknown warp, a huge adjust value, a glue to a missing shape.
+    let xml = wordcraft_docx::write(&r).unwrap();
+    let mut pkg = zip::ZipArchive::new(std::io::Cursor::new(xml)).unwrap();
+    let mut doc_xml = String::new();
+    std::io::Read::read_to_string(&mut pkg.by_name("word/document.xml").unwrap(), &mut doc_xml).unwrap();
+    let doc_xml = doc_xml
+        .replace("prst=\"textArchUp\"", "prst=\"textNotAWarp\"")
+        .replace("a:stCxn id=\"5\" idx=\"3\"", "a:stCxn id=\"404\" idx=\"99999999999\"");
+    let bytes = replace_part(&wordcraft_docx::write(&r).unwrap(), "word/document.xml", doc_xml.as_bytes());
+    let h = wordcraft_docx::read(&bytes).unwrap();
+    let got = &paras(&h)[0].objects;
+    assert_eq!(extra(&got[0]).warp, None);
+    assert_eq!(extra(&got[1]).start, Some(ConnEnd { id: 404, site: wordcraft_doc::connector::MAX_SITE }));
+}
+
+/// `zip` with part `name` replaced by `data`.
+fn replace_part(zip_bytes: &[u8], name: &str, data: &[u8]) -> Vec<u8> {
+    let mut src = zip::ZipArchive::new(std::io::Cursor::new(zip_bytes)).unwrap();
+    let mut out = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+    for i in 0..src.len() {
+        let mut f = src.by_index(i).unwrap();
+        let n = f.name().to_string();
+        out.start_file(n.as_str(), zip::write::SimpleFileOptions::default()).unwrap();
+        if n == name {
+            std::io::Write::write_all(&mut out, data).unwrap();
+        } else {
+            std::io::copy(&mut f, &mut out).unwrap();
+        }
+    }
+    out.finish().unwrap().into_inner()
 }

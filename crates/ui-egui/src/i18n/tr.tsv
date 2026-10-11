@@ -1428,3 +1428,39 @@
 	Search icons	Simgelerde ara
 	No icons match your search.	Aramanızla eşleşen simge yok.
 	Recolor a one-color picture, such as an icon	Simge gibi tek renkli bir resmi yeniden renklendir
+
+# WordArt and connectors (#416).
+	WordArt Styles	WordArt Stilleri
+	Text Fill	Metin Dolgusu
+	Text Outline	Metin Anahattı
+	Transform	Dönüştür
+	No Fill	Dolgu Yok
+	No Outline	Anahat Yok
+	Reflection	Yansıma
+	No Reflection	Yansıma Yok
+	No Transform	Dönüşüm Yok
+	Connect Shapes	Şekilleri Bağla
+	Straight Connector	Düz Bağlayıcı
+	Straight Arrow Connector	Düz Oklu Bağlayıcı
+	Elbow Connector	Dirsekli Bağlayıcı
+	Elbow Arrow Connector	Dirsekli Oklu Bağlayıcı
+	Curved Connector	Eğri Bağlayıcı
+	Curved Arrow Connector	Eğri Oklu Bağlayıcı
+	Arch Up	Yukarı Kemer
+	Arch Down	Aşağı Kemer
+	Slant Up	Yukarı Eğim
+	Slant Down	Aşağı Eğim
+	Inflate	Şişir
+	Deflate	Söndür
+	Chevron Up	Yukarı Şevron
+	Chevron Down	Aşağı Şevron
+	Triangle Up	Yukarı Üçgen
+	Triangle Down	Aşağı Üçgen
+	Solid Accent	Düz Vurgu
+	Light with Outline	Anahatlı Açık
+	Hollow	İçi Boş
+	Accent Gradient	Vurgu Geçişi
+	Dark with Shadow	Gölgeli Koyu
+	Soft Glow	Yumuşak Parıltı
+	Accent with Reflection	Yansımalı Vurgu
+	Warm Gradient with Outline	Anahatlı Sıcak Geçiş

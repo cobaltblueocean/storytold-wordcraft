@@ -164,3 +164,5 @@ mod tests;
 mod tests_bidi;
 #[cfg(test)]
 mod tests_typing;
+#[cfg(test)]
+mod tests_wordart;

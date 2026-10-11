@@ -5143,6 +5143,7 @@ version = "0.5.0"
 dependencies = [
  "image",
  "js-sys",
+ "kurbo",
  "log",
  "serde",
  "serde_json",

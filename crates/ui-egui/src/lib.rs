@@ -44,6 +44,7 @@ pub mod table_pen;
 pub mod theme;
 pub mod widgets;
 pub mod window_geometry;
+pub mod wordart_menus;
 pub mod zotero;
 
 use serde::{Deserialize, Serialize};

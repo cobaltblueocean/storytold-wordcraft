@@ -66,7 +66,13 @@ pub fn shape_outline(kind: ShapeKind, w: f32, h: f32) -> Option<Vec<(f32, f32)>>
     let (w, h) = (pos(w), pos(h));
     let pts = match kind {
         // A freeform's paths (ink among them) aren't known from its kind: its frame is its outline.
-        ShapeKind::Rectangle | ShapeKind::TextBox | ShapeKind::Line | ShapeKind::Freeform => return None,
+        ShapeKind::Rectangle
+        | ShapeKind::TextBox
+        | ShapeKind::Line
+        | ShapeKind::Freeform
+        | ShapeKind::StraightConnector
+        | ShapeKind::ElbowConnector
+        | ShapeKind::CurvedConnector => return None,
         ShapeKind::Ellipse => (0..48).map(|i| (i as f32) * TAU / 48.0).map(|a| (0.5 + 0.5 * a.cos(), 0.5 + 0.5 * a.sin())).collect(),
         ShapeKind::RoundedRectangle => {
             // Corner radius as drawn: 16% of the shorter side.

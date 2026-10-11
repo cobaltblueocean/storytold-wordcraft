@@ -16,6 +16,7 @@ pub mod kinsoku;
 pub mod math;
 pub mod para;
 mod table;
+pub mod wordart;
 
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
@@ -107,6 +108,8 @@ pub enum Placed {
         freeform: Option<Arc<wordcraft_doc::freeform::Freeform>>,
         effects: wordcraft_doc::effects::ShapeEffects,
         spin: Spin,
+        /// Arrowheads and text warp (see [`wordcraft_doc::connector::ShapeExtra`]).
+        extra: wordcraft_doc::connector::ShapeExtra,
     },
     /// A floating chart or diagram, drawn from its items inside `rect`. The object is the U+FFFC at
     /// byte `off` of paragraph `path` (its alt text).
@@ -1810,7 +1813,7 @@ fn float_items(o: &InlineObject, rect: Rect, outer: (Spin, Point), story: StoryR
         InlineObject::Image { media, crop, .. } => {
             vec![Placed::Image { rect, media: media.clone(), crop: *crop, story, path: Path(path.to_vec()), off, spin }]
         }
-        InlineObject::Shape { kind, fill, stroke, stroke_width, effects, freeform, .. } => {
+        InlineObject::Shape { kind, fill, stroke, stroke_width, effects, freeform, extra, .. } => {
             vec![Placed::Shape {
                 rect,
                 kind: *kind,
@@ -1820,6 +1823,7 @@ fn float_items(o: &InlineObject, rect: Rect, outer: (Spin, Point), story: StoryR
                 effects: *effects,
                 freeform: freeform.clone(),
                 spin,
+                extra: extra.clone(),
             }]
         }
         InlineObject::Graphic { graphic, .. } => {
@@ -1846,6 +1850,7 @@ fn float_items(o: &InlineObject, rect: Rect, outer: (Spin, Point), story: StoryR
                             effects: Default::default(),
                             freeform: None,
                             spin,
+                            extra: Default::default(),
                         },
                         Placed::Clip { rect, spin, items: members },
                     ]
