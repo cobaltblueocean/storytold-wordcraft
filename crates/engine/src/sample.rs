@@ -269,7 +269,7 @@ pub fn large_document(pages: usize) -> Document {
     let mut toc = Paragraph::new();
     let _ = toc.insert_object(
         0,
-        InlineObject::Field { instr: "TOC \\o \"1-2\" \\h".into(), result: String::new(), locked: false },
+        InlineObject::Field { instr: "TOC \\o \"1-2\" \\h".into(), result: String::new(), locked: false, code: false },
         &CharProps::default(),
     );
     b.push(Block::Para(toc));
@@ -305,7 +305,7 @@ pub fn large_document(pages: usize) -> Document {
             let at = p.len();
             let _ = p.insert_object(
                 at,
-                InlineObject::Field { instr: "DATE \\@ \"MMMM d, yyyy\"".into(), result: "May 1, 2026".into(), locked: false },
+                InlineObject::Field { instr: "DATE \\@ \"MMMM d, yyyy\"".into(), result: "May 1, 2026".into(), locked: false, code: false },
                 &CharProps::default(),
             );
             add(&mut p, ".", CharProps::default());
@@ -367,10 +367,10 @@ pub fn large_document(pages: usize) -> Document {
     f.props.align = Some(Align::Center);
     add(&mut f, "Page ", CharProps::default());
     let at = f.len();
-    let _ = f.insert_object(at, InlineObject::Field { instr: "PAGE".into(), result: "1".into(), locked: false }, &CharProps::default());
+    let _ = f.insert_object(at, InlineObject::Field { instr: "PAGE".into(), result: "1".into(), locked: false, code: false }, &CharProps::default());
     add(&mut f, " of ", CharProps::default());
     let at = f.len();
-    let _ = f.insert_object(at, InlineObject::Field { instr: "NUMPAGES".into(), result: "1".into(), locked: false }, &CharProps::default());
+    let _ = f.insert_object(at, InlineObject::Field { instr: "NUMPAGES".into(), result: "1".into(), locked: false, code: false }, &CharProps::default());
     let fid = d.add_part(PartKind::Footer, vec![para_block(f)]);
     d.last_section.footers.default = Some(fid);
     let hid = d.add_part(PartKind::Header, vec![para_block(styled("A Long Synthetic Book", "Header"))]);
