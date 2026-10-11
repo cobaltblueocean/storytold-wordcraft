@@ -250,6 +250,9 @@ pub fn specs() -> Vec<CommandSpec> {
         })
         .params(r#"{"side": "bothSides|left|right|largest"}  (the sides of the selected Square, Tight or Through object text flows on; largest: the wider side, line by line)"#)
         .when(has_movable),
+        CommandSpec::new("arrange.moveWithText", "Move with Text", "Layout › Arrange › Wrap Text", |s, v| move_with_text(s, p::bool(v, "value").unwrap_or(true)))
+            .params(r#"{"value": bool}  (true: Move with Text, the floating object's vertical position follows its paragraph; false: Fix Position on Page. It stays where it is)"#)
+            .when(has_floating),
         CommandSpec::new("arrange.position", "Position", "Layout › Arrange", |s, v| {
             let preset = p::str(v, "preset").unwrap_or("middleCenter").to_string();
             let (x, y) = (p::f32(v, "x"), p::f32(v, "y"));
@@ -621,6 +624,34 @@ fn unalign(s: &mut Session) -> Result<(), CmdError> {
         }
     })?;
     Ok(())
+}
+
+/// Whether a floating object moves with its text (Word's "Move with Text"): its vertical position
+/// follows its paragraph (as layout places any anchor but the page and its margins), rather than
+/// being fixed on the page ("Fix Position on Page").
+pub fn moves_with_text(f: &Float) -> bool {
+    use wordcraft_doc::para::Anchor;
+    !matches!(f.v_rel, Anchor::Page | Anchor::Margin | Anchor::TopMargin | Anchor::BottomMargin | Anchor::InsideMargin | Anchor::OutsideMargin)
+}
+
+/// Arrange › Wrap Text › Move with Text / Fix Position on Page: anchor the selected floating
+/// object's vertical position to its paragraph or to the page, keeping it where it is now.
+fn move_with_text(s: &mut Session, with_text: bool) -> CmdResult {
+    use wordcraft_doc::para::Anchor;
+    let (pos, obj) = selected(s).ok_or_else(|| CmdError::Disabled("no picture or shape selected".into()))?;
+    let Some((_, _, float)) = obj.frame() else { return Err(CmdError::Disabled("select a floating picture or shape first".into())) };
+    if moves_with_text(float) == with_text {
+        return Ok(json!({"object": serde_json::to_value(&obj).unwrap_or(Value::Null)}));
+    }
+    let hit = s.layout().object(&pos, s.page_hint).ok_or_else(|| CmdError::Failed("the object isn't laid out".into()))?;
+    // Paragraph offsets start at the paragraph's top (the hit's origin), page offsets at the page's.
+    let y = if with_text { hit.rect.y - hit.origin.y } else { hit.rect.y };
+    let o = edit_float(s, &pos, |f| {
+        f.v_rel = if with_text { Anchor::Paragraph } else { Anchor::Page };
+        f.v_align = None;
+        f.y = y.clamp(-MAX_OFFSET, MAX_OFFSET);
+    })?;
+    Ok(json!({"object": serde_json::to_value(o).unwrap_or(Value::Null)}))
 }
 
 /// The top-level body paragraph under `y` on `page`: the last one starting at or above it (else
@@ -1230,6 +1261,35 @@ mod tests {
         s.run("select.collapse", &json!({"end": true})).unwrap();
         s.run("text.insert", &json!({"text": "x"})).unwrap();
         assert!(s.run("picture.crop", &json!({"left": 0.1})).is_err());
+    }
+
+    /// #513: Wrap Text › Fix Position on Page / Move with Text re-anchor a floating picture
+    /// vertically without moving it; one undo step each; an inline picture can't.
+    #[test]
+    fn move_with_text_and_fix_position_keep_the_picture_in_place() {
+        use wordcraft_doc::para::Anchor;
+        let mut s = Session::new(wordcraft_doc::Document::new());
+        s.run("text.insert", &json!({"text": "First paragraph\nSecond"})).unwrap();
+        let data = super::super::insert::base64_encode(&png(20, 10));
+        s.run("insert.picture", &json!({"data": data, "width": 100})).unwrap();
+        assert!(s.run("arrange.moveWithText", &json!({"value": false})).is_err(), "inline: no anchoring");
+        s.run("arrange.wrap", &json!({"wrap": "square"})).unwrap();
+        let v_rel = |s: &Session| selected(s).unwrap().1.frame().unwrap().2.v_rel;
+        let with_text = |s: &Session| moves_with_text(selected(s).unwrap().1.frame().unwrap().2);
+        let rect = |s: &mut Session| {
+            let pos = selected(s).unwrap().0;
+            s.layout().object(&pos, 0).unwrap().rect
+        };
+        let before = rect(&mut s);
+        s.run("arrange.moveWithText", &json!({"value": false})).unwrap();
+        assert_eq!(v_rel(&s), Anchor::Page);
+        assert!(!with_text(&s));
+        assert!((rect(&mut s).y - before.y).abs() < 0.01, "it stays put");
+        s.run("arrange.moveWithText", &json!({"value": true})).unwrap();
+        assert!(with_text(&s));
+        assert!((rect(&mut s).y - before.y).abs() < 0.01, "it stays put");
+        s.run("edit.undo", &json!({})).unwrap();
+        assert_eq!(v_rel(&s), Anchor::Page);
     }
 
     /// #332: Rotate and Flip turn the frame (an angle and mirroring), never the pixels; an exact

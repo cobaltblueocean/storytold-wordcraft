@@ -18,7 +18,7 @@ own (`AGENTS.md`: no Microsoft iconography, ever).
 | Keyboard shortcuts | **125** commands bound in `CommandSpec::key`, 144 key combinations (measured on Linux/Windows); styles, spacing, symbols, fields, views, mail merge (#330); field keys Alt+F9, Shift+F9, Ctrl+Shift+F9, Ctrl+F11, Ctrl+Shift+F11, F11, Shift+F11 (#339); Alt+Shift+arrows (move paragraphs, promote/demote), Shift+F5 Go Back and Alt+X (#343). Missing: en dash on the numeric keypad | ~250 default shortcuts | ~70% | 2–4 |
 | Modal dialogs | **38** (`Dialog` enum: Font, Enclose Characters, Paragraph, Tabs, Borders and Shading, Find, Go To, Insert Table, Table Properties, Page Setup, Link, Bookmark, Word Count, Zoom, Watermark, New Style, Modify Style, Manage Styles, Table Style, Commands, Icons, Paste Special, About, Save Changes, Password, Encrypt with Password, Define New Multilevel List, Track Changes Options; Columns, Symbol with Special Characters, Field (#321); Field code (#339); mail merge Recipients, Insert Merge Field, Find Recipient, Rules, Match Fields, Check for Errors) plus panes and menus for the rest | ~100 (Caption, Index, TOC options, Citation, Compare, Protect, Language, Hyphenation, Line Numbers, Envelopes, Labels, AutoCorrect, Options panes…) | ~40% | 20–30 |
 | Task panes (Navigation, Styles, Comments, Reviewing, Format Picture/Shape, Thesaurus, Accessibility, Clipboard, Selection) | Navigation, Styles, Comments, Thesaurus, Accessibility, Read Aloud, Zotero; Style Inspector (#236); Clipboard pane (#264) open | all | 70% | 4–6 |
-| Context menus (right-click) | text, spelling suggestions, fields (Update Field, Edit Field…, Toggle Field Codes, #339); objects and tables partial | rich per context | 55% | 3–5 |
+| Context menus (right-click) | text, spelling suggestions, fields (Update Field, Edit Field…, Toggle Field Codes, #339); right-click selects a picture, shape or text box and offers Wrap Text (styles, Move with Text / Fix Position on Page, #513); tables partial | rich per context | 60% | 3–5 |
 | Backstage (Home, New, Open, Info, Save As, Print, Share, Export, Options) | Home and New separate (#254), Info properties kept (#268) | | 68% | 4–6 |
 | Rulers: indents, tabs, margins, table columns | indents draggable (one undo, #62); tabs; table column drag pending (#49) | ✅ | 70% | 2–3 |
 | On-canvas objects: select, drag, resize handles, nudge | ✅ tested (#228) | ✅ | 75% | — |
@@ -37,6 +37,7 @@ own (`AGENTS.md`: no Microsoft iconography, ever).
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | trivial | Right-click on a picture, shape or text box selects it and offers Wrap Text: the seven wrapping styles (current one checked), Move with Text and Fix Position on Page (`arrange.moveWithText`) (#513) |
 | 2026-10-11 | trivial | Customize Ribbon (custom tabs and groups, hidden and reordered tabs) and a customizable Quick Access Toolbar with a working … menu (#379, #376) |
 | 2026-10-11 | trivial | Customize Keyboard dialog (Tools › Customize Keyboard, File › Options › Keyboard shortcuts): custom keys override built-ins and persist (#368) |
 | 2026-10-11 | minor | Keyboard shortcuts 101 → 125 commands (#330): Reset Paragraph/Character Formatting, symbols, DATE/TIME/PAGE fields, view switches, Word Count, mail merge, F4 Repeat now reachable |

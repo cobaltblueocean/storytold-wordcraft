@@ -1422,3 +1422,7 @@
 	Search icons	Simgelerde ara
 	No icons match your search.	Aramanızla eşleşen simge yok.
 	Recolor a one-color picture, such as an icon	Simge gibi tek renkli bir resmi yeniden renklendir
+
+# Wrap Text context menu (#513).
+	Move with Text	Metinle birlikte taşı
+	Fix Position on Page	Sayfadaki konumu sabitle
