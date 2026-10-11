@@ -219,6 +219,11 @@ pub fn split(
     });
 }
 
+/// Whether a menu button whose menu is about command `id` is on ("" = always).
+pub fn menu_enabled(app: &WordApp, id: &str) -> bool {
+    id.is_empty() || enabled(app, id)
+}
+
 /// A button that only opens a menu (icon + label + drop-down marker).
 pub fn menu_button(
     ui: &mut Ui,
@@ -227,10 +232,15 @@ pub fn menu_button(
     label: Option<&str>,
     tip: &str,
     big_btn: bool,
+    id: &str,
     menu: impl FnOnce(&mut Ui, &mut WordApp),
 ) {
     let (label, tip) = (label.map(|l| tl!(l)), tl!(tip));
     let t = Tokens::get(ui.ctx());
+    // `id` names the command the menu is about (Header for the Header menu…); while it is
+    // disabled the button greys out and doesn't open, like the other ribbon buttons. "" = always on.
+    let on = menu_enabled(app, id);
+    let (c, a, text) = if on { (t.icon, t.accent, t.text) } else { (t.text_disabled, t.text_disabled, t.text_disabled) };
     let resp = if big_btn {
         let galley_w = label
             .unwrap_or("")
@@ -241,11 +251,11 @@ pub fn menu_button(
         let (r, resp) = ui.allocate_exact_size(vec2(w, CONTENT_H), Sense::click());
         keytip_badge(ui, r, "menu", tip);
         bg(ui, r, &resp, false, &t);
-        icons::paint(ui.painter(), Rect::from_center_size(pos2(r.center().x, r.min.y + 20.0), vec2(32.0, 32.0)), icon, t.icon, t.accent);
+        icons::paint(ui.painter(), Rect::from_center_size(pos2(r.center().x, r.min.y + 20.0), vec2(32.0, 32.0)), icon, c, a);
         let lines: Vec<&str> = label.unwrap_or("").split('\n').collect();
         let mut y = r.min.y + 43.0;
         for (i, l) in lines.iter().enumerate() {
-            label_line(ui, r.center().x, y, l, regular(11.5), t.text, i + 1 == lines.len());
+            label_line(ui, r.center().x, y, l, regular(11.5), text, i + 1 == lines.len());
             y += 13.0;
         }
         resp
@@ -254,14 +264,17 @@ pub fn menu_button(
         let (r, resp) = ui.allocate_exact_size(vec2(24.0 + text_w + 10.0, 22.0), Sense::click());
         keytip_badge(ui, r, "menu", tip);
         bg(ui, r, &resp, false, &t);
-        icons::paint(ui.painter(), Rect::from_center_size(pos2(r.min.x + 12.0, r.center().y), vec2(17.0, 17.0)), icon, t.icon, t.accent);
+        icons::paint(ui.painter(), Rect::from_center_size(pos2(r.min.x + 12.0, r.center().y), vec2(17.0, 17.0)), icon, c, a);
         if let Some(l) = label {
-            ui.painter().text(pos2(r.min.x + 24.0, r.center().y), Align2::LEFT_CENTER, l, regular(11.5), t.text);
+            ui.painter().text(pos2(r.min.x + 24.0, r.center().y), Align2::LEFT_CENTER, l, regular(11.5), text);
         }
-        icons::paint(ui.painter(), Rect::from_center_size(pos2(r.max.x - 6.0, r.center().y), vec2(DROPDOWN, DROPDOWN)), "dropdown", t.icon, t.accent);
+        icons::paint(ui.painter(), Rect::from_center_size(pos2(r.max.x - 6.0, r.center().y), vec2(DROPDOWN, DROPDOWN)), "dropdown", c, c);
         resp
     };
     let resp = resp.on_hover_text(tip);
+    if !on {
+        return;
+    }
     egui::Popup::menu(&resp).show(|ui| {
         ui.set_min_width(200.0);
         menu(ui, app);
