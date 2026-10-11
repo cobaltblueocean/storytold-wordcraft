@@ -1421,3 +1421,18 @@
 	Right (vertical)	Paremal (vertikaalne)
 	Ruby text:	Ruby-tekst:
 	Size (pt):	Suurus (pt):
+	All pages	Kõik leheküljed
+	Current page	Praegune lehekülg
+	Selected pages	Valitud leheküljed
+	Custom range	Kohandatud vahemik
+	All pages in the range	Kõik vahemiku leheküljed
+	Odd pages only	Ainult paaritud leheküljed
+	Even pages only	Ainult paarisleheküljed
+	Copies	Koopiad
+	Collate copies	Järjesta koopiad
+	Pages like 1-3, 5	Leheküljed, nt 1-3, 5
+	{count} of {total} pages will print	Prinditakse {count} lehekülge {total}-st
+	Save these pages as PDF…	Salvesta need leheküljed PDF-ina…
+	The printer, two-sided printing and pages per sheet are chosen in that dialog.	Printer, kahepoolne printimine ja lehekülgi lehe kohta valitakse selles dialoogis.
+	Previous Page	Eelmine lehekülg
+	Print to PDF	Prindi PDF-i

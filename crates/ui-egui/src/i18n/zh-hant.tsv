@@ -1412,3 +1412,18 @@
 	Enlarge symbol	放大符號
 	Enclosure	圍繞符號
 	Circle	圓形
+	All pages	所有頁面
+	Current page	目前頁面
+	Selected pages	所選頁面
+	Custom range	自訂範圍
+	All pages in the range	範圍內的所有頁面
+	Odd pages only	僅奇數頁
+	Even pages only	僅偶數頁
+	Copies	份數
+	Collate copies	逐份列印
+	Pages like 1-3, 5	頁碼,如 1-3, 5
+	{count} of {total} pages will print	將列印 {total} 頁中的 {count} 頁
+	Save these pages as PDF…	將這些頁面另存為 PDF…
+	The printer, two-sided printing and pages per sheet are chosen in that dialog.	印表機、雙面列印和每張頁數在該對話方塊中選擇。
+	Previous Page	上一頁
+	Print to PDF	列印為 PDF

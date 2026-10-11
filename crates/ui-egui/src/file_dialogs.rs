@@ -33,6 +33,8 @@ pub(crate) enum AfterPick {
     SaveAs(AfterSave),
     /// Save a copy there in this format (`pdf`, `docx`, `png`…).
     Export { ext: String },
+    /// Write the PDF of these print settings there (File › Print › Save these pages as PDF).
+    PrintPdf { settings: Value },
     /// Load the picked CSV/TSV/text file as the mail-merge recipients (#240).
     Recipients,
 }
@@ -135,6 +137,16 @@ impl WordApp {
                 }
                 r
             }
+            AfterPick::PrintPdf { settings } => {
+                let Some(path) = picked else { return Ok(json!({"cancelled": true})) };
+                let mut params = settings;
+                params["path"] = json!(path);
+                let r = self.run("file.printPdf", params);
+                if r.is_ok() {
+                    self.status(crate::i18n::fmt(tl!("Exported {path}"), &[("path", &path)]));
+                }
+                r
+            }
             AfterPick::SaveAs(after) => {
                 let saved = picked.is_some_and(|path| {
                     self.run("file.save", json!({"path": path})).is_ok_and(|v| v.get("saved").and_then(Value::as_bool) == Some(true))
@@ -173,6 +185,14 @@ impl WordApp {
     pub(crate) fn export_dialog(&mut self, ext: &str) {
         let name = format!("{}.{ext}", self.title_stem());
         let _ = self.ask_file(FileDialogRequest::Save { name }, AfterPick::Export { ext: ext.to_string() });
+    }
+
+    /// File › Print › Save these pages as PDF: ask where, then write the pages the print
+    /// settings choose.
+    pub(crate) fn print_pdf_dialog(&mut self) {
+        let name = format!("{}.pdf", self.title_stem());
+        let settings = self.ui.print.params();
+        let _ = self.ask_file(FileDialogRequest::Save { name }, AfterPick::PrintPdf { settings });
     }
 
     pub(crate) fn open_dialog(&mut self) {
