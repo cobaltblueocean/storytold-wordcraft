@@ -350,7 +350,7 @@ mod tests {
     #[test]
     fn languagetool_results_become_squiggles_and_suggestions() {
         let _serial = serial();
-        let text = "😀 Thiss is fine 575.";
+        let text = "\u{1F600} Thiss is fine 575.";
         let mut app = app_with(text);
         assert!(!app.ui.language_tool.enabled, "opt-in");
         let sent = Arc::new(Mutex::new(Vec::<(String, String)>::new()));
