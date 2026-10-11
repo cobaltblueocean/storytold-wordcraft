@@ -45,7 +45,7 @@ Measured by grepping `crates/docx/src/read` and `src/write` for the OOXML elemen
 
 | Feature | Read | Write | Notes |
 |---|---|---|---|
-| Text, runs, paragraph and character properties, styles, numbering, sections | ✅ | ✅ | Including complex-script props (`w:rtl`, `w:cs`, `w:szCs`, `w:bCs`…), East Asian fonts kept apart from Latin (#111) |
+| Text, runs, paragraph and character properties, styles, numbering, sections | ✅ | ✅ | Including complex-script props (`w:rtl`, `w:cs`, `w:szCs`, `w:bCs`…), East Asian fonts kept apart from Latin (#111), indents in characters (`w:firstLineChars`, `w:hangingChars`, `w:leftChars`, `w:rightChars`, #534). `w:beforeLines`/`w:afterLines` not kept (the points are) |
 | Tables incl. floating (`w:tblpPr`), table styles and conditional formatting | ✅ | ✅ | Custom table styles round-trip (#256) |
 | Headers/footers (first, even/odd), page borders, line numbers, gutter, mirror margins | ✅ | ✅ | |
 | Footnotes, endnotes, comments | ✅ | ✅ | `commentsExtended` written; `commentsIds`, modern threaded comments (`w16cex`) partly |
@@ -83,6 +83,7 @@ Measured by grepping `crates/docx/src/read` and `src/write` for the OOXML elemen
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | trivial | #534: DOCX indents in characters read and written; `.doc` first-line indents (`sprmPDxaLeft1`, its two-byte operand, and `sprmPDxaLeft1_80`), indents in characters (`sprmPDxc*`) and exact/at-least line spacing (LSPD) read correctly |
 | 2026-10-11 | trivial | Import/export fixes (#433–#440): TXT opens through the encoding-sniffing reader (Windows-1252, unmarked UTF-16) and saves list labels; RTF `\uN` in document info, bookmark names and field instructions; ODT common paragraph styles' text formatting and table-cell background colours; HTML borderless tables export without cell borders and `white-space:pre` keeps edge spaces; LaTeX brace groups scope `\centering`/`\raggedleft`/`\raggedright` |
 | 2026-10-11 | trivial | `.doc` import fixes per [MS-DOC]: piece Prm0/Prm1 decoding (#458), section-break kinds (#459), explicit orientation (#460), negative `sprmPIlfo` list references (#461), zero-based `istdBase` style inheritance (#462), font-table entries with alternate names (#463) |
 | 2026-10-11 | trivial | Formatting revisions (`w:rPrChange`, `w:pPrChange`, table, row, cell, section and numbering changes) read and written (#41) |

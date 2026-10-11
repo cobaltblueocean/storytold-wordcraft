@@ -43,6 +43,7 @@ pub fn specs() -> Vec<CommandSpec> {
                 let l = p.indent_left.unwrap_or(0.0) + 36.0;
                 p.indent_left = Some(l);
                 p.indent_first = Some(-36.0);
+                p.cancel_char_indents(true, false, true);
             })
         })
         .key("Mod+T"),
@@ -50,6 +51,7 @@ pub fn specs() -> Vec<CommandSpec> {
             fmt(s, &|p| {
                 p.indent_left = Some((p.indent_left.unwrap_or(0.0) - 36.0).max(0.0));
                 p.indent_first = Some(0.0);
+                p.cancel_char_indents(true, false, true);
             })
         })
         .key("Mod+Shift+T"),
@@ -65,6 +67,7 @@ pub fn specs() -> Vec<CommandSpec> {
                 if let Some(x) = f {
                     p.indent_first = Some(x.clamp(-1584.0, 1584.0));
                 }
+                p.cancel_char_indents(l.is_some(), r.is_some(), f.is_some());
             })
         })
         .params(r#"{"left"?: pt, "right"?: pt, "firstLine"?: pt (negative = hanging)}"#),
@@ -309,7 +312,10 @@ pub fn indent(s: &mut Session, _: &Value) -> CmdResult {
         let para = s.doc.para_mut(a.story, &path)?;
         match num {
             Some(n) => para.props.numbering = Some(NumRef { num: n.num, level: (n.level + 1).min(8) }),
-            None => para.props.indent_left = Some(((left / tab).floor() + 1.0) * tab),
+            None => {
+                para.props.indent_left = Some(((left / tab).floor() + 1.0) * tab);
+                para.props.cancel_char_indents(true, false, false);
+            }
         }
         para.touch();
     }
@@ -328,7 +334,10 @@ pub fn outdent(s: &mut Session, _: &Value) -> CmdResult {
         let para = s.doc.para_mut(a.story, &path)?;
         match num {
             Some(n) => para.props.numbering = Some(NumRef { num: n.num, level: n.level.saturating_sub(1) }),
-            None => para.props.indent_left = Some((((left / tab).ceil() - 1.0) * tab).max(0.0)),
+            None => {
+                para.props.indent_left = Some((((left / tab).ceil() - 1.0) * tab).max(0.0));
+                para.props.cancel_char_indents(true, false, false);
+            }
         }
         para.touch();
     }
@@ -431,6 +440,8 @@ fn list(s: &mut Session, v: &Value, default: ListKind) -> CmdResult {
             p.numbering = Some(NumRef { num: 0, level: 0 });
             p.indent_left = None;
             p.indent_first = None;
+            p.indent_left_chars = None;
+            p.indent_first_chars = None;
             if p.style.as_deref() == Some("ListParagraph") {
                 p.style = None;
             }
@@ -454,6 +465,8 @@ fn list(s: &mut Session, v: &Value, default: ListKind) -> CmdResult {
         p.numbering = Some(NumRef { num, level });
         p.indent_left = None;
         p.indent_first = None;
+        p.indent_left_chars = None;
+        p.indent_first_chars = None;
         if p.style.is_none() || p.style.as_deref() == Some("Normal") {
             p.style = Some("ListParagraph".into());
         }

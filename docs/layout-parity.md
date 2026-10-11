@@ -23,8 +23,9 @@ font can't match Word's metrics.
 | Kashida justification (Arabic) | ❌ | no kashida in `crates/layout` | 3–5 |
 | Distributed / Thai distributed alignment | 🟡 | read; layout untested | 1–2 |
 | Default font metrics (Aptos, Calibri, Cambria…) | 🟡 | Carlito/Caladea/Liberation are metric-compatible for Calibri/Cambria/Arial/Times/Courier; **Aptos (Word's default since 2024) has no metric-compatible open substitute**, so new Word documents wrap differently ([typing-parity.md](typing-parity.md) Known gaps). Needs an owner decision (commission or license a metric-matched font) | 6–10 + owner |
+| Indents in characters (`w:firstLineChars`, `w:leftChars`…), measured in the paragraph mark's font size | ✅ | #534, `layout::tests::character_indents_use_the_paragraph_mark_size`; spacing in lines (`w:beforeLines`/`w:afterLines`) uses the stored points (needs the document grid) | — |
 | Line spacing (single, 1.5, double, at least, exactly, multiple), spacing before/after, contextual spacing | 🟡 | Word puts multiple-spacing extra below the text and collapses spacing differently (#135, #108 open) | 3–5 |
-| Widow/orphan control, keep with next, keep lines together, page break before | ✅ | `lib.rs` keep_next/keep_lines | — |
+| Widow/orphan control, keep with next, keep lines together, page break before | ✅ | `lib.rs` keep_next/keep_lines; a line holding only a page break stays at the bottom of a full page instead of leaving a blank page (#534) | — |
 | Tabs (left, center, right, decimal, bar), leaders | 🟡 | Bar tabs untested | 1–2 |
 | Hyphenation (automatic, 0.25" zone, soft hyphens, consecutive limit) | 🟡 | English patterns only; other languages hyphenate wrongly or not at all | in localization |
 | Drop caps | ✅ | 2026-10-06 | — |
@@ -34,7 +35,7 @@ font can't match Word's metrics.
 | Footnotes at the page bottom, endnotes at the end, note numbering | 🟡 | A long note continues onto the next page at a line boundary (its first line stays with the reference), first in that page's note area under a full-width continuation separator (#352); the document's own `w:continuationSeparator`/`w:continuationNotice` aren't read (default line, no notice); per-section restart partial | 2–4 |
 | Tables: row heights (at least/exact), rows split across pages, header rows repeat, Can't Split | ✅ | 2026-10-06, #138 | — |
 | Tables: autofit to contents/window, fixed widths, Word 2013 edge | 🟡 | #137; #44: AutoFit Contents measures each column's narrowest and widest text and shares the width like Word, once (not live as you type); cell preferred widths and spans still differ | 3–5 |
-| Floating tables (`w:tblpPr`) | 🟡 | #137; overlap rules untested | 2–3 |
+| Floating tables (`w:tblpPr`) | 🟡 | #137; one placed on the page or margin that would cover the text before it and doesn't fit below it moves to the next page (#534); overlap rules untested | 2–3 |
 | Nested tables | 🟡 | render; polish missing | 2–4 |
 | Floating pictures/shapes placement (relative to page/margin/column/paragraph/line/character) | ✅ | #136 | — |
 | Text wrap: square, top-and-bottom, behind, in front | ✅ | 2026-10-06 | — |
@@ -68,6 +69,7 @@ font can't match Word's metrics.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | trivial | Chinese documents (#534): indents in characters, a page-anchored floating table after a full page moves to the next page, no blank page from a page break at the bottom of a full page |
 | 2026-10-11 | trivial | Group and Ungroup keep turned members' orientation and placement (#441, #443); Size resizes a group (#442); the eraser hits turned ink where it is drawn (#445) |
 | 2026-10-10 | trivial | Long footnotes continue onto the next page with a continuation separator (#352) |
 | 2026-10-10 | trivial | Wrap side: text on both sides, left only, right only or the largest side of an object (#354) |

@@ -394,9 +394,10 @@ fn backspace(s: &mut Session, _: &Value) -> CmdResult {
         super::leave_list(s.doc.para_mut(f.story, &f.path)?);
         return sel_result(s);
     }
-    if para.props.indent_first.is_some_and(|x| x > 0.0) {
+    if para.props.indent_first.is_some_and(|x| x > 0.0) || para.props.indent_first_chars.is_some_and(|x| x > 0.0) {
         let p = s.doc.para_mut(f.story, &f.path)?;
         p.props.indent_first = Some(0.0);
+        p.props.cancel_char_indents(false, false, true);
         p.touch();
         return sel_result(s);
     }

@@ -629,6 +629,18 @@ pub struct ParaProps {
     /// First-line indent, points; negative = hanging.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub indent_first: Option<f32>,
+    /// Left (start) indent in characters (`w:leftChars` / `w:startChars`, stored by Word in
+    /// hundredths). A non-zero value wins over `indent_left`; one character is the size of the
+    /// paragraph mark's font. `Some(0.0)` cancels an inherited value. Common in East Asian documents.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub indent_left_chars: Option<f32>,
+    /// Right (end) indent in characters (`w:rightChars` / `w:endChars`), like `indent_left_chars`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub indent_right_chars: Option<f32>,
+    /// First-line indent in characters (`w:firstLineChars`; negative = `w:hangingChars`), like
+    /// `indent_left_chars`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub indent_first_chars: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub space_before: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -698,7 +710,7 @@ pub struct ParaProps {
 
 impl ParaProps {
     pub fn overlay(&mut self, patch: &ParaProps) {
-        overlay_fields!(self, patch; style, align, indent_left, indent_right, indent_first, space_before, space_after, line_spacing,
+        overlay_fields!(self, patch; style, align, indent_left, indent_right, indent_first, indent_left_chars, indent_right_chars, indent_first_chars, space_before, space_after, line_spacing,
             contextual_spacing, keep_next, keep_lines, page_break_before, widow_control, outline_level, numbering, tabs, shading, borders,
             suppress_hyphens, suppress_line_numbers, bidi, drop_cap, kinsoku, word_wrap, overflow_punct, top_line_punct, auto_space_de, auto_space_dn);
     }
@@ -708,6 +720,15 @@ impl ParaProps {
     }
     pub fn is_empty(&self) -> bool {
         *self == ParaProps::default()
+    }
+    /// After setting indents in points: keep the indents in characters (left, right, first line)
+    /// an inherited style may set from winning over them, as Word does (`w:firstLineChars="0"`).
+    pub fn cancel_char_indents(&mut self, left: bool, right: bool, first: bool) {
+        for (on, chars) in [(left, &mut self.indent_left_chars), (right, &mut self.indent_right_chars), (first, &mut self.indent_first_chars)] {
+            if on {
+                *chars = Some(0.0);
+            }
+        }
     }
     /// Just the formatting: without the tracked changes.
     pub fn formatting(&self) -> ParaProps {

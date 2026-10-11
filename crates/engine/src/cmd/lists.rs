@@ -220,6 +220,8 @@ fn define(s: &mut Session, v: &Value) -> CmdResult {
             pp.numbering = Some(NumRef { num, level });
             pp.indent_left = None;
             pp.indent_first = None;
+            pp.indent_left_chars = None;
+            pp.indent_first_chars = None;
             if pp.style.is_none() || pp.style.as_deref() == Some("Normal") {
                 pp.style = Some("ListParagraph".into());
             }

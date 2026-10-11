@@ -616,17 +616,21 @@ pub(crate) fn left_out(rc: &ResolvedChar, show_hidden: bool, hide_deleted: bool)
 pub fn layout_para(p: &Paragraph, env: &ParaEnv) -> ParaLayout {
     let doc = env.doc;
     let mut rp = doc.styles.resolve_para_in(&p.props, env.table.map(|t| &t.para));
+    let para_style = p.props.style.as_deref();
+    let table_chr = env.table.map(|t| &t.chr);
+    // Indents in characters are measured in the paragraph mark's font size.
+    if rp.indent_chars.iter().any(|c| *c != 0.0) {
+        rp.set_char_unit(doc.styles.resolve_char_in(para_style, table_chr, &p.mark).size);
+    }
     // List level indents apply unless the paragraph sets its own.
     if let Some((_, lvl)) = &env.label {
-        if p.props.indent_left.is_none() {
+        if p.props.indent_left.is_none() && p.props.indent_left_chars.is_none_or(|c| c == 0.0) {
             rp.indent_left = lvl.indent;
         }
-        if p.props.indent_first.is_none() {
+        if p.props.indent_first.is_none() && p.props.indent_first_chars.is_none_or(|c| c == 0.0) {
             rp.indent_first = -lvl.hanging;
         }
     }
-    let para_style = p.props.style.as_deref();
-    let table_chr = env.table.map(|t| &t.chr);
     let resolve = |c: &CharProps| -> Arc<ResolvedChar> { Arc::new(doc.styles.resolve_char_in(para_style, table_chr, c)) };
     let levels = bidi_levels(&p.text, rp.bidi);
     let mut b =
