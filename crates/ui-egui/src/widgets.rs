@@ -114,6 +114,24 @@ pub fn big_toggle(ui: &mut Ui, app: &mut WordApp, icon: &str, label: &str, id: &
     big_button(ui, app, icon, label, id, Value::Object(Default::default()), false, checked)
 }
 
+/// Size of the drop-down marker drawn after a label or beside a split button (#659: one marker,
+/// the `dropdown` icon, everywhere; no text glyph).
+pub const DROPDOWN: f32 = 10.0;
+
+/// One centred label line (top at `y`); `marker` draws the drop-down icon after the text, in the
+/// text's colour, and the pair is centred together.
+pub fn label_line(ui: &Ui, cx: f32, y: f32, text: &str, font: egui::FontId, color: Color32, marker: bool) {
+    let galley = ui.painter().layout_no_wrap(text.to_string(), font, color);
+    let extra = if marker { DROPDOWN + 3.0 } else { 0.0 };
+    let size = galley.size();
+    let x = cx - (size.x + extra) / 2.0;
+    ui.painter().galley(pos2(x, y), galley, color);
+    if marker {
+        let c = pos2(x + size.x + 3.0 + DROPDOWN / 2.0, y + size.y / 2.0);
+        icons::paint(ui.painter(), Rect::from_center_size(c, vec2(DROPDOWN, DROPDOWN)), "dropdown", color, color);
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn big_button(ui: &mut Ui, app: &mut WordApp, icon: &str, label: &str, id: &str, params: Value, menu: bool, checked: bool) -> Response {
     let label = tl!(label);
@@ -131,8 +149,7 @@ fn big_button(ui: &mut Ui, app: &mut WordApp, icon: &str, label: &str, id: &str,
     let mut y = r.min.y + 43.0;
     let lines: Vec<&str> = label.split('\n').collect();
     for (i, l) in lines.iter().enumerate() {
-        let txt = if menu && i + 1 == lines.len() { format!("{l} ▾") } else { (*l).to_string() };
-        ui.painter().text(pos2(r.center().x, y), Align2::CENTER_TOP, txt, regular(11.5), if on { t.text } else { t.text_disabled });
+        label_line(ui, r.center().x, y, l, regular(11.5), if on { t.text } else { t.text_disabled }, menu && i + 1 == lines.len());
         y += 13.0;
     }
     let resp = tooltip(app, resp, &label.replace('\n', " "), id);
@@ -190,7 +207,7 @@ pub fn split(
     if let Some(sw) = swatch {
         ui.painter().rect_filled(Rect::from_min_max(pos2(r.min.x + 4.0, r.max.y - 5.0), pos2(r.max.x - 4.0, r.max.y - 2.0)), 0.0, sw);
     }
-    icons::paint(ui.painter(), Rect::from_center_size(ar.center(), vec2(10.0, 10.0)), "dropdown", t.icon, t.accent);
+    icons::paint(ui.painter(), Rect::from_center_size(ar.center(), vec2(DROPDOWN, DROPDOWN)), "dropdown", t.icon, t.accent);
     let resp = tooltip(app, resp, tip, id);
     command_menu(&resp, app, id);
     if resp.clicked() {
@@ -202,7 +219,7 @@ pub fn split(
     });
 }
 
-/// A button that only opens a menu (icon + label + ▾).
+/// A button that only opens a menu (icon + label + drop-down marker).
 pub fn menu_button(
     ui: &mut Ui,
     app: &mut WordApp,
@@ -228,8 +245,7 @@ pub fn menu_button(
         let lines: Vec<&str> = label.unwrap_or("").split('\n').collect();
         let mut y = r.min.y + 43.0;
         for (i, l) in lines.iter().enumerate() {
-            let txt = if i + 1 == lines.len() { format!("{l} ▾") } else { (*l).to_string() };
-            ui.painter().text(pos2(r.center().x, y), Align2::CENTER_TOP, txt, regular(11.5), t.text);
+            label_line(ui, r.center().x, y, l, regular(11.5), t.text, i + 1 == lines.len());
             y += 13.0;
         }
         resp
@@ -242,7 +258,7 @@ pub fn menu_button(
         if let Some(l) = label {
             ui.painter().text(pos2(r.min.x + 24.0, r.center().y), Align2::LEFT_CENTER, l, regular(11.5), t.text);
         }
-        icons::paint(ui.painter(), Rect::from_center_size(pos2(r.max.x - 6.0, r.center().y), vec2(9.0, 9.0)), "dropdown", t.icon, t.accent);
+        icons::paint(ui.painter(), Rect::from_center_size(pos2(r.max.x - 6.0, r.center().y), vec2(DROPDOWN, DROPDOWN)), "dropdown", t.icon, t.accent);
         resp
     };
     let resp = resp.on_hover_text(tip);
@@ -558,7 +574,7 @@ fn combo_impl(
         }
         let (ar, aresp) = ui.allocate_exact_size(vec2(16.0, resp.rect.height()), Sense::click());
         ui.painter().rect(ar, 0.0, if aresp.hovered() { t.hover } else { t.input }, Stroke::new(1.0, t.input_border), egui::StrokeKind::Inside);
-        icons::paint(ui.painter(), Rect::from_center_size(ar.center(), vec2(9.0, 9.0)), "dropdown", t.icon, t.accent);
+        icons::paint(ui.painter(), Rect::from_center_size(ar.center(), vec2(DROPDOWN, DROPDOWN)), "dropdown", t.icon, t.accent);
         egui::Popup::menu(&aresp).show(|ui| {
             if let Some(v) = combo_list(ui, width, current, items, preview) {
                 out = Some(v);
@@ -721,11 +737,21 @@ pub fn icon_button(ui: &mut Ui, icon: &str, tip: &str) -> Response {
 /// fonts and would draw as empty boxes, so icons are painted (`icons.rs`) rather than typed.
 /// It looks and reacts like `ui.button` (see [`drawn_state`]).
 pub fn icon_text_button(ui: &mut Ui, icon: &str, text: &str, font: egui::FontId) -> Response {
+    icon_text_button_with(ui, icon, text, font, false)
+}
+
+/// [`icon_text_button`] that opens a menu: the drop-down marker follows the text.
+pub fn icon_text_menu_button(ui: &mut Ui, icon: &str, text: &str, font: egui::FontId) -> Response {
+    icon_text_button_with(ui, icon, text, font, true)
+}
+
+fn icon_text_button_with(ui: &mut Ui, icon: &str, text: &str, font: egui::FontId, marker: bool) -> Response {
     let t = Tokens::get(ui.ctx());
     let galley = ui.painter().layout_no_wrap(text.to_string(), font, Color32::PLACEHOLDER);
     let pad = ui.spacing().button_padding;
     let icon_w = 16.0;
-    let size = vec2(pad.x + icon_w + 4.0 + galley.size().x + pad.x, galley.size().y.max(icon_w) + 2.0 * pad.y);
+    let marker_w = if marker { DROPDOWN + 4.0 } else { 0.0 };
+    let size = vec2(pad.x + icon_w + 4.0 + galley.size().x + marker_w + pad.x, galley.size().y.max(icon_w) + 2.0 * pad.y);
     let (r, resp) = ui.allocate_exact_size(size, Sense::click());
     let st = drawn_state(ui, &resp, true);
     let r = r.expand(st.expansion);
@@ -737,7 +763,13 @@ pub fn icon_text_button(ui: &mut Ui, icon: &str, text: &str, font: egui::FontId)
         t.icon,
         t.accent,
     );
-    ui.painter().galley(pos2(r.min.x + pad.x + icon_w + 4.0, r.center().y - galley.size().y / 2.0), galley, st.text);
+    let text_x = r.min.x + pad.x + icon_w + 4.0;
+    let text_w = galley.size().x;
+    ui.painter().galley(pos2(text_x, r.center().y - galley.size().y / 2.0), galley, st.text);
+    if marker {
+        let c = pos2(text_x + text_w + 4.0 + DROPDOWN / 2.0, r.center().y);
+        icons::paint(ui.painter(), Rect::from_center_size(c, vec2(DROPDOWN, DROPDOWN)), "dropdown", st.text, st.text);
+    }
     resp
 }
 
