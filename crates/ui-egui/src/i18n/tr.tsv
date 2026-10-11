@@ -1408,6 +1408,13 @@
 	Left Only	Yalnızca Sol
 	Right Only	Yalnızca Sağ
 	Largest Only	Yalnızca En Geniş
+	Document Grid	Belge Kılavuzu
+	No grid	Kılavuz yok
+	Lines only	Yalnızca satırlar
+	Lines and characters	Satırlar ve karakterler
+	Text snaps to characters	Metin karakterlere yapışır
+	Characters per line:	Satır başına karakter:
+	Lines per page:	Sayfa başına satır:
 	Right-to-Left Table	Sağdan Sola Tablo
 	Right-to-Left Section	Sağdan Sola Bölüm
 	Table direction:	Tablo yönü:

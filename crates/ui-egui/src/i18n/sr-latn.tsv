@@ -1406,6 +1406,13 @@
 	New Group	Nova grupa
 	Rename…	Preimenuj…
 	Ribbon and Quick Access Toolbar:	Traka i traka sa alatkama za brzi pristup:
+	Document Grid	Mreža dokumenta
+	No grid	Bez mreže
+	Lines only	Samo redovi
+	Lines and characters	Redovi i znakovi
+	Text snaps to characters	Tekst se poravnava sa znakovima
+	Characters per line:	Znakova po redu:
+	Lines per page:	Redova po stranici:
 	Right-to-Left Table	Tabela sa desna na levo
 	Right-to-Left Section	Odeljak sa desna na levo
 	Table direction:	Smer tabele:

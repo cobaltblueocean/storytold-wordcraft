@@ -1397,6 +1397,13 @@
 	New Group	新增群組
 	Rename…	重新命名…
 	Ribbon and Quick Access Toolbar:	功能區和快速存取工具列：
+	Document Grid	文件格線
+	No grid	無格線
+	Lines only	僅行
+	Lines and characters	行與字元
+	Text snaps to characters	文字貼齊字元格線
+	Characters per line:	每行字數：
+	Lines per page:	每頁行數：
 	Right-to-Left Table	從右至左表格
 	Right-to-Left Section	從右至左節
 	Table direction:	表格方向：

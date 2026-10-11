@@ -1408,6 +1408,13 @@
 	New Group	新建组
 	Rename…	重命名…
 	Ribbon and Quick Access Toolbar:	功能区和快速访问工具栏：
+	Document Grid	文档网格
+	No grid	无网格
+	Lines only	仅行
+	Lines and characters	行和字符
+	Text snaps to characters	文字贴合字符网格
+	Characters per line:	每行字数：
+	Lines per page:	每页行数：
 	Right-to-Left Table	从右向左表格
 	Right-to-Left Section	从右向左节
 	Table direction:	表格方向：

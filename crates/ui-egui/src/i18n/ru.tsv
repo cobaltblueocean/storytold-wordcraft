@@ -1790,6 +1790,13 @@ preview	Title	Пример
 	Left Only	Только слева
 	Right Only	Только справа
 	Largest Only	Только по большей стороне
+	Document Grid	Сетка документа
+	No grid	Без сетки
+	Lines only	Только строки
+	Lines and characters	Строки и символы
+	Text snaps to characters	Текст привязывается к символам
+	Characters per line:	Символов в строке:
+	Lines per page:	Строк на странице:
 	Right-to-Left Table	Таблица справа налево
 	Right-to-Left Section	Раздел справа налево
 	Table direction:	Направление таблицы:

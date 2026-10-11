@@ -1408,6 +1408,13 @@
 	New Group	Нова група
 	Rename…	Перейменувати…
 	Ribbon and Quick Access Toolbar:	Стрічка й панель швидкого доступу:
+	Document Grid	Сітка документа
+	No grid	Без сітки
+	Lines only	Лише рядки
+	Lines and characters	Рядки й символи
+	Text snaps to characters	Текст прив’язується до символів
+	Characters per line:	Символів у рядку:
+	Lines per page:	Рядків на сторінці:
 	Right-to-Left Table	Таблиця справа наліво
 	Right-to-Left Section	Розділ справа наліво
 	Table direction:	Напрямок таблиці:
