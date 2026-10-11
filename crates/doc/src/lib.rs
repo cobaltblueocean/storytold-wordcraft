@@ -30,6 +30,7 @@ pub mod resolve;
 pub mod section;
 pub mod styles;
 pub mod table;
+pub mod wrap;
 
 use std::collections::BTreeMap;
 use std::sync::Arc;

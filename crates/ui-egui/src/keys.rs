@@ -1,4 +1,5 @@
-//! Keyboard: typing, editing keys and command shortcuts (from the registry's `shortcut` fields).
+//! Keyboard: typing, editing keys and command shortcuts (the user's custom keys from Customize
+//! Keyboard first, then the registry's `shortcut` fields).
 
 use egui::{Key, Modifiers};
 use serde_json::{Value, json};
@@ -22,6 +23,7 @@ pub fn key_name(k: Key) -> Option<&'static str> {
         Key::Delete => "Delete",
         Key::Escape => "Escape",
         Key::Space => "Space",
+        Key::Insert => "Insert",
         Key::Equals | Key::Plus => "=",
         Key::Minus => "-",
         Key::Period => ".",
@@ -32,14 +34,23 @@ pub fn key_name(k: Key) -> Option<&'static str> {
         Key::Num1 => "1",
         Key::Num2 => "2",
         Key::Num3 => "3",
+        Key::Num4 => "4",
         Key::Num5 => "5",
+        Key::Num6 => "6",
+        Key::Num7 => "7",
         Key::Num8 => "8",
         Key::Num9 => "9",
+        Key::F1 => "F1",
+        Key::F2 => "F2",
         Key::F3 => "F3",
+        Key::F4 => "F4",
         Key::F5 => "F5",
+        Key::F6 => "F6",
         Key::F7 => "F7",
         Key::F8 => "F8",
         Key::F9 => "F9",
+        Key::F10 => "F10",
+        Key::F11 => "F11",
         Key::F12 => "F12",
         Key::A => "A",
         Key::B => "B",
@@ -57,6 +68,7 @@ pub fn key_name(k: Key) -> Option<&'static str> {
         Key::N => "N",
         Key::O => "O",
         Key::P => "P",
+        Key::Q => "Q",
         Key::R => "R",
         Key::S => "S",
         Key::T => "T",
@@ -70,7 +82,8 @@ pub fn key_name(k: Key) -> Option<&'static str> {
     })
 }
 
-fn combo(m: Modifiers, key: &str, with_shift: bool) -> String {
+/// A key with its modifiers as the registry writes shortcuts (`Mod+Shift+K`).
+pub fn combo(m: Modifiers, key: &str, with_shift: bool) -> String {
     let mut s = String::new();
     if m.command {
         s.push_str("Mod+");
@@ -95,19 +108,24 @@ fn combo(m: Modifiers, key: &str, with_shift: bool) -> String {
 fn dispatch(app: &mut WordApp, key: Key, m: Modifiers) -> bool {
     let Some(name) = key_name(key) else { return false };
     let reg = app.session.registry.clone();
-    if let Some(spec) = reg.by_shortcut(&combo(m, name, true)) {
+    if let Some(spec) = app.session.keymap.resolve(&reg, &combo(m, name, true)) {
         let _ = app.run(spec.id, json!({}));
         return true;
     }
     // Shift extends caret movement.
     if m.shift
-        && let Some(spec) = reg.by_shortcut(&combo(m, name, false))
+        && let Some(spec) = app.session.keymap.resolve(&reg, &combo(m, name, false))
         && spec.id.starts_with("caret.")
     {
         let _ = app.run(spec.id, json!({"extend": true}));
         return true;
     }
     false
+}
+
+/// F1–F12: shortcuts on these work without the canvas focused.
+fn is_function_key(key: Key) -> bool {
+    matches!(key, Key::F1 | Key::F2 | Key::F3 | Key::F4 | Key::F5 | Key::F6 | Key::F7 | Key::F8 | Key::F9 | Key::F10 | Key::F11 | Key::F12)
 }
 
 /// Keys while editing inside an equation. Returns true when handled.
@@ -148,6 +166,12 @@ pub fn canvas_events(app: &mut WordApp, ctx: &egui::Context) {
     }
     let events = ctx.input(|i| i.events.clone());
     for e in events {
+        // An Alt shortcut (Alt+Shift+D, Alt+F7…) may also send its key's text; it isn't typed.
+        match &e {
+            egui::Event::Key { pressed: true, .. } => app.canvas.swallow_text = false,
+            egui::Event::Text(_) if std::mem::take(&mut app.canvas.swallow_text) => continue,
+            _ => {}
+        }
         if let egui::Event::Paste(t) = &e {
             app.canvas.pasted = true;
             // Copied picture files arrive as their paths: insert the pictures (#45).
@@ -171,7 +195,7 @@ pub fn canvas_events(app: &mut WordApp, ctx: &egui::Context) {
             match &e {
                 egui::Event::Text(t) => {
                     let m = ctx.input(|i| i.modifiers);
-                    if !(m.command || (m.ctrl && !cfg!(target_os = "macos"))) && !t.is_empty() && t.chars().all(|c| !c.is_control()) {
+                    if !(m.command || t.is_empty() || (m.ctrl && !cfg!(target_os = "macos"))) && t.chars().all(|c| !c.is_control()) {
                         let _ = app.run("equation.type", json!({"text": t}));
                     }
                     continue;
@@ -260,7 +284,7 @@ pub fn canvas_events(app: &mut WordApp, ctx: &egui::Context) {
                     let _ = app.run("insert.closeHeader", json!({}));
                     continue;
                 }
-                dispatch(app, key, modifiers);
+                app.canvas.swallow_text = dispatch(app, key, modifiers) && modifiers.alt;
             }
             _ => {}
         }
@@ -269,13 +293,14 @@ pub fn canvas_events(app: &mut WordApp, ctx: &egui::Context) {
 
 /// Command shortcuts when the canvas isn't focused but no text field is either.
 pub fn global_shortcuts(app: &mut WordApp, ctx: &egui::Context) {
-    if app.canvas.focused || ctx.egui_wants_keyboard_input() {
+    // Customize Keyboard records the keys pressed; they never run commands meanwhile.
+    if app.canvas.focused || ctx.egui_wants_keyboard_input() || matches!(app.dialog, Some(crate::dialogs::Dialog::CustomizeKeyboard { .. })) {
         return;
     }
     let events = ctx.input(|i| i.events.clone());
     for e in events {
         if let egui::Event::Key { key, pressed: true, modifiers, .. } = e
-            && (modifiers.command || matches!(key, Key::F3 | Key::F5 | Key::F7 | Key::F9 | Key::F12))
+            && (modifiers.command || is_function_key(key))
         {
             dispatch(app, key, modifiers);
         }

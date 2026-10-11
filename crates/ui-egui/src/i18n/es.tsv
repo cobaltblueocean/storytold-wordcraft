@@ -28,7 +28,7 @@
 	Add Space Before Paragraph	Añadir espacio antes del párrafo
 	Add space between Asian and Latin text	Añadir espacio entre texto asiático y latino
 	Add space between Asian text and numbers	Añadir espacio entre texto asiático y números
-	Add tab stop at:	Agregar tabulación en:
+	Add tab stop at:	Añadir tabulación en:
 	Add Text	Añadir texto
 	Add a Table	Añadir una tabla
 	Add a comment	Añadir un comentario
@@ -70,13 +70,13 @@
 	AutoFit Window	Ajustar a la ventana
 	AutoSave	Autoguardado
 	AutoSave saves every change to the file (needs a saved document)	El autoguardado guarda cada cambio en el archivo (requiere un documento guardado)
-	AutoSave isn't available in the browser: it can't write to your files. Save downloads a copy.	El autoguardado no está disponible en el navegador: no puede escribir en sus archivos. Guardar descarga una copia.
-	AutoSave only keeps .docx, .odt and .rtf files; {name} can't keep all formatting. Save as .docx to turn on AutoSave.	El autoguardado solo mantiene archivos .docx, .odt y .rtf; {name} no puede conservar todo el formato. Guarde como .docx para activar el autoguardado.
+	AutoSave isn't available in the browser: it can't write to your files. Save downloads a copy.	El autoguardado no está disponible en el navegador: no puede escribir en tus archivos. Guardar descarga una copia.
+	AutoSave only keeps .docx, .odt and .rtf files; {name} can't keep all formatting. Save as .docx to turn on AutoSave.	El autoguardado solo admite archivos .docx, .odt y .rtf; {name} no puede conservar todo el formato. Guarda como .docx para activar el autoguardado.
 	Balloons	Globos
 	Bullet	Viñeta
 	By author	Por autor
 	Changed lines:	Líneas cambiadas:
-	Click level to modify:	Haga clic en el nivel que desea modificar:
+	Click level to modify:	Haz clic en el nivel que quieras modificar:
 	Color only	Solo color
 	Define New Multilevel List	Definir nueva lista multinivel
 	Define New Multilevel List…	Definir nueva lista multinivel…
@@ -99,8 +99,8 @@
 	Outside border	Borde exterior
 	Restart list after:	Reiniciar lista después de:
 	Right border	Borde derecho
-	Save the document to turn on AutoSave	Guarde el documento para activar el autoguardado
-	Save the document to turn on AutoSave (a file you have only opened isn't rewritten until you save it)	Guarde el documento para activar el autoguardado (un archivo que solo ha abierto no se reescribe hasta que lo guarde)
+	Save the document to turn on AutoSave	Guarda el documento para activar el autoguardado
+	Save the document to turn on AutoSave (a file you have only opened isn't rewritten until you save it)	Guarda el documento para activar el autoguardado (un archivo que solo has abierto no se reescribe hasta que lo guardes)
 	AutoText	Texto automático
 	Automatic	Automático
 	Automatic ({language})	Automático ({language})
@@ -118,7 +118,7 @@
 	Blank (Three Columns)	En blanco (tres columnas)
 	Blank Page	Página en blanco
 	Blank document	Documento en blanco
-	Block\nAuthors	Autores en\nbloque
+	Block\nAuthors	Bloquear\nautores
 	Bold	Negrita
 	Bookmark	Marcador
 	Bookmark name:	Nombre del marcador:
@@ -159,7 +159,7 @@
 	Bullets	Viñetas
 	Calendar	Calendario
 	Cancel	Cancelar
-	Capitalize Each Word	Poner en mayúscula cada palabra
+	Capitalize Each Word	Mayúscula inicial en cada palabra
 	Captions	Leyendas
 	Cell Margins	Márgenes de celda
 	Cell Size	Tamaño de celda
@@ -193,7 +193,7 @@
 	Clear Character Style	Borrar estilo de carácter
 	Clear Formatting Level	Borrar nivel de formato
 	Clear Paragraph Formatting	Borrar formato de párrafo
-	Click a border between two cells to merge them. Esc stops.	Haga clic en un borde entre dos celdas para combinarlas. Esc termina.
+	Click a border between two cells to merge them. Esc stops.	Haz clic en un borde entre dos celdas para combinarlas. Esc termina.
 	Clipboard	Portapapeles
 	Clipboard Pane	Panel del portapapeles
 	Clipboard Items	Elementos del portapapeles
@@ -277,7 +277,7 @@
 	Distribute Columns	Distribuir columnas
 	Distribute Rows	Distribuir filas
 	Distributed	Distribuido
-	Do Not Show in TOC	No mostrar en el índice
+	Do Not Show in TOC	No mostrar en la tabla de contenido
 	Document End	Fin del documento
 	Document Formatting	Formato del documento
 	Document Property	Propiedad del documento
@@ -293,7 +293,7 @@
 	Double Underline	Subrayado doble
 	Down	Abajo
 	Draft	Borrador
-	Drag a rectangle to draw a table, or a line across cells to split them. Esc stops.	Arrastre un rectángulo para dibujar una tabla, o una línea sobre las celdas para dividirlas. Esc termina.
+	Drag a rectangle to draw a table, or a line across cells to split them. Esc stops.	Arrastra un rectángulo para dibujar una tabla, o una línea sobre las celdas para dividirlas. Esc termina.
 	Draw	Dibujar
 	Draw Table	Dibujar tabla
 	Drawing Tools	Herramientas de dibujo
@@ -364,7 +364,7 @@
 	Go To (⌘⌥G)	Ir a (⌘⌥G)
 	Go To…	Ir a…
 	Go to	Ir a
-	Grab bag	Bolsa de datos adicionales
+	Grab bag	Miscelánea
 	Greeting Line	Línea de saludo
 	Greeting\nLine	Línea de\nsaludo
 	Gridlines	Líneas de cuadrícula
@@ -549,6 +549,16 @@
 	Open	Abrir
 	OpenDocument Text (*.odt)	Texto de OpenDocument (*.odt)
 	Optional Hyphen	Guion opcional
+	Copyright Sign	Signo de copyright
+	Ellipsis	Puntos suspensivos
+	Em Dash	Raya
+	Insert Date Field	Insertar campo de fecha
+	Insert Page Field	Insertar campo de página
+	Insert Time Field	Insertar campo de hora
+	Registered Sign	Signo de marca registrada
+	Reset Character Formatting	Restablecer formato de caracteres
+	Reset Paragraph Formatting	Restablecer formato de párrafo
+	Trademark Sign	Signo de marca comercial
 	Options	Opciones
 	Orientation	Orientación
 	Outline	Esquema
@@ -563,11 +573,11 @@
 	Page Break Before	Salto de página antes
 	Page Breaks	Saltos de página
 	Page Color	Color de página
-	Page Down	Re Pág
+	Page Down	Av Pág
 	Page Movement	Movimiento de página
 	Page Number	Número de página
 	Page Setup	Configurar página
-	Page Up	Av Pág
+	Page Up	Re Pág
 	Page Width	Ancho de página
 	Page X of Y	Página X de Y
 	Page break before	Salto de página antes
@@ -718,7 +728,7 @@
 	Selection Pane	Panel de selección
 	Send Backward	Enviar hacia atrás
 	Sentence case.	Mayúscula inicial de oración.
-	Set Caret	Establecer cursor
+	Set Caret	Colocar el cursor
 	Set Character Formatting	Establecer formato de carácter
 	Set Numbering Value	Establecer valor de numeración
 	Set Paragraph Formatting	Establecer formato de párrafo
@@ -788,8 +798,8 @@
 	Styles Pane	Panel de estilos
 	Subscript	Subíndice
 	Superscript	Superíndice
-	Switch Modes	Cambiar modos
-	Switch\nModes	Cambiar\nmodos
+	Switch Modes	Cambiar de modo
+	Switch\nModes	Cambiar\nde modo
 	Symbol	Símbolo
 	Symbols	Símbolos
 	Synonyms	Sinónimos
@@ -847,7 +857,7 @@
 	Triangle	Triángulo
 	Two	Dos
 	Type Text	Escribir texto
-	Type a command, e.g. "insert table"	Escribe un comando, p. ej. "insertar tabla"
+	Type a command, e.g. "insert table"	Escribe un comando, p. ej. «insertar tabla»
 	Ungroup	Desagrupar
 	UPPERCASE	MAYÚSCULAS
 	Underline	Subrayado
@@ -916,7 +926,7 @@
 	Scroll ribbon right	Desplazar la cinta a la derecha
 	Apply Styles	Aplicar estilos
 	Dark page (white text on black)	Página oscura (texto blanco sobre negro)
-	Show documents with their colours inverted, like View › Switch Modes. Saving, printing and PDFs are unchanged.	Muestra los documentos con los colores invertidos, como en Vista › Cambiar modos. Guardar, imprimir y los PDF no cambian.
+	Show documents with their colours inverted, like View › Switch Modes. Saving, printing and PDFs are unchanged.	Muestra los documentos con los colores invertidos, como en Vista › Cambiar de modo. Guardar, imprimir y los PDF no cambian.
 	Only web (http, https) and email (mailto) links can be followed	Solo se pueden seguir vínculos web (http, https) y de correo electrónico (mailto)
 	Character Border	Borde de carácter
 	Direction:	Dirección:
@@ -960,13 +970,13 @@
 	Stopped	Detenido
 	Speed	Velocidad
 	Normal speed	Velocidad normal
-	AutoSave documents you have saved in WordCraft	Autoguardar los documentos que haya guardado en WordCraft
-	AutoSave failed: {error}. Save the document to turn AutoSave back on.	Error de autoguardado: {error}. Guarde el documento para volver a activar el autoguardado.
+	AutoSave documents you have saved in WordCraft	Autoguardar los documentos que hayas guardado en WordCraft
+	AutoSave failed: {error}. Save the document to turn AutoSave back on.	Error de autoguardado: {error}. Guarda el documento para volver a activar el autoguardado.
 	Couldn't download {name}: {error}	No se pudo descargar {name}: {error}
-	Do you want to save changes to {name}?	¿Desea guardar los cambios en {name}?
+	Do you want to save changes to {name}?	¿Quieres guardar los cambios en {name}?
 	Don't Save	No guardar
-	That format doesn't keep everything, so the document is still open. Save it as a Word document (.docx) to go on.	Ese formato no conserva todo, así que el documento sigue abierto. Guárdelo como documento de Word (.docx) para continuar.
-	Your changes will be lost if you don't save them.	Si no guarda los cambios, se perderán.
+	That format doesn't keep everything, so the document is still open. Save it as a Word document (.docx) to go on.	Ese formato no conserva todo, así que el documento sigue abierto. Guárdalo como documento de Word (.docx) para continuar.
+	Your changes will be lost if you don't save them.	Si no guardas los cambios, se perderán.
 # Equations.
 	Change Structure	Cambiar estructura
 	Change to Display	Cambiar a presentación
@@ -1029,11 +1039,11 @@
 	Level {n}	Nivel {n}
 	Body Text	Texto independiente
 	{n} lines	{n} líneas
-	At least {n}	Mínimo {n}
-	Exactly {n}	Exacto {n}
+	At least {n}	Al menos {n}
+	Exactly {n}	Exactamente {n}
 	Centered	Centrado
 	Character spacing	Espaciado de caracteres
-	Don't add space between paragraphs of the same style	No agregar espacio entre párrafos del mismo estilo
+	Don't add space between paragraphs of the same style	No añadir espacio entre párrafos del mismo estilo
 	Don't hyphenate	No separar con guiones
 	Double strikethrough	Doble tachado
 	Drop cap	Letra capital
@@ -1075,12 +1085,12 @@
 	(not matched)	(sin asignar)
 	Leave a recipient out of the merge when a field has this value.	Excluir un destinatario de la combinación cuando un campo tenga este valor.
 	Insert one text or another, depending on a field's value.	Insertar un texto u otro según el valor de un campo.
-	Select recipients first to match their fields.	Primero seleccione los destinatarios para asignar sus campos.
+	Select recipients first to match their fields.	Primero selecciona los destinatarios para asignar sus campos.
 	The recipient-list field that fills each part of an address block and greeting line.	El campo de la lista de destinatarios que rellena cada parte del bloque de dirección y la línea de saludo.
 	No errors found: every merge field is in the recipient list.	No se encontraron errores: todos los campos de combinación están en la lista de destinatarios.
 	These merge fields aren't in the recipient list:	Estos campos de combinación no están en la lista de destinatarios:
-	Add at least one field.	Agregue al menos un campo.
-	Add Field	Agregar campo
+	Add at least one field.	Añade al menos un campo.
+	Add Field	Añadir campo
 	Every field needs a name.	Cada campo necesita un nombre.
 	Field name	Nombre del campo
 	Field names must be different.	Los nombres de los campos deben ser distintos.
@@ -1092,10 +1102,10 @@
 	Recipients: {count}	Destinatarios: {count}
 	Remove field	Quitar campo
 	Remove recipient	Quitar destinatario
-	Select recipients first to choose from their fields.	Primero seleccione los destinatarios para elegir entre sus campos.
+	Select recipients first to choose from their fields.	Primero selecciona los destinatarios para elegir entre sus campos.
 	Type a New List…	Escribir una lista nueva…
-	Type at least one recipient.	Escriba al menos un destinatario.
-	Type the recipients, or load them from a file.	Escriba los destinatarios o cárguelos desde un archivo.
+	Type at least one recipient.	Escribe al menos un destinatario.
+	Type the recipients, or load them from a file.	Escribe los destinatarios o cárgalos desde un archivo.
 	Use an Existing List…	Usar una lista existente…
 	Interface theme:	Tema de la interfaz:
 	Interface\nTheme	Tema de la\ninterfaz
@@ -1155,8 +1165,6 @@
 	Document Information	Información del documento
 	Double Closing Quote	Comilla doble de cierre
 	Double Opening Quote	Comilla doble de apertura
-	Ellipsis	Puntos suspensivos
-	Em Dash	Raya
 	En Dash	Guion medio
 	Em Space	Espacio eme
 	En Space	Espacio ene
@@ -1179,7 +1187,7 @@
 	No-Width Non Break	Unión sin ancho
 	No-Width Optional Break	Salto opcional sin ancho
 	Paragraph Mark	Marca de párrafo
-	Pick a field from the list	Elija un campo
+	Pick a field from the list	Elige un campo de la lista
 	Preserve formatting during updates	Conservar el formato al actualizar
 	Presets	Preestablecidos
 	Recently used symbols:	Símbolos usados recientemente:
@@ -1212,7 +1220,7 @@
 	This point forward	De aquí en adelante
 	The date it is today	La fecha de hoy
 	Trademark	Marca comercial
-	Type the field's name and its switches, for example PAGE \\* roman.	Escriba el nombre del campo y sus modificadores, por ejemplo PAGE \\* roman.
+	Type the field's name and its switches, for example PAGE \\* roman.	Escribe el nombre del campo y sus modificadores, por ejemplo PAGE \\* roman.
 	Width and spacing	Ancho y espaciado
 	from Unicode (hex)	de Unicode (hex)
 	Shape Effects	Efectos de forma
@@ -1242,8 +1250,8 @@
 	Font: {font}	Fuente: {font}
 	{size} pt	{size} pt
 	Color: {color}	Color: {color}
-	Space before: {pt} pt	Espacio antes: {pt} pt
-	Space after: {pt} pt	Espacio después: {pt} pt
+	Space before: {pt} pt	Espacio anterior: {pt} pt
+	Space after: {pt} pt	Espacio posterior: {pt} pt
 	Based on: {style}	Basado en: {style}
 	Paragraph style	Estilo de párrafo
 	Character style	Estilo de carácter
@@ -1320,12 +1328,77 @@
 	South	Sur
 	West	Oeste
 	Total	Total
+
+# Table Layout › Draw (#308)
+	Draw\nTable	Dibujar\ntabla
 	Rotation	Giro
 	Rotation:	Giro:
 	Rotate Right 90°	Girar 90° a la derecha
 	Rotate Left 90°	Girar 90° a la izquierda
 	Flip Vertical	Voltear verticalmente
 	Flip Horizontal	Voltear horizontalmente
+	Move Paragraph Up	Subir párrafo
+	Move Paragraph Down	Bajar párrafo
+	Promote	Promover
+	Demote	Degradar
+	Go Back	Volver
+	Toggle Unicode Character	Alternar carácter Unicode
+	Toggle Field Codes	Alternar códigos de campo
+	Edit Field Code	Editar código de campo
+	Unlink Fields	Desvincular campos
+	Lock Fields	Bloquear campos
+	Unlock Fields	Desbloquear campos
+	Next Field	Campo siguiente
+	Previous Field	Campo anterior
+	Selected Fields	Campos seleccionados
+	Edit Field…	Editar campo…
 	Formatted	Con formato
 	Interface size:	Tamaño de la interfaz:
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	Agranda o reduce la cinta, los menús y los cuadros de diálogo, además del escalado de pantalla del sistema. El zoom del documento es aparte.
+	In Line with Text	En línea con el texto
+	Square	Cuadrado
+	Through	Transparente
+	Top and Bottom	Arriba y abajo
+	Behind Text	Detrás del texto
+	In Front of Text	Delante del texto
+	Wrap Text Sides	Lados del ajuste
+	Both Sides	Ambos lados
+	Left Only	Solo a la izquierda
+	Right Only	Solo a la derecha
+	Largest Only	Solo el lado más ancho
+	Customize Keyboard	Personalizar teclado
+	Choose a command	Elija un comando
+	Choose a shortcut	Elija un método abreviado
+	All Commands	Todos los comandos
+	Commands:	Comandos:
+	Keys for this command:	Teclas de este comando:
+	New shortcut:	Nuevo método abreviado:
+	Now used by {command}	Ahora lo usa {command}
+	Not used by any command	Ningún comando lo usa
+	Remove every custom shortcut and restore the built-in keys?	¿Quitar todos los métodos abreviados personalizados y restaurar las teclas integradas?
+	Assign	Asignar
+	Remove	Quitar
+	Reset All…	Restablecer todo…
+	Press a key combination	Pulse una combinación de teclas
+	Customize	Personalizar
+	Keyboard shortcuts:	Métodos abreviados de teclado:
+	Customize…	Personalizar…
+	Customize Ribbon	Personalizar cinta de opciones
+	Add to Quick Access Toolbar	Agregar a la barra de herramientas de acceso rápido
+	Remove from Quick Access Toolbar	Quitar de la barra de herramientas de acceso rápido
+	Customize the Ribbon…	Personalizar la cinta de opciones…
+	Customize Quick Access Toolbar…	Personalizar barra de herramientas de acceso rápido…
+	More Commands…	Más comandos…
+	Ribbon	Cinta de opciones
+	(Custom)	(Personalizado)
+	Remove every custom tab and group and show all tabs again?	¿Quitar todas las pestañas y grupos personalizados y volver a mostrar todas las pestañas?
+	Put the default commands back on the Quick Access Toolbar?	¿Volver a poner los comandos predeterminados en la barra de herramientas de acceso rápido?
+	Reset…	Restablecer…
+	Add >>	Agregar >>
+	<< Remove	<< Quitar
+	Pick a custom group (New Group makes one)	Elija un grupo personalizado (Nuevo grupo crea uno)
+	Ribbon tabs	Pestañas de la cinta
+	New Tab	Nueva pestaña
+	New Group	Nuevo grupo
+	Rename…	Cambiar nombre…
+	Ribbon and Quick Access Toolbar:	Cinta de opciones y barra de acceso rápido:
