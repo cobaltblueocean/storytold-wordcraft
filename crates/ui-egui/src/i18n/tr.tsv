@@ -1428,3 +1428,43 @@
 	Search icons	Simgelerde ara
 	No icons match your search.	Aramanızla eşleşen simge yok.
 	Recolor a one-color picture, such as an icon	Simge gibi tek renkli bir resmi yeniden renklendir
+
+# Insert SmartArt (#497).
+	Add Shape	Şekil Ekle
+	Change Colors	Renkleri Değiştir
+	Change Layout	Düzeni Değiştir
+	Create Graphic	Grafik Oluştur
+	Edit Items	Öğeleri Düzenle
+	Layouts	Düzenler
+	Reset Graphic	Grafiği Sıfırla
+	SmartArt Design	SmartArt Tasarımı
+	SmartArt Styles	SmartArt Stilleri
+	Text Pane	Metin Bölmesi
+	List	Liste
+	Process	Süreç
+	Cycle	Döngü
+	Hierarchy	Hiyerarşi
+	Relationship	İlişki
+	Pyramid	Piramit
+	Basic List	Temel Liste
+	Basic Process	Temel Süreç
+	Basic Cycle	Temel Döngü
+	Basic Pyramid	Temel Piramit
+	Basic Radial	Temel Radyal
+	Basic Matrix	Temel Matris
+	Basic Venn	Temel Venn
+	Shows items of equal weight as blocks in rows.	Eşit ağırlıktaki öğeleri satırlar halinde bloklar olarak gösterir.
+	Shows steps in order, left to right, with arrows between them.	Adımları soldan sağa sırayla, aralarında oklarla gösterir.
+	Shows steps that repeat, around a circle.	Yinelenen adımları daire etrafında gösterir.
+	Shows a tree: each item below the item it belongs to.	Bir ağaç gösterir: her öğe ait olduğu öğenin altındadır.
+	Shows parts that build on each other, largest at the bottom.	Birbirinin üzerine kurulan parçaları, en büyüğü altta olacak şekilde gösterir.
+	Shows items around a central idea: the first item is the centre.	Öğeleri merkezi bir fikrin çevresinde gösterir: ilk öğe merkezdedir.
+	Shows parts of a whole as quadrants.	Bütünün parçalarını dörtte birlikler olarak gösterir.
+	Shows overlapping ideas as overlapping circles.	Örtüşen fikirleri iç içe geçen daireler olarak gösterir.
+	Accent {n}	Vurgu {n}
+	Colorful	Renkli
+	Insert SmartArt	SmartArt Ekle
+	One line per item. Enter adds an item.	Öğe başına bir satır. Enter bir öğe ekler.
+	Add\nShape	Şekil\nEkle
+	Change\nColors	Renkleri\nDeğiştir
+	Reset\nGraphic	Grafiği\nSıfırla
