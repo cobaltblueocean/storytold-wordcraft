@@ -1630,6 +1630,10 @@ fn context_menu(app: &mut WordApp, ui: &mut Ui) {
         item(ui, app, tl!("Edit Field…"), "fields.setCode", json!({}));
         item(ui, app, tl!("Toggle Field Codes"), "fields.toggleCode", json!({}));
     }
+    let object = wordcraft_engine::cmd::objects::selected(&app.session).is_some();
+    if object || app.session.sel.focus.path.cell().is_some() {
+        item(ui, app, "View Alt Text…", "view.altTextPane", json!({"value": true}));
+    }
     if crate::ribbon::has_picture_selected(&app.session) {
         ui.separator();
         item(ui, app, "Change Picture…", "ui.changePicture", json!({}));

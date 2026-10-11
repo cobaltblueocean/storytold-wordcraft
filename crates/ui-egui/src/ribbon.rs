@@ -1346,6 +1346,7 @@ fn shape_format(app: &mut WordApp, ui: &mut Ui) {
             });
         });
     });
+    alt_text_group(ui, app);
     if wordcraft_engine::cmd::canvas::selected_canvas(&app.session).is_some() {
         group(ui, "Drawing Canvas", None, app, |ui, app| {
             menu_button(ui, app, "canvas", Some("Drawing\nCanvas"), "Drawing Canvas", true, |ui, app| {
@@ -1421,6 +1422,13 @@ fn shape_text_group(app: &mut WordApp, ui: &mut Ui) {
                 small(ui, app, "textBoxLink", Some("Create Link"), "Create Link", "ui.linkTextBox", json!({}), waiting);
             }
         });
+    });
+}
+
+/// Picture/Shape Format › Accessibility: Alt Text opens the Alt Text pane.
+fn alt_text_group(ui: &mut Ui, app: &mut WordApp) {
+    group(ui, "Accessibility", None, app, |ui, app| {
+        big(ui, app, "altText", "Alt\nText", "view.altTextPane", json!({"value": true}), false);
     });
 }
 
@@ -1512,6 +1520,7 @@ fn picture_format(app: &mut WordApp, ui: &mut Ui) {
             }
         });
     });
+    alt_text_group(ui, app);
     group(ui, "Arrange", None, app, |ui, app| {
         big(ui, app, "position", "Position", "arrange.position", json!({}), false);
         wrap_menu(ui, app);

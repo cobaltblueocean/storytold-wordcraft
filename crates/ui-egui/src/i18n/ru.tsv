@@ -1790,6 +1790,20 @@ preview	Title	Пример
 	Left Only	Только слева
 	Right Only	Только справа
 	Largest Only	Только по большей стороне
+	Accessibility Pane	Область специальных возможностей
+	Alt Text Pane	Область замещающего текста
+	Alt\nText	Замещающий\nтекст
+	View Alt Text…	Показать замещающий текст…
+	Mark as decorative	Пометить как декоративный
+	Title:	Заголовок:
+	Errors ({n})	Ошибки ({n})
+	Warnings ({n})	Предупреждения ({n})
+	Tips ({n})	Советы ({n})
+	No accessibility issues found.	Проблем со специальными возможностями не найдено.
+	Describe what this object shows, for people who can't see it.	Опишите, что показывает этот объект, для людей, которые его не видят.
+	Decorative objects only add visual interest: screen readers skip them.	Декоративные объекты лишь украшают документ: программы чтения с экрана их пропускают.
+	Describe what this table shows, for people who can't see it.	Опишите, что показывает эта таблица, для людей, которые её не видят.
+	Select a picture, shape, chart or table to describe it.	Выберите рисунок, фигуру, диаграмму или таблицу, чтобы описать её.
 	Right-to-Left Table	Таблица справа налево
 	Right-to-Left Section	Раздел справа налево
 	Table direction:	Направление таблицы:

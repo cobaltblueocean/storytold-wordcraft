@@ -208,6 +208,41 @@ pub struct Float {
     /// (unrotated) frame; `None` = derived from the object (see [`crate::wrap`]).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub wrap_polygon: Option<std::sync::Arc<crate::wrap::WrapPolygon>>,
+    /// What the drawing is, for screen readers and exports (`wp:docPr` `@descr`, `@title` and the
+    /// decorative mark). See [`InlineObject::alt_text`].
+    #[serde(skip_serializing_if = "AltText::is_empty")]
+    pub alt: AltText,
+}
+
+/// Longest alternative text kept (characters): hostile files and commands are capped.
+pub const MAX_ALT_TEXT: usize = 10_000;
+
+/// A drawing's alternative text (Picture/Shape Format › Accessibility › Alt Text).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+pub struct AltText {
+    /// The description of a shape, text box or group. Pictures and charts keep theirs in their
+    /// own `alt`; read it with [`InlineObject::alt_text`], which knows where it is.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub text: String,
+    /// The short title (`wp:docPr/@title`).
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub title: String,
+    /// Decorative: it adds nothing to the content, so screen readers skip it and the
+    /// accessibility checker doesn't ask for a description.
+    #[serde(skip_serializing_if = "is_false")]
+    pub decorative: bool,
+}
+
+impl AltText {
+    pub fn is_empty(&self) -> bool {
+        self.text.is_empty() && self.title.is_empty() && !self.decorative
+    }
+}
+
+/// `s` cut to [`MAX_ALT_TEXT`] characters.
+pub fn cap_alt(s: &str) -> String {
+    s.chars().take(MAX_ALT_TEXT).collect()
 }
 
 fn is_zero(v: &f32) -> bool {
@@ -606,6 +641,28 @@ impl InlineObject {
                 | InlineObject::FieldStart { .. }
                 | InlineObject::FieldEnd
         )
+    }
+    /// A drawing's description (alternative text), wherever it is kept.
+    pub fn alt_text(&self) -> &str {
+        match self {
+            InlineObject::Image { alt, .. } | InlineObject::Graphic { alt, .. } => alt,
+            InlineObject::Shape { float, .. } | InlineObject::Group { float, .. } => &float.alt.text,
+            _ => "",
+        }
+    }
+    /// Set a drawing's description (capped at [`MAX_ALT_TEXT`] characters); `false` if this is no drawing.
+    pub fn set_alt_text(&mut self, text: &str) -> bool {
+        let text = cap_alt(text);
+        match self {
+            InlineObject::Image { alt, .. } | InlineObject::Graphic { alt, .. } => *alt = text,
+            InlineObject::Shape { float, .. } | InlineObject::Group { float, .. } => float.alt.text = text,
+            _ => return false,
+        }
+        true
+    }
+    /// A drawing marked decorative.
+    pub fn is_decorative(&self) -> bool {
+        self.frame().is_some_and(|(_, _, f)| f.alt.decorative)
     }
     pub fn is_floating(&self) -> bool {
         match self {

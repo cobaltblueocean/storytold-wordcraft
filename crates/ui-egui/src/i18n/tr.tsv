@@ -1408,6 +1408,20 @@
 	Left Only	Yalnızca Sol
 	Right Only	Yalnızca Sağ
 	Largest Only	Yalnızca En Geniş
+	Accessibility Pane	Erişilebilirlik Bölmesi
+	Alt Text Pane	Alternatif Metin Bölmesi
+	Alt\nText	Alternatif\nMetin
+	View Alt Text…	Alternatif Metni Görüntüle…
+	Mark as decorative	Dekoratif olarak işaretle
+	Title:	Başlık:
+	Errors ({n})	Hatalar ({n})
+	Warnings ({n})	Uyarılar ({n})
+	Tips ({n})	İpuçları ({n})
+	No accessibility issues found.	Erişilebilirlik sorunu bulunamadı.
+	Describe what this object shows, for people who can't see it.	Bu nesnenin neyi gösterdiğini, göremeyenler için açıklayın.
+	Decorative objects only add visual interest: screen readers skip them.	Dekoratif nesneler yalnızca görsel çekicilik katar: ekran okuyucular bunları atlar.
+	Describe what this table shows, for people who can't see it.	Bu tablonun neyi gösterdiğini, göremeyenler için açıklayın.
+	Select a picture, shape, chart or table to describe it.	Açıklamak için bir resim, şekil, grafik veya tablo seçin.
 	Right-to-Left Table	Sağdan Sola Tablo
 	Right-to-Left Section	Sağdan Sola Bölüm
 	Table direction:	Tablo yönü:
