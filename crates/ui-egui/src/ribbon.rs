@@ -760,7 +760,7 @@ fn design(app: &mut WordApp, ui: &mut Ui) {
 }
 
 fn layout(app: &mut WordApp, ui: &mut Ui) {
-    group(ui, "Page Setup", Some("ui.dialog"), app, |ui, app| {
+    group(ui, "Page Setup", Some("layout.pageSetup"), app, |ui, app| {
         menu_button(ui, app, "margins", Some("Margins"), "Margins", true, |ui, app| {
             for (l, k) in [
                 ("Normal  1\" all", "normal"),
@@ -1703,6 +1703,21 @@ mod tests {
         s.run("select.collapse", &json!({"end": true})).unwrap();
         s.run("text.insert", &json!({"text": "x"})).unwrap();
         assert!(!contextual_tabs(&s).contains(&"Shape Format"));
+    }
+
+    #[test]
+    fn page_setup_launcher_opens_the_dialog() {
+        // A group launcher runs its command with no parameters (#471).
+        let mut app = crate::WordApp::new(Session::new(wordcraft_doc::Document::new()), crate::Services::default());
+        app.run("layout.pageSetup", json!({})).unwrap();
+        assert!(matches!(app.dialog, Some(crate::dialogs::Dialog::PageSetup { .. })));
+        // `ui.dialog` needs a dialog name, so it can't be a launcher.
+        let launchers: Vec<&str> = include_str!("ribbon.rs")
+            .split("group(ui, \"")
+            .filter_map(|g| g.split_once('"')?.1.strip_prefix(", Some(\"")?.split('"').next())
+            .collect();
+        assert!(launchers.contains(&"layout.pageSetup"), "{launchers:?}");
+        assert!(!launchers.contains(&"ui.dialog"), "{launchers:?}");
     }
 
     #[test]
