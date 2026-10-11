@@ -1,6 +1,6 @@
 # Where WordCraft falls short of Word
 
-> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-11 · **Change:** trivial (#24 narrowed: Customize Keyboard and Customize Ribbon landed; previously trivial: formatting revisions landed, #41; previously trivial: Draw Table and Eraser landed, #303; previously minor: beta distance restated: ~15 points, ~150–230 h; previously: first version; every known shortfall from the 2026-10-10 re-measure, ranked) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
+> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-11 · **Change:** trivial (#20 narrowed: large-document benchmark and incremental pagination, #554; previously trivial: #24 narrowed: Customize Keyboard and Customize Ribbon landed; previously trivial: formatting revisions landed, #41; previously trivial: Draw Table and Eraser landed, #303; previously minor: beta distance restated: ~15 points, ~150–230 h; previously: first version; every known shortfall from the 2026-10-10 re-measure, ranked) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
 
 The work list. One entry per shortfall, ranked by how much it stops a Word user from switching
 (**B** = blocks beta). Each says what's missing, the evidence, who it hurts, an Opus 5.5 agent
@@ -30,7 +30,7 @@ first (`gh pr list`), and update this file and the parity doc when a gap closes.
 | 17 | **East Asian typography**: vertical text, Enclose Characters, document grid, Asian Typography options (Phonetic Guide landed, #288) | | Catalog misses `format.enclose`, `para.asianTypography` | Chinese, Japanese and Korean documents | 18–27 | [layout-parity.md](layout-parity.md) |
 | 18 | **Screen-reader access** to the document canvas untested | | AccessKit enabled; no tests | Blind and low-vision users; public-sector procurement | 10–15 | [ui-parity.md](ui-parity.md) |
 | 19 | **RTF and ODT depth**: notes, comments, revisions, sections, RTL | | ~1,500 lines each in `crates/formats` | Users exchanging with LibreOffice or older tools | 18–27 | [file-format-parity.md](file-format-parity.md) |
-| 20 | **Performance on large real-world documents** unmeasured (500+ pages, many pictures) | | Only the 188-page sample benchmark | Thesis and book authors | 10–20 | [layout-parity.md](layout-parity.md) |
+| 20 | **Performance on large real-world documents**: measured on a synthetic 511-page book (#554: typing re-lays out only from the edited paragraph, ~3 ms); real-world corpus documents and PDF export (1 s) still to profile | | `cargo xtask bench` | Thesis and book authors | 10–20 | [layout-parity.md](layout-parity.md) |
 | 21 | **Mail merge data sources**: no Excel, Outlook/Contacts, email merge; CSV and typed lists only (#247) | | | Office administrators | 6–10 | [target-app-parity.md](target-app-parity.md) |
 | 22 | **Ecosystem**: no VBA execution (macros preserved only), no Office add-ins, no cloud storage, no real-time co-authoring | | `.docm` keeps macros (#172) | Enterprise users with macro templates; teams | 40–80 + owner decisions | [target-app-parity.md](target-app-parity.md) |
 | 23 | **PDF Reflow** (open a PDF as an editable document, Word for Windows) | | | Users who edit PDFs they receive | 30–50 | [file-format-parity.md](file-format-parity.md) |
