@@ -161,6 +161,7 @@ pub fn specs() -> Vec<CommandSpec> {
             fmt(s, &|p| p.overlay(&props))
         })
         .params(r#"{"props": ParaProps}"#),
+        CommandSpec::new("para.state", "Paragraph Formatting at Selection", "Home › Paragraph", |s, _| Ok(state(s))).pure(),
         CommandSpec::new("para.dialog", "Paragraph Settings", "Home › Paragraph", |s, _| {
             s.ui_requests.push(json!({"open": "paragraph"}));
             sel_result(s)
@@ -1026,4 +1027,25 @@ fn own_format(st: &Style) -> Value {
 /// nothing needs touching here (kept as the one place to hook style-change side effects).
 pub fn touch_all(s: &mut Session) {
     s.dirty = true;
+}
+
+/// What the ribbon shows: the paragraph formatting at the selection (mixed values are null).
+pub fn state(s: &Session) -> Value {
+    let rp = s.doc.para_at(&s.sel.focus).map(|p| s.doc.styles.resolve_para(&p.props));
+    let numbering = rp.as_ref().and_then(|r| r.numbering);
+    let (bullets, numbering_kind, multilevel) = if let Some(n) = numbering.filter(|n| n.num != 0) {
+        let level = s.doc.numbering.level(n.num, 0);
+        let is_bullet = level.is_some_and(|l| l.format == wordcraft_doc::section::NumFormat::Bullet);
+        let is_multilevel = level.is_some_and(|l| {
+            l.text.contains("%2.") || l.text.contains("%3.") || l.text.contains("%4.") || l.text.contains("%5.")
+        });
+        (is_bullet, !is_bullet, is_multilevel)
+    } else {
+        (false, false, false)
+    };
+    json!({
+        "bullets": bullets,
+        "numbering": numbering_kind,
+        "multilevel": multilevel,
+    })
 }
