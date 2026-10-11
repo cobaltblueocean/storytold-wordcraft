@@ -2807,3 +2807,29 @@ fn deleting_the_last_cell_column_never_leaves_a_table_without_rows() {
     run(&mut s, "edit.undo", json!({}));
     assert!(s.doc.body.iter().any(|b| b.as_table().is_some_and(|t| !t.rows.is_empty())));
 }
+
+/// #606: the colour commands behind More Colors… take any `RRGGBB` (with or without `#`, any
+/// case), not only the palette's colours; junk is a params error and changes nothing.
+#[test]
+fn colour_commands_take_any_custom_hex() {
+    let mut s = s();
+    run(&mut s, "text.insert", json!({"text": "Custom"}));
+    run(&mut s, "select.all", json!({}));
+    for (given, want) in [("7A3EC8", "7A3EC8"), ("#0b5d1e", "0B5D1E"), ("  ff8800 ", "FF8800")] {
+        run(&mut s, "format.color", json!({"color": given}));
+        assert_eq!(run(&mut s, "format.state", json!({})).get("color"), Some(&json!(want)));
+    }
+    let doc = s.doc.clone();
+    for junk in [json!("#12"), json!("purple"), json!("GG0000"), json!(12), json!(null), json!("ééé")] {
+        assert!(s.run("format.color", &json!({"color": junk})).is_err(), "{junk}");
+    }
+    assert_eq!(s.doc, doc);
+    run(&mut s, "format.color", json!({"color": "auto"}));
+    assert_eq!(run(&mut s, "format.state", json!({})).get("color"), Some(&json!("auto")));
+    // Shading and page colour take custom colours the same way.
+    run(&mut s, "para.shading", json!({"color": "#C0FFEE"}));
+    let shading = s.doc.para_at(&s.sel.focus).and_then(|p| p.props.shading);
+    assert_eq!(shading, wordcraft_doc::Rgb::parse("C0FFEE"));
+    run(&mut s, "design.pageColor", json!({"color": "123ABC"}));
+    assert_eq!(s.doc.settings.page_color, wordcraft_doc::Rgb::parse("123ABC"));
+}
