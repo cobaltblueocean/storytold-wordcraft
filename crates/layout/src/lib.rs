@@ -1299,7 +1299,13 @@ pub fn layout(doc: &Document, cache: &mut LayoutCache, opts: &LayoutOptions) -> 
             // The section was started before the checkpoint; carry on from there.
             st.restore(&mut pb, &mut ctx);
             let last = (*end).min(doc.body.len().saturating_sub(1));
-            place_blocks(&mut ctx, &mut pb, (&mut block, last, si, body_top), (&mut pass, prev.as_ref(), converge_after), (&mut last_checkpoint, &mut placed, &mut spliced));
+            place_blocks(
+                &mut ctx,
+                &mut pb,
+                (&mut block, last, si, body_top),
+                (&mut pass, prev.as_ref(), converge_after),
+                (&mut last_checkpoint, &mut placed, &mut spliced),
+            );
             continue;
         }
         let first_top = if web || !sect.title_page { body_top } else { body_top_for(&mut ctx, sect, sect.headers.first) };
@@ -1328,7 +1334,13 @@ pub fn layout(doc: &Document, cache: &mut LayoutCache, opts: &LayoutOptions) -> 
             pb.top = pb.y;
         }
         let last = (*end).min(doc.body.len().saturating_sub(1));
-        place_blocks(&mut ctx, &mut pb, (&mut block, last, si, body_top), (&mut pass, prev.as_ref(), converge_after), (&mut last_checkpoint, &mut placed, &mut spliced));
+        place_blocks(
+            &mut ctx,
+            &mut pb,
+            (&mut block, last, si, body_top),
+            (&mut pass, prev.as_ref(), converge_after),
+            (&mut last_checkpoint, &mut placed, &mut spliced),
+        );
     }
     if spliced && let Some((_, s)) = sections.get(pb.sect_idx) {
         pb.sect = s;

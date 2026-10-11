@@ -90,7 +90,11 @@ fn main() -> Result<(), String> {
         }
         let total: Vec<f64> = cmd.iter().zip(&relay).map(|(a, b)| a + b).collect();
         row(&format!("keystroke at {label} (command)"), median(cmd), "");
-        row(&format!("keystroke at {label} (re-layout)"), median(relay), &format!("{misses} paragraphs laid out, {placed} of {} blocks placed", s.doc.body.len()));
+        row(
+            &format!("keystroke at {label} (re-layout)"),
+            median(relay),
+            &format!("{misses} paragraphs laid out, {placed} of {} blocks placed", s.doc.body.len()),
+        );
         row(&format!("keystroke at {label} (total)"), median(total), &format!("page {}", at_page + 1));
     }
 

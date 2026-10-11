@@ -205,10 +205,10 @@ pub fn report() -> Document {
 
 /// Words for [`large_document`]'s generated prose (our own list).
 const WORDS: &[&str] = &[
-    "the", "studio", "of", "a", "and", "light", "paper", "press", "river", "measure", "quiet", "build", "harbor", "to", "in", "with",
-    "garden", "window", "ink", "season", "careful", "small", "table", "every", "morning", "letter", "colour", "wood", "stone", "is",
-    "maker", "shared", "evening", "thread", "for", "carries", "north", "slowly", "against", "simple", "between", "patient", "kiln",
-    "glaze", "drawing", "notebook", "bright", "under", "map", "lantern", "bridge", "orchard", "copper", "weaving", "from", "over",
+    "the", "studio", "of", "a", "and", "light", "paper", "press", "river", "measure", "quiet", "build", "harbor", "to", "in", "with", "garden",
+    "window", "ink", "season", "careful", "small", "table", "every", "morning", "letter", "colour", "wood", "stone", "is", "maker", "shared",
+    "evening", "thread", "for", "carries", "north", "slowly", "against", "simple", "between", "patient", "kiln", "glaze", "drawing", "notebook",
+    "bright", "under", "map", "lantern", "bridge", "orchard", "copper", "weaving", "from", "over",
 ];
 
 /// A deterministic run of `n` words (`seed` picks which) forming sentences.
@@ -267,7 +267,11 @@ pub fn large_document(pages: usize) -> Document {
     let mut b: Vec<Block> = Vec::new();
     b.push(Block::Para(styled("A Long Synthetic Book", "Title")));
     let mut toc = Paragraph::new();
-    let _ = toc.insert_object(0, InlineObject::Field { instr: "TOC \\o \"1-2\" \\h".into(), result: String::new(), locked: false }, &CharProps::default());
+    let _ = toc.insert_object(
+        0,
+        InlineObject::Field { instr: "TOC \\o \"1-2\" \\h".into(), result: String::new(), locked: false },
+        &CharProps::default(),
+    );
     b.push(Block::Para(toc));
     let mut num = d.numbering.clone();
     let steps = num.add_list(ListKind::Numbered);
@@ -299,7 +303,11 @@ pub fn large_document(pages: usize) -> Document {
         if i % 10 == 7 {
             add(&mut p, " Today is ", CharProps::default());
             let at = p.len();
-            let _ = p.insert_object(at, InlineObject::Field { instr: "DATE \\@ \"MMMM d, yyyy\"".into(), result: "May 1, 2026".into(), locked: false }, &CharProps::default());
+            let _ = p.insert_object(
+                at,
+                InlineObject::Field { instr: "DATE \\@ \"MMMM d, yyyy\"".into(), result: "May 1, 2026".into(), locked: false },
+                &CharProps::default(),
+            );
             add(&mut p, ".", CharProps::default());
         }
         if i % 4 == 1 {
@@ -317,13 +325,24 @@ pub fn large_document(pages: usize) -> Document {
             let media = d.add_media(picture_png(pic as u32, 320 + (pic as u32 % 5) * 40, 240), "png");
             let floating = pic % 4 == 1;
             let float = if floating {
-                Float { wrap: Wrap::Square, h_rel: Anchor::Column, v_rel: Anchor::Paragraph, h_align: Some(FloatAlign::End), dist: 9.0, ..Default::default() }
+                Float {
+                    wrap: Wrap::Square,
+                    h_rel: Anchor::Column,
+                    v_rel: Anchor::Paragraph,
+                    h_align: Some(FloatAlign::End),
+                    dist: 9.0,
+                    ..Default::default()
+                }
             } else {
                 Float::default()
             };
             let (w, h) = if floating { (180.0, 135.0) } else { (360.0, 240.0) };
             let mut fig = if floating { para(&prose(&mut seed, 60)) } else { Paragraph::new() };
-            let _ = fig.insert_object(0, InlineObject::Image { media, w, h, alt: format!("Figure {}", pic + 1), float, crop: [0.0; 4], ole: None }, &CharProps::default());
+            let _ = fig.insert_object(
+                0,
+                InlineObject::Image { media, w, h, alt: format!("Figure {}", pic + 1), float, crop: [0.0; 4], ole: None },
+                &CharProps::default(),
+            );
             b.push(Block::Para(fig));
             b.push(Block::Para(styled(&format!("Figure {}: {}", pic + 1, prose(&mut seed, 8)), "Caption")));
             pic += 1;

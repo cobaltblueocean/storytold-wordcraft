@@ -248,10 +248,11 @@ impl Pass {
             Some(cp) => self.end_pages.get(..cp.pages.saturating_sub(1))?.to_vec(),
             None => Vec::new(),
         };
-        let all_sections = sections.len() == self.sections.len() && (0..sections.len()).all(|i| match (sections.get(i), self.sections.get(i)) {
-            (Some((e, s)), Some((oe, os))) => e == oe && *s == os,
-            _ => false,
-        });
+        let all_sections = sections.len() == self.sections.len()
+            && (0..sections.len()).all(|i| match (sections.get(i), self.sections.get(i)) {
+                (Some((e, s)), Some((oe, os))) => e == oe && *s == os,
+                _ => false,
+            });
         let converge_after = (doc.body.len() == self.body.len() && all_sections).then(|| {
             // The first block of the unchanged tail.
             let tail = self.body.iter().rev().zip(doc.body.iter().rev()).take_while(|(a, b)| same(a, b)).count();
