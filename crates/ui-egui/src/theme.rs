@@ -232,7 +232,8 @@ impl Tokens {
             checked: Color32::from_rgb(0x2E, 0x3A, 0x66),
             accent: Color32::from_rgb(0x7A, 0x93, 0xF0),
             accent_text: Color32::from_rgb(0x9C, 0xB0, 0xF5),
-            on_accent: Color32::WHITE,
+            // Dark text on the light dark-theme accent: white on #7a93f0 is only 2.9:1 (#655).
+            on_accent: Color32::from_rgb(0x11, 0x16, 0x2E),
             input: Color32::from_rgb(0x1E, 0x1E, 0x1E),
             input_border: Color32::from_rgb(0x7A, 0x7A, 0x7A),
             group_label: Color32::from_rgb(0xA0, 0xA0, 0xA0),
@@ -506,6 +507,18 @@ mod tests {
         };
         let (x, y) = (lum(a), lum(b));
         (x.max(y) + 0.05) / (x.min(y) + 0.05)
+    }
+
+    /// #655: text and knobs on filled accent controls (Share, avatar, AutoSave, keytips) reach 4.5:1
+    /// on the accent and on its hover shade, in both themes.
+    #[test]
+    fn on_accent_reads_on_the_accent() {
+        for t in [super::Tokens::light(), super::Tokens::dark()] {
+            for (name, bg) in [("accent", t.accent), ("hover", t.accent_text)] {
+                let r = contrast(t.on_accent, bg);
+                assert!(r >= 4.5, "dark={}: on_accent on {name} is {r:.2}:1", t.dark);
+            }
+        }
     }
 
     /// #657: text field and combo outlines reach 3:1 against the field and everything it sits on.
