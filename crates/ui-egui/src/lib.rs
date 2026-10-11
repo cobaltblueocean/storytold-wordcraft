@@ -24,6 +24,7 @@ pub mod dialogs_keyboard;
 pub mod dialogs_lists;
 pub mod dialogs_para;
 pub mod dialogs_ribbon;
+pub mod dialogs_refs;
 pub mod equation_tab;
 pub mod file_dialogs;
 pub mod frame;
@@ -134,6 +135,9 @@ pub struct UiState {
     /// Custom ribbon tabs and groups, hidden tabs and the Quick Access Toolbar (Customize Ribbon,
     /// #379); the session owns them while running.
     pub ribbon: wordcraft_engine::RibbonLayout,
+    /// Caption labels the user added (References › Insert Caption › New Label), kept between
+    /// runs like Word keeps them in its Normal template (#402).
+    pub caption_labels: Vec<String>,
 }
 
 impl Default for UiState {
@@ -161,6 +165,7 @@ impl Default for UiState {
             dark_page: false,
             keyboard: wordcraft_engine::KeyMap::default(),
             ribbon: wordcraft_engine::RibbonLayout::default(),
+            caption_labels: Vec::new(),
         }
     }
 }
@@ -1181,6 +1186,14 @@ fn input_dialog(id: &str, params: &Value) -> Option<&'static str> {
         "review.wordCount" if params.as_object().is_none_or(|m| m.is_empty()) => Some("wordCount"),
         // Enclose Characters without a shape (null is one: it takes the enclosure away).
         "format.enclose" if params.get("shape").is_none() => Some("enclose"),
+        // References dialogs (#402): Insert Caption, Insert Index, Mark Entry, Manage Sources and
+        // Insert Citation without a source.
+        "references.caption" | "references.index" if params.as_object().is_none_or(|m| m.is_empty()) => {
+            Some(if id == "references.caption" { "caption" } else { "index" })
+        }
+        "references.markEntry" if !has("entry") => Some("markEntry"),
+        "references.sources" if params.as_object().is_none_or(|m| m.is_empty()) => Some("sourceManager"),
+        "references.citation" if !has("tag") && !has("source") => Some("createSource"),
         _ => None,
     }
 }

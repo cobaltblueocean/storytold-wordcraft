@@ -1790,6 +1790,101 @@ preview	Title	Пример
 	Left Only	Только слева
 	Right Only	Только справа
 	Largest Only	Только по большей стороне
+	A, B, C, …	A, B, C, …
+	Above the item	Над объектом
+	Accessed on	Дата обращения
+	Add New Source…	Добавить новый источник…
+	Add the chapter number	Добавить номер главы
+	Atmosphere	Атмосфера
+	Below the item	Под объектом
+	Book	Книга
+	Book title	Название книги
+	Caption Numbering	Нумерация названий
+	Caption text	Текст названия
+	Caption:	Название:
+	Chapter in a book	Глава книги
+	Chapters begin at:	Главы начинаются с:
+	Collect entries from:	Собирать записи из:
+	Columns:	Столбцы:
+	Conference	Конференция
+	Conference paper	Доклад на конференции
+	Container Title	Название контейнера
+	Create Source	Создать источник
+	Cross-reference:	Перекрёстная ссылка:
+	Custom Table of Contents…	Настраиваемое оглавление…
+	DOI	DOI
+	Day	День
+	Delete Label	Удалить подпись
+	Edit Source	Изменить источник
+	Edition	Издание
+	Edit…	Изменить…
+	Entry marked.	Запись помечена.
+	Example: {sample}	Пример: {sample}
+	Figure	Рисунок
+	Film	Фильм
+	Heading styles (levels 1–{n})	Стили заголовков (уровни 1–{n})
+	I, II, III, …	I, II, III, …
+	Include page numbers	Включить номера страниц
+	Indented	Со ступенчатым отступом
+	Institution	Учреждение
+	Ionosphere	Ионосфера
+	Issue	Выпуск
+	Journal	Журнал
+	Label:	Подпись:
+	Last, First; Last, First	Фамилия, Имя; Фамилия, Имя
+	Leave the label out of the caption	Не включать подпись в название
+	Letter headings	Заголовки с буквами
+	Levels:	Уровни:
+	Link entries to their headings	Связать записи с заголовками
+	Made from the author and year when empty	Если пусто, составляется из автора и года
+	Magazine or newspaper article	Статья в журнале или газете
+	Main entry:	Основная запись:
+	Mark	Пометить
+	Mark All	Пометить все
+	Mark Entry…	Пометить запись…
+	Mark Index Entry	Пометка элемента указателя
+	Mesosphere	Мезосфера
+	Month	Месяц
+	New Label	Новая подпись
+	New Label…	Новая подпись…
+	New…	Создать…
+	No sources yet.	Источников пока нет.
+	Numbering…	Нумерация…
+	Options…	Параметры…
+	Other	Другое
+	Other styles and their TOC level:	Другие стили и их уровень в оглавлении:
+	Outline levels	Уровни структуры
+	Page number style	Стиль номеров страниц
+	Page numbers at the right margin	Номера страниц по правому краю
+	Page title	Название страницы
+	Pages of bookmark:	Страницы закладки:
+	Periodical	Периодическое издание
+	Position:	Положение:
+	Publisher	Издатель
+	Run-in	В подбор
+	See	См.
+	Separator:	Разделитель:
+	Show every bibliography field	Показать все поля библиографии
+	Site name	Название сайта
+	Source Manager	Диспетчер источников
+	Source type:	Тип источника:
+	Sources in this document:	Источники в этом документе:
+	Styles:	Стили:
+	Subentry:	Подзапись:
+	TC entry fields	Поля записей TC
+	Tab leader:	Заполнитель табуляции:
+	Table of Contents Options	Параметры оглавления
+	Table of Contents Styles	Стили оглавления
+	Tag	Тег
+	This page	Эта страница
+	Type:	Тип:
+	URL	URL
+	Volume	Том
+	Website	Веб-сайт
+	Year	Год
+	a, b, c, …	a, b, c, …
+	i, ii, iii, …	i, ii, iii, …
+	{n} entries marked.	Помечено записей: {n}.
 	Drawing Canvas	Полотно для рисования
 	New Drawing Canvas	Новое полотно для рисования
 	Fit	По размеру

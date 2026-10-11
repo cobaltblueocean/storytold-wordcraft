@@ -1408,6 +1408,104 @@
 	Left Only	Yalnızca Sol
 	Right Only	Yalnızca Sağ
 	Largest Only	Yalnızca En Geniş
+	A, B, C, …	A, B, C, …
+	Above the item	Öğenin üstünde
+	Accessed on	Erişim tarihi
+	Add New Source…	Yeni Kaynak Ekle…
+	Add the chapter number	Bölüm numarasını ekle
+	Atmosphere	Atmosfer
+	Below the item	Öğenin altında
+	Book	Kitap
+	Book title	Kitap başlığı
+	Caption	Başlık
+	Caption Numbering	Başlık Numaralandırma
+	Caption text	Başlık metni
+	Caption:	Başlık:
+	Chapter in a book	Kitapta bölüm
+	Chapters begin at:	Bölümler şunla başlar:
+	Collect entries from:	Girdileri şuradan topla:
+	Columns:	Sütunlar:
+	Conference	Konferans
+	Conference paper	Konferans bildirisi
+	Container Title	Kapsayıcı Başlığı
+	Create Source	Kaynak Oluştur
+	Cross-reference:	Çapraz başvuru:
+	Custom Table of Contents…	Özel İçindekiler Tablosu…
+	DOI	DOI
+	Day	Gün
+	Delete Label	Etiketi Sil
+	Edit Source	Kaynağı Düzenle
+	Edition	Baskı
+	Edit…	Düzenle…
+	Entry marked.	Girdi işaretlendi.
+	Example: {sample}	Örnek: {sample}
+	Figure	Şekil
+	Film	Film
+	Heading styles (levels 1–{n})	Başlık stilleri (1–{n}. düzeyler)
+	Heading {n}	Başlık {n}
+	I, II, III, …	I, II, III, …
+	Include page numbers	Sayfa numaralarını ekle
+	Indented	Girintili
+	Institution	Kurum
+	Ionosphere	İyonosfer
+	Issue	Sayı
+	Journal	Dergi
+	Label:	Etiket:
+	Last, First; Last, First	Soyadı, Adı; Soyadı, Adı
+	Leave the label out of the caption	Etiketi başlıktan çıkar
+	Letter headings	Harf başlıkları
+	Levels:	Düzeyler:
+	Link entries to their headings	Girdileri başlıklarına bağla
+	Made from the author and year when empty	Boşsa yazardan ve yıldan oluşturulur
+	Magazine or newspaper article	Dergi veya gazete makalesi
+	Main entry:	Ana girdi:
+	Mark	İşaretle
+	Mark All	Tümünü İşaretle
+	Mark Entry…	Girdiyi İşaretle…
+	Mark Index Entry	Dizin Girdisini İşaretle
+	Mesosphere	Mezosfer
+	Month	Ay
+	New Label	Yeni Etiket
+	New Label…	Yeni Etiket…
+	New…	Yeni…
+	No sources yet.	Henüz kaynak yok.
+	Numbering…	Numaralandırma…
+	Options…	Seçenekler…
+	Other	Diğer
+	Other styles and their TOC level:	Diğer stiller ve İçindekiler düzeyleri:
+	Outline levels	Anahat düzeyleri
+	Page number style	Sayfa numarası stili
+	Page numbers at the right margin	Sayfa numaraları sağ kenar boşluğunda
+	Page title	Sayfa başlığı
+	Pages of bookmark:	Yer işaretinin sayfaları:
+	Periodical	Süreli yayın
+	Position:	Konum:
+	Publisher	Yayıncı
+	Run-in	Yan yana
+	See	Bkz.
+	Separator:	Ayırıcı:
+	Show every bibliography field	Tüm kaynakça alanlarını göster
+	Site name	Site adı
+	Source Manager	Kaynak Yöneticisi
+	Source type:	Kaynak türü:
+	Sources in this document:	Bu belgedeki kaynaklar:
+	Styles:	Stiller:
+	Subentry:	Alt girdi:
+	TC entry fields	TC girdi alanları
+	Tab leader:	Sekme öncülü:
+	Table of Contents Options	İçindekiler Tablosu Seçenekleri
+	Table of Contents Styles	İçindekiler Tablosu Stilleri
+	Tag	Etiket
+	This page	Bu sayfa
+	Title	Başlık
+	Type:	Tür:
+	URL	URL
+	Volume	Cilt
+	Website	Web sitesi
+	Year	Yıl
+	a, b, c, …	a, b, c, …
+	i, ii, iii, …	i, ii, iii, …
+	{n} entries marked.	{n} girdi işaretlendi.
 	Drawing Canvas	Çizim Tuvali
 	New Drawing Canvas	Yeni Çizim Tuvali
 	Fit	Sığdır
