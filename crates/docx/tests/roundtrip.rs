@@ -1486,6 +1486,7 @@ fn wrap_polygons_round_trip() {
         float,
         story: None,
         effects: Default::default(),
+        ends: Default::default(),
         freeform: None,
     };
     // A hand-edited polygon, including points outside the frame.
@@ -1530,6 +1531,7 @@ fn wrap_text_sides_round_trip() {
         float,
         story: None,
         effects: Default::default(),
+        ends: Default::default(),
         freeform: None,
     };
     let sides =

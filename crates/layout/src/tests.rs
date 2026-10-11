@@ -3064,6 +3064,7 @@ fn wrapped_shape_doc(kind: wordcraft_doc::para::ShapeKind, w: f32, h: f32, float
         float,
         story: None,
         effects: Default::default(),
+        ends: Default::default(),
         freeform: None,
     };
     d.insert_object(&Pos::body(0, 0), shape, &Default::default()).unwrap();
