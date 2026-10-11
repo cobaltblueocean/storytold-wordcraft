@@ -2732,3 +2732,18 @@ fn deleting_the_last_cell_column_never_leaves_a_table_without_rows() {
     run(&mut s, "edit.undo", json!({}));
     assert!(s.doc.body.iter().any(|b| b.as_table().is_some_and(|t| !t.rows.is_empty())));
 }
+
+/// #552: format.state reports character spacing and font effects so the Font dialog reads them.
+#[test]
+fn format_state_reports_spacing_and_effects() {
+    let mut s = s();
+    run(&mut s, "document.setText", json!({"text": "Spacing test text"}));
+    run(&mut s, "select.all", json!({}));
+    run(&mut s, "format.spacing", json!({"points": 2.1}));
+    run(&mut s, "format.set", json!({"props": {"smallCaps": true, "caps": false, "hidden": true}}));
+    let st = run(&mut s, "format.state", json!({}));
+    assert!((st["spacing"].as_f64().unwrap() - 2.1).abs() < 1e-4, "spacing was not reported");
+    assert!(st["smallCaps"].as_bool().unwrap());
+    assert!(!st["caps"].as_bool().unwrap());
+    assert!(st["hidden"].as_bool().unwrap());
+}

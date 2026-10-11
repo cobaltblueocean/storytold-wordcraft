@@ -488,6 +488,12 @@ pub fn state(s: &Session) -> Value {
         "superscript": all.iter().all(|r| r.vert_align == VertAlign::Superscript),
         "color": same(&|r| json!(match r.color { TextColor::Auto => "auto".to_string(), TextColor::Rgb(c) => c.hex() })),
         "highlight": same(&|r| json!(r.highlight.map(|c| c.hex()))),
+        "spacing": same(&|r| json!(r.spacing)),
+        "scale": same(&|r| json!(r.scale)),
+        "position": same(&|r| json!(r.position)),
+        "smallCaps": all.iter().all(|r| r.small_caps),
+        "caps": all.iter().all(|r| r.caps),
+        "hidden": all.iter().all(|r| r.hidden),
         "style": style,
         "styleName": style_name,
     })

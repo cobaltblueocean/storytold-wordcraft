@@ -40,3 +40,7 @@ sync_github_name = false
 
 [people.henno]
 sync_github_name = true
+
+[people.krinry]
+sync_github_name = true
+

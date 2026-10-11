@@ -686,11 +686,11 @@ impl Dialog {
                 strike: b("strike"),
                 sup: b("superscript"),
                 sub: b("subscript"),
-                small_caps: false,
-                caps: false,
-                hidden: false,
+                small_caps: b("smallCaps"),
+                caps: b("caps"),
+                hidden: b("hidden"),
                 color: s("color"),
-                spacing: 0.0,
+                spacing: st.get("spacing").and_then(Value::as_f64).map(|v| if v.is_finite() { v as f32 } else { 0.0 }).unwrap_or(0.0),
             },
             "paragraph" | "asianTypography" => {
                 let rp = app.session.doc.para_at(&app.session.sel.focus).map(|p| app.session.doc.styles.resolve_para(&p.props));
@@ -996,6 +996,9 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             }
             if *strike {
                 fmt.strikethrough = egui::Stroke::new(1.0, preview_color);
+            }
+            if spacing.is_finite() {
+                fmt.extra_letter_spacing = *spacing;
             }
             egui::Grid::new("fontdlg").num_columns(2).spacing(vec2(10.0, 6.0)).show(ui, |ui| {
                 ui.label(tl!("Font:"));
@@ -2293,5 +2296,19 @@ mod tests {
         assert_eq!(p.bidi, Some(true));
         assert_eq!(p.align, Some(Align::Left), "right on the page is the start edge");
         assert_eq!(p.indent_left, Some(72.0), "the right indent is the start indent");
+    }
+
+    /// #552: Reopening the Font dialog reads the applied character spacing and effects.
+    #[test]
+    fn font_dialog_reads_character_spacing_and_effects() {
+        let mut app = app_with("Sample text with spacing");
+        let _ = app.run("select.all", json!({}));
+        let _ = app.run("format.spacing", json!({"points": 2.1}));
+        let _ = app.run("format.set", json!({"props": {"smallCaps": true, "hidden": true}}));
+        let Some(Dialog::Font { spacing, small_caps, caps, hidden, .. }) = Dialog::open("font", &mut app) else { panic!("no font dialog") };
+        assert!((spacing - 2.1).abs() < 1e-4, "expected spacing 2.1, got {spacing}");
+        assert!(small_caps, "expected small_caps true");
+        assert!(!caps, "expected caps false");
+        assert!(hidden, "expected hidden true");
     }
 }
