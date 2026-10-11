@@ -909,6 +909,7 @@
 	Word Left	Palabra a la izquierda
 	Word Right	Palabra a la derecha
 	Word document (*.docx)	Documento de Word (*.docx)
+	Word XML Document (*.xml)	Documento XML de Word (*.xml)
 	WordArt	WordArt
 	WordCraft	WordCraft
 	Words	Palabras

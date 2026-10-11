@@ -792,6 +792,7 @@
 	Word Left	Sõna vasakule
 	Word Right	Sõna paremale
 	Word document (*.docx)	Wordi dokument (*.docx)
+	Word XML Document (*.xml)	Wordi XML-dokument (*.xml)
 	WordArt	WordArt
 	WordCraft	WordCraft
 	Words	Sõnad

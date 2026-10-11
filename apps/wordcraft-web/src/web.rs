@@ -8,7 +8,7 @@ use wasm_bindgen::JsCast as _;
 use wordcraft_engine::Session;
 use wordcraft_ui_egui::{Inbox, Services, WordApp};
 
-const DOC_EXTS: &[&str] = &["docx", "docm", "dotx", "dotm", "doc", "dot", "odt", "rtf", "txt", "md", "html", "htm", "tex", "json"];
+const DOC_EXTS: &[&str] = &["docx", "docm", "dotx", "dotm", "doc", "dot", "odt", "rtf", "txt", "md", "html", "htm", "tex", "json", "xml"];
 const IMAGE_EXTS: &[&str] = &["png", "jpg", "jpeg", "gif", "webp", "bmp"];
 const RECIPIENT_EXTS: &[&str] = &["csv", "tsv", "txt", "xlsx", "xlsm", "ods"];
 const CANVAS_ID: &str = "wordcraft_canvas";
@@ -306,6 +306,7 @@ fn mime_for(name: &str) -> &'static str {
         Some("md" | "txt") => "text/plain",
         Some("tex") => "application/x-tex",
         Some("json") => "application/json",
+        Some("xml") => "application/xml",
         _ => "application/octet-stream",
     }
 }

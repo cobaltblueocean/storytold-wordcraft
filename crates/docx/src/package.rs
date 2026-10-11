@@ -174,6 +174,12 @@ impl Package {
         Ok(Package { files })
     }
 
+    /// A package from parts already in memory (a Flat OPC file, a converted document), by part
+    /// name without the leading `/`.
+    pub fn from_parts(files: BTreeMap<String, Vec<u8>>) -> Package {
+        Package { files }
+    }
+
     /// Part bytes by name (leading `/` ignored; case-insensitive fallback).
     pub fn get(&self, name: &str) -> Option<&[u8]> {
         let n = name.trim_start_matches('/');
