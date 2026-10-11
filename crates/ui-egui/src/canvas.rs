@@ -76,6 +76,8 @@ pub struct CanvasState {
     /// The last key ran an Alt shortcut: the text its key sends (it may arrive a frame later)
     /// isn't typed. The next key press clears it.
     pub(crate) swallow_text: bool,
+    /// What screen readers were last told about the document (#488).
+    pub(crate) a11y: crate::a11y::A11yCache,
 }
 
 impl CanvasState {
@@ -124,6 +126,7 @@ impl Default for CanvasState {
             balloon_rects: Vec::new(),
             table_tool: None,
             table_stroke: None,
+            a11y: Default::default(),
         }
     }
 }
@@ -676,6 +679,8 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
         });
     }
     app.canvas.focused = resp.has_focus();
+    // Screen readers: the document under the canvas, with the caret (#488).
+    crate::a11y::expose(app, ui.ctx(), resp.id, &layout, &rects, area);
     // Draw Table / Eraser own the mouse while on (no caret moves); else the usual editing.
     if !crate::table_pen::pointer(app, ui, &resp, &rects, &layout, geo.scale) {
         mouse(app, ui, &resp, &rects, &layout, geo.scale);
