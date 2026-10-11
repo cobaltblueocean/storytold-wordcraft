@@ -72,6 +72,8 @@ impl Launcher {
 fn open_filters(d: rfd::AsyncFileDialog, purpose: &str) -> rfd::AsyncFileDialog {
     if purpose == "picture" {
         d.add_filter("Pictures", &["png", "jpg", "jpeg", "gif", "webp", "bmp"])
+    } else if purpose == "font" {
+        d.add_filter("Fonts", wordcraft_fonts::FONT_FILE_EXTS)
     } else if purpose == "recipients" {
         d.add_filter("Recipient lists", &["csv", "tsv", "txt"]).add_filter("All files", &["*"])
     } else {

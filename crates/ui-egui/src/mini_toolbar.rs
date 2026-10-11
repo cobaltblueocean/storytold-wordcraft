@@ -99,7 +99,7 @@ fn content(app: &mut WordApp, ui: &mut egui::Ui, t: &Tokens) {
     let fams = app.previews.families();
     let prev = app.previews.font_preview_fn();
     if let Some(f) = widgets::font_combo(ui, "mini_font", COMBO_FONT_W, &font, &fams, Some(&*prev)) {
-        let _ = app.run("format.font", json!({"name": f}));
+        let _ = if f == crate::widgets::ADD_FONT { app.run("font.add", json!({})) } else { app.run("format.font", json!({"name": f})) };
     }
     let size = st.get("size").and_then(Value::as_f64).map(|s| if s.fract() == 0.0 { format!("{s:.0}") } else { s.to_string() }).unwrap_or_default();
     let sizes: Vec<String> =
