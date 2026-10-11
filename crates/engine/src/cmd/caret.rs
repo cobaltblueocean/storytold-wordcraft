@@ -48,6 +48,9 @@ pub fn specs() -> Vec<CommandSpec> {
         CommandSpec::new("select.word", "Select Word", "Navigation", select_word).pure(),
         CommandSpec::new("select.sentence", "Select Sentence", "Navigation", select_sentence).pure(),
         CommandSpec::new("select.paragraph", "Select Paragraph", "Navigation", select_paragraph).pure(),
+        CommandSpec::new("select.dragUnit", "Extend Selection by Units", "Navigation", drag_unit)
+            .params(r#"{"unit": "word|sentence|paragraph", "start": Pos, "end": Pos, "pos": Pos}"#)
+            .pure(),
         CommandSpec::new("select.line", "Select Line", "Navigation", select_line).pure(),
         CommandSpec::new("select.text", "Select Text", "Navigation", select_text).params(r#"{"text": string, "occurrence"?: n}"#).pure(),
         CommandSpec::new("select.collapse", "Collapse Selection", "Navigation", |s, v| {
@@ -287,33 +290,83 @@ fn select_range(s: &mut Session, v: &Value) -> CmdResult {
     sel_result(s)
 }
 
-fn select_word(s: &mut Session, _: &Value) -> CmdResult {
+/// A unit a selection grows by: what a double-click (word), Ctrl/⌘+click (sentence) or
+/// triple-click (paragraph) selects, and what dragging after it extends by.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Unit {
+    Word,
+    Sentence,
+    Paragraph,
+}
+
+impl Unit {
+    pub fn parse(s: &str) -> Option<Unit> {
+        match s {
+            "word" => Some(Unit::Word),
+            "sentence" => Some(Unit::Sentence),
+            "paragraph" => Some(Unit::Paragraph),
+            _ => None,
+        }
+    }
+}
+
+/// The word, sentence or paragraph around `at`, as (start, end). A paragraph includes its mark
+/// (it ends at the start of the next paragraph in the same container, when there is one).
+pub fn unit_range(s: &Session, at: &Pos, unit: Unit) -> (Pos, Pos) {
+    let Some(p) = s.doc.para_at(at) else { return (at.clone(), at.clone()) };
+    let (a, b) = match unit {
+        Unit::Word => p.word_at(at.off),
+        Unit::Sentence => p.sentence_at(at.off),
+        Unit::Paragraph => {
+            let start = Pos { off: 0, ..at.clone() };
+            let end = match s.doc.next_para(at.story, &at.path) {
+                Some(q) if q.parent() == at.path.parent() => Pos { story: at.story, path: q, off: 0 },
+                _ => Pos { off: p.len(), ..at.clone() },
+            };
+            return (start, end);
+        }
+    };
+    (Pos { off: a, ..at.clone() }, Pos { off: b, ..at.clone() })
+}
+
+fn select_unit(s: &mut Session, unit: Unit) -> CmdResult {
     let f = s.sel.focus.clone();
-    if let Some(p) = s.doc.para_at(&f) {
-        let (a, b) = p.word_at(f.off);
-        s.sel = Selection { anchor: Pos { off: a, ..f.clone() }, focus: Pos { off: b, ..f } };
+    if s.doc.para_at(&f).is_some() {
+        let (a, b) = unit_range(s, &f, unit);
+        s.sel = Selection { anchor: a, focus: b };
     }
     sel_result(s)
+}
+
+fn select_word(s: &mut Session, _: &Value) -> CmdResult {
+    select_unit(s, Unit::Word)
 }
 
 fn select_sentence(s: &mut Session, _: &Value) -> CmdResult {
-    let f = s.sel.focus.clone();
-    if let Some(p) = s.doc.para_at(&f) {
-        let (a, b) = p.sentence_at(f.off);
-        s.sel = Selection { anchor: Pos { off: a, ..f.clone() }, focus: Pos { off: b, ..f } };
-    }
-    sel_result(s)
+    select_unit(s, Unit::Sentence)
 }
 
 fn select_paragraph(s: &mut Session, _: &Value) -> CmdResult {
-    let f = s.sel.focus.clone();
-    let len = s.doc.para_at(&f).map(|p| p.len()).unwrap_or(0);
-    // Word includes the paragraph mark: extend to the start of the next paragraph when there is one.
-    let end = match s.doc.next_para(f.story, &f.path) {
-        Some(q) if q.parent() == f.path.parent() => Pos { story: f.story, path: q, off: 0 },
-        _ => Pos { off: len, ..f.clone() },
-    };
-    s.sel = Selection { anchor: Pos { off: 0, ..f }, focus: end };
+    select_unit(s, Unit::Paragraph)
+}
+
+/// Drag after a double-click (words), triple-click (paragraphs) or Ctrl/⌘+click (sentences):
+/// the selection keeps the unit first selected (`start`..`end`) and grows by whole units to
+/// the one under `pos`. Dragging forward anchors at the unit's start; dragging back before it
+/// anchors at its end, as in Word.
+fn drag_unit(s: &mut Session, v: &Value) -> CmdResult {
+    let unit = p::str(v, "unit").and_then(Unit::parse).ok_or_else(|| CmdError::Params("`unit` must be word, sentence or paragraph".into()))?;
+    let get = |k: &str| v.get(k).and_then(parse_pos).ok_or_else(|| CmdError::Params(format!("bad `{k}`")));
+    let (at, start, end) = (s.doc.clamp(&get("pos")?), s.doc.clamp(&get("start")?), s.doc.clamp(&get("end")?));
+    let (start, end) = if start <= end { (start, end) } else { (end, start) };
+    // Only within one story (the pointer over another story keeps the selection).
+    if at.story != start.story || end.story != start.story {
+        return sel_result(s);
+    }
+    let (us, ue) = unit_range(s, &at, unit);
+    s.sel = if at >= start { Selection { focus: ue.max(end.clone()), anchor: start } } else { Selection { focus: us.min(start), anchor: end } };
+    s.goal_x = None;
+    s.pending = None;
     sel_result(s)
 }
 

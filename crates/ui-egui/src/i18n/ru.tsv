@@ -253,6 +253,7 @@
 	Export PDF	Экспорт в PDF
 	Exported {path}	Экспортировано: {path}
 	Extend Selection	Расширить выделение
+	Extend Selection by Units	Расширить выделение по единицам
 	Field	Поле
 	File	Файл
 	Find	Найти

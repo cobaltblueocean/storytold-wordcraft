@@ -336,6 +336,7 @@
 	Export PDF	导出 PDF
 	Exported {path}	已导出 {path}
 	Extend Selection	扩展选定范围
+	Extend Selection by Units	按单位扩展选定范围
 	Field	域
 	File	文件
 	Find	查找
