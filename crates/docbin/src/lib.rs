@@ -8,12 +8,14 @@
 //! capped), so hostile input yields an error or a best-effort document, never a panic.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
+mod drawing;
 mod fib;
 mod fkp;
 mod fmt;
 mod list;
 mod media;
 mod notes;
+mod officeart;
 mod piece;
 mod sections;
 mod sprm;
@@ -139,7 +141,34 @@ pub fn read(bytes: &[u8]) -> Result<Document, DocbinError> {
         sheet: &sheet,
         notes: &[],
         marks: &[],
+        drawn: &[],
     };
+
+    // Drawings: text box stories become parts first, then the floating shapes and pictures
+    // anchored in the main document and the headers, found by their anchor CP while walking.
+    let txbx_base = edn_base.saturating_add(fib.ccp.edn);
+    let hdr_txbx_base = txbx_base.saturating_add(fib.ccp.txbx);
+    let art = fib
+        .pair(fib::pair::DGG_INFO)
+        .and_then(|(f, l)| table.get(f as usize..(f as usize).saturating_add(l as usize)))
+        .map(officeart::content)
+        .unwrap_or_default();
+    let mut tb_stories = std::collections::HashMap::new();
+    for (pair, base, len) in [(fib::pair::PLCF_TXBX_TXT, txbx_base, fib.ccp.txbx), (fib::pair::PLCF_HDR_TXBX_TXT, hdr_txbx_base, fib.ccp.hdr_txbx)] {
+        for (spid, ab) in drawing::textbox_stories(&table, fib.pair(pair)) {
+            let Some((a, b)) = story(base, len, ab) else { continue };
+            if doc.parts.len() >= MAX_PARTS || tb_stories.contains_key(&spid) {
+                continue;
+            }
+            let blocks = table::assemble(walk(&ctx, a, b, &mut pics));
+            tb_stories.insert(spid, doc.add_part(PartKind::TextBox, blocks));
+        }
+    }
+    let build = drawing::Build { bstore: &art.bstore, delay: &word, stories: &tb_stories };
+    let mut drawn = drawing::anchors(&table, fib.pair(fib::pair::PLC_SPA_MOM), 0, &art.main, &build, &mut pics);
+    drawn.extend(drawing::anchors(&table, fib.pair(fib::pair::PLC_SPA_HDR), hdd_base, &art.header, &build, &mut pics));
+    drawn.sort_by_key(|(cp, _)| *cp);
+    let ctx = WalkCtx { drawn: &drawn, ..ctx };
 
     // Header and footer parts: skip the six separator stories, then six stories per section
     // in the order even header, odd (default) header, even footer, odd (default) footer,
@@ -246,6 +275,8 @@ struct WalkCtx<'a> {
     notes: &'a [(u32, NoteKind, u32)],
     /// Bookmark boundaries (main-document CPs), sorted for a sequential walk.
     marks: &'a [(u32, notes::Mark)],
+    /// Floating shapes and pictures by anchor CP (absolute), sorted.
+    drawn: &'a [(u32, InlineObject)],
 }
 
 /// State while assembling one paragraph from per-CP formatting.
@@ -405,19 +436,27 @@ fn walk(ctx: &WalkCtx, cp_start: u32, cp_end: u32, pics: &mut media::Pictures) -
                 let fc = ctx.pieces.fc_of_cp(cp).unwrap_or(0);
                 let fc_pic = pic_location(ctx.chpx_bins.chpx(ctx.word, fc));
                 match fc_pic.and_then(|at| pics.get(ctx.data, at)) {
-                    Some((key, w, h)) => {
+                    Some(p) => {
                         pb.push('\u{FFFC}', CharProps::default());
                         pb.objects.push(InlineObject::Image {
-                            media: key,
-                            w,
-                            h,
-                            alt: String::new(),
+                            media: p.key,
+                            w: p.w,
+                            h: p.h,
+                            alt: p.alt,
                             float: Default::default(),
-                            crop: [0.0; 4],
+                            crop: p.crop,
                             ole: None,
                         });
                     }
                     None => pics.dropped(cp),
+                }
+            }
+            '\u{8}' => {
+                // Drawn object anchor: the floating shape or picture anchored at this CP.
+                let at = ctx.drawn.partition_point(|(c, _)| *c < cp);
+                for (_, obj) in ctx.drawn.get(at..).unwrap_or_default().iter().take_while(|(c, _)| *c == cp) {
+                    pb.push('\u{FFFC}', CharProps::default());
+                    pb.objects.push(obj.clone());
                 }
             }
             '\u{2}' => {
