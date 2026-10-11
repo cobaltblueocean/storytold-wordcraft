@@ -663,7 +663,7 @@ impl Writer<'_> {
     /// A shape's or text box's `wps:wsp`, at `off` in its group (or 0, 0). In a group it carries
     /// its own `wps:cNvPr` with drawing id `id`.
     fn wsp(&mut self, w: &mut W, o: &InlineObject, id: Option<&str>, off: (f32, f32), rels: &mut PartRels, depth: usize) {
-        let InlineObject::Shape { kind, w: sw, h: sh, fill, stroke, stroke_width, story, effects, float, freeform } = o else { return };
+        let InlineObject::Shape { kind, w: sw, h: sh, fill, stroke, stroke_width, story, effects, float, freeform, ends } = o else { return };
         let geom = freeform.as_deref().filter(|_| *kind == ShapeKind::Freeform);
         w.open("wps:wsp", &[]);
         if let Some(id) = id {
@@ -722,6 +722,9 @@ impl Writer<'_> {
                 w.close("a:solidFill");
                 if ink {
                     w.empty("a:round", &[]);
+                }
+                if *kind == ShapeKind::Line {
+                    line_ends(w, ends);
                 }
                 w.close("a:ln");
             }
@@ -1034,6 +1037,22 @@ fn cust_geom(w: &mut W, f: &wordcraft_doc::freeform::Freeform, sw: f32, sh: f32)
 }
 
 /// A shape's `a:effectLst` (ECMA-376 Part 1 §20.1.8.26), children in schema order.
+/// A line's arrowheads, as `a:headEnd` / `a:tailEnd` (inside `a:ln`, after its fill and join).
+fn line_ends(w: &mut W, ends: &wordcraft_doc::para::LineEnds) {
+    use wordcraft_doc::para::LineEnd;
+    for (name, end) in [("a:headEnd", ends.head), ("a:tailEnd", ends.tail)] {
+        let ty = match end {
+            LineEnd::None => continue,
+            LineEnd::Triangle => "triangle",
+            LineEnd::Stealth => "stealth",
+            LineEnd::Arrow => "arrow",
+            LineEnd::Diamond => "diamond",
+            LineEnd::Oval => "oval",
+        };
+        w.empty(name, &[("type", ty)]);
+    }
+}
+
 fn effect_list(w: &mut W, effects: &ShapeEffects) {
     let fx = effects.sanitized();
     if fx.is_empty() {

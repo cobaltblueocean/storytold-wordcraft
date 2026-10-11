@@ -1078,3 +1078,92 @@ fn formatting_revisions_round_trip() {
     assert_eq!(again.last_section, d.last_section);
     assert_eq!(again.revisions, d.revisions);
 }
+
+/// One anchored Word shape (`wps:wsp` inside `mc:AlternateContent`, as Word writes them) with
+/// shape properties `sppr`, style `style` and extra `wsp` content.
+fn anchored_wsp(name: &str, cx: u32, cy: u32, sppr: &str, style: &str, extra: &str) -> String {
+    format!(
+        r#"<w:r><mc:AlternateContent><mc:Choice Requires="wps"><w:drawing><wp:anchor distT="0" distB="0" distL="114300" distR="114300" simplePos="0" relativeHeight="1" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1"><wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="column"><wp:posOffset>12700</wp:posOffset></wp:positionH><wp:positionV relativeFrom="paragraph"><wp:posOffset>25400</wp:posOffset></wp:positionV><wp:extent cx="{cx}" cy="{cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/><wp:docPr id="1" name="{name}"/><a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"><wps:wsp>{extra}<wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="{cx}" cy="{cy}"/></a:xfrm>{sppr}</wps:spPr>{style}<wps:bodyPr/></wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></mc:Choice><mc:Fallback><w:pict><v:line from="0,0" to="1pt,2pt"/></w:pict></mc:Fallback></mc:AlternateContent></w:r>"#
+    )
+}
+
+/// #611: diagrams drawn with Word's shapes were mostly missing. Connectors and boxes take their
+/// outline and fill from the theme through their style references, or name preset and scheme
+/// colours; all of these are read, with line widths and arrowheads.
+#[test]
+fn theme_styled_connectors_and_callout_boxes_keep_their_paint() {
+    let style = |ln: u8, fill: u8, clr: &str| {
+        format!(
+            r#"<wps:style><a:lnRef idx="{ln}"><a:schemeClr val="{clr}"/></a:lnRef><a:fillRef idx="{fill}"><a:schemeClr val="{clr}"/></a:fillRef><a:effectRef idx="0"><a:schemeClr val="{clr}"/></a:effectRef><a:fontRef idx="minor"><a:schemeClr val="tx1"/></a:fontRef></wps:style>"#
+        )
+    };
+    let body = [
+        // A connector with only a style: accent4, the theme's thinnest line, an arrowhead.
+        anchored_wsp("Arrow", 673100, 889000, r#"<a:prstGeom prst="straightConnector1"><a:avLst/></a:prstGeom><a:ln><a:tailEnd type="triangle"/></a:ln>"#, &style(1, 0, "accent4"), "<wps:cNvCnPr/>"),
+        // A callout text box: scheme fill, preset black outline.
+        anchored_wsp(
+            "Text Box",
+            3073400,
+            673100,
+            r#"<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:schemeClr val="lt1"/></a:solidFill><a:ln w="6350"><a:solidFill><a:prstClr val="black"/></a:solidFill></a:ln>"#,
+            "",
+            r#"<wps:cNvSpPr txBox="1"/><wps:txbx><w:txbxContent><w:p><w:r><w:t>Callout</w:t></w:r></w:p></w:txbxContent></wps:txbx>"#,
+        ),
+        // A filled rectangle from its style alone.
+        anchored_wsp("Rect", 292100, 647700, r#"<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>"#, &style(2, 1, "accent1"), "<wps:cNvSpPr/>"),
+        // An elbow connector.
+        anchored_wsp("Elbow", 1270000, 635000, r#"<a:prstGeom prst="bentConnector3"><a:avLst/></a:prstGeom>"#, &style(1, 0, "accent2"), "<wps:cNvCnPr/>"),
+        // A rounded-rectangle callout.
+        anchored_wsp("Callout", 1270000, 635000, r#"<a:prstGeom prst="wedgeRoundRectCallout"><a:avLst/></a:prstGeom>"#, &style(2, 1, "accent1"), "<wps:cNvSpPr/>"),
+    ]
+    .concat();
+    let d = read_body(&format!("<w:p>{body}</w:p>"));
+    let theme = &d.settings.theme_colors;
+    let objs = &paras(&d)[0].objects;
+    assert_eq!(objs.len(), 5);
+    let shape = |i: usize| match &objs[i] {
+        InlineObject::Shape { kind, fill, stroke, stroke_width, ends, freeform, story, .. } => {
+            (*kind, *fill, *stroke, *stroke_width, *ends, freeform.is_some(), story.is_some())
+        }
+        o => panic!("{o:?}"),
+    };
+    use wordcraft_doc::para::{LineEnd, LineEnds};
+    let arrow = LineEnds { head: LineEnd::None, tail: LineEnd::Triangle };
+    assert_eq!(shape(0), (ShapeKind::Line, None, Some(theme[7]), 0.5, arrow, false, false));
+    assert_eq!(shape(1), (ShapeKind::TextBox, Some(theme[1]), Some(Rgb(0, 0, 0)), 0.5, LineEnds::default(), false, true));
+    assert_eq!(shape(2), (ShapeKind::Rectangle, Some(theme[4]), Some(theme[4]), 1.0, LineEnds::default(), false, false));
+    assert_eq!(shape(3), (ShapeKind::Freeform, None, Some(theme[5]), 0.5, LineEnds::default(), true, false));
+    assert_eq!(shape(4).0, ShapeKind::RoundedRectangle);
+    // The arrowhead survives saving.
+    let again = wordcraft_docx::read(&wordcraft_docx::write(&d).unwrap()).unwrap();
+    assert!(matches!(&paras(&again)[0].objects[0], InlineObject::Shape { ends, .. } if *ends == arrow));
+}
+
+/// #611: legacy VML lines and rectangles (documents without DrawingML) and drawing canvases.
+#[test]
+fn vml_lines_and_drawing_canvases() {
+    let body = r##"<w:p><w:r><w:pict><v:line style="position:absolute;flip:y;z-index:1" from="10pt,20pt" to="40pt,60pt" strokecolor="#4472c4 [3204]" strokeweight=".5pt"><v:stroke endarrow="block"/></v:line></w:pict></w:r>
+<w:r><w:pict><v:rect style="position:absolute;margin-left:5pt;margin-top:6pt;width:30pt;height:20pt" fillcolor="#ff0000" stroked="f"/></w:pict></w:r>
+<w:r><w:drawing><wp:inline><wp:extent cx="1270000" cy="635000"/><wp:docPr id="4" name="Canvas"/><a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas"><wpc:wpc xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas"><wpc:bg/><wpc:whole/><wps:wsp><wps:cNvCnPr/><wps:spPr><a:xfrm><a:off x="127000" y="127000"/><a:ext cx="254000" cy="127000"/></a:xfrm><a:prstGeom prst="line"><a:avLst/></a:prstGeom><a:ln w="12700"><a:solidFill><a:srgbClr val="00FF00"/></a:solidFill></a:ln></wps:spPr><wps:bodyPr/></wps:wsp></wpc:wpc></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>"##;
+    let d = read_body(body);
+    let objs = &paras(&d)[0].objects;
+    assert_eq!(objs.len(), 3, "{objs:?}");
+    match &objs[0] {
+        InlineObject::Shape { kind: ShapeKind::Line, w, h, stroke, stroke_width, float, ends, .. } => {
+            assert_eq!((*w, *h, *stroke, *stroke_width), (30.0, 40.0, Some(Rgb(0x44, 0x72, 0xC4)), 0.5));
+            assert_eq!((float.x, float.y, float.flip_h, float.flip_v), (10.0, 20.0, false, true));
+            assert_eq!(ends.tail, wordcraft_doc::para::LineEnd::Triangle);
+        }
+        o => panic!("{o:?}"),
+    }
+    assert!(matches!(&objs[1], InlineObject::Shape { kind: ShapeKind::Rectangle, fill: Some(Rgb(255, 0, 0)), stroke: None, w: 30.0, h: 20.0, .. }));
+    match &objs[2] {
+        InlineObject::Group { w, h, children, .. } => {
+            assert_eq!((*w, *h, children.len()), (100.0, 50.0, 1));
+            let c = &children[0];
+            assert_eq!((c.x, c.y), (10.0, 10.0));
+            assert!(matches!(c.obj, InlineObject::Shape { kind: ShapeKind::Line, stroke: Some(Rgb(0, 255, 0)), w: 20.0, h: 10.0, .. }));
+        }
+        o => panic!("{o:?}"),
+    }
+}

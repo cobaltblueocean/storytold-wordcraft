@@ -778,10 +778,11 @@ pub fn shape_path(kind: ShapeKind, r: kurbo::Rect) -> BezPath {
         ShapeKind::Ellipse => kurbo::Ellipse::from_rect(r).to_path(0.1),
         ShapeKind::Triangle => poly(&[(cx, r.y0), (r.x1, r.y1), (r.x0, r.y1)]),
         ShapeKind::Diamond => poly(&[(cx, r.y0), (r.x1, cy), (cx, r.y1), (r.x0, cy)]),
+        // DrawingML's `line`: top-left to bottom-right (flips give the other directions).
         ShapeKind::Line => {
             let mut p = BezPath::new();
-            p.move_to((r.x0, r.y1));
-            p.line_to((r.x1, r.y0));
+            p.move_to((r.x0, r.y0));
+            p.line_to((r.x1, r.y1));
             p
         }
         ShapeKind::Arrow => {
@@ -887,6 +888,7 @@ mod tests {
                 story: None,
                 freeform: None,
                 effects,
+                ends: Default::default(),
             };
             let at = wordcraft_doc::Pos { story: wordcraft_doc::StoryRef::Body, path: wordcraft_doc::Path::top(0), off: 0 };
             d.insert_object(&at, shape, &Default::default()).unwrap();
@@ -1147,6 +1149,14 @@ mod tests {
         for k in [ShapeKind::Rectangle, ShapeKind::Ellipse, ShapeKind::Star, ShapeKind::Heart, ShapeKind::Arrow, ShapeKind::Line] {
             assert!(!shape_path(k, r).elements().is_empty());
         }
+    }
+
+    /// #611: a line runs as DrawingML's `line` preset does, top-left to bottom-right (Word's
+    /// files flip it for the other diagonal), not bottom-left to top-right.
+    #[test]
+    fn a_line_runs_from_top_left_to_bottom_right() {
+        let p = shape_path(ShapeKind::Line, kurbo::Rect::new(10.0, 20.0, 30.0, 60.0));
+        assert_eq!(p.elements(), &[kurbo::PathEl::MoveTo((10.0, 20.0).into()), kurbo::PathEl::LineTo((30.0, 60.0).into())]);
     }
 }
 

@@ -242,6 +242,40 @@ impl Float {
     }
 }
 
+/// The decoration at one end of a line (DrawingML `a:headEnd` / `a:tailEnd` `@type`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub enum LineEnd {
+    #[default]
+    None,
+    /// A filled triangle.
+    Triangle,
+    /// A filled, notched arrowhead.
+    Stealth,
+    /// An open arrowhead (two strokes).
+    Arrow,
+    /// A filled diamond.
+    Diamond,
+    /// A filled dot.
+    Oval,
+}
+
+/// Arrowheads on a line's two ends: `head` where its path starts (the frame's top-left corner
+/// before flips), `tail` where it ends.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct LineEnds {
+    pub head: LineEnd,
+    pub tail: LineEnd,
+}
+
+impl LineEnds {
+    /// No arrowhead at either end.
+    pub fn is_none(&self) -> bool {
+        self.head == LineEnd::None && self.tail == LineEnd::None
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub enum ShapeKind {
@@ -320,6 +354,9 @@ pub enum InlineObject {
         /// Shadow, glow and soft edges.
         #[serde(default, skip_serializing_if = "crate::effects::ShapeEffects::is_empty")]
         effects: crate::effects::ShapeEffects,
+        /// Arrowheads (lines only).
+        #[serde(default, skip_serializing_if = "LineEnds::is_none")]
+        ends: LineEnds,
     },
     /// Pictures, shapes and text boxes grouped into one object (Layout › Arrange › Group): it
     /// moves, wraps and resizes as one. Its members are laid out in the group's own coordinate

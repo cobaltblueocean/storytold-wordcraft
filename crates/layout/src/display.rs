@@ -1,7 +1,8 @@
 //! Page → draw items, shared by the raster renderer, the PDF exporter and thumbnails.
 
 use wordcraft_doc::graphic::{Graphic, GraphicItem, GraphicKind, PathSeg, TextAlign};
-use wordcraft_doc::para::{InlineObject, ShapeKind};
+use wordcraft_doc::para::LineEnd as Head;
+use wordcraft_doc::para::{InlineObject, LineEnds, ShapeKind};
 use wordcraft_doc::props::{Border, BorderStyle, Rgb, TextColor, TextDirection, Underline};
 use wordcraft_doc::section::SectionStart;
 use wordcraft_doc::{Block, Document, Path, StoryRef};
@@ -407,9 +408,10 @@ fn item(doc: &Document, it: &Placed, opts: &DisplayOptions, alpha: f32, out: &mu
         Placed::Image { rect, media, crop, spin, .. } => {
             spun(*spin, *rect, vec![Draw::Image { rect: *rect, media: media.clone(), crop: *crop, alpha }], out)
         }
-        Placed::Shape { rect, kind, fill, stroke, stroke_width, effects, freeform, spin } => {
+        Placed::Shape { rect, kind, fill, stroke, stroke_width, effects, freeform, spin, ends } => {
             let mut items = Vec::new();
-            shape_draws(*rect, *kind, *fill, *stroke, *stroke_width, effects_in(*effects, *spin), freeform.as_deref(), opts, &mut items);
+            let effects = effects_in(*effects, *spin);
+            shape_draws(*rect, *kind, *fill, *stroke, *stroke_width, effects, freeform.as_deref(), *ends, opts, &mut items);
             spun(*spin, *rect, items, out)
         }
         Placed::Graphic { rect, graphic, spin, .. } => spun(*spin, *rect, graphic_draws(doc, graphic, *rect, alpha), out),
@@ -1054,11 +1056,17 @@ fn shape_draws(
     stroke_width: f32,
     effects: wordcraft_doc::effects::ShapeEffects,
     freeform: Option<&wordcraft_doc::freeform::Freeform>,
+    ends: LineEnds,
     opts: &DisplayOptions,
     out: &mut Vec<Draw>,
 ) {
     let Some(f) = freeform.filter(|_| kind == ShapeKind::Freeform) else {
         out.push(Draw::Shape { rect, kind, fill, stroke, stroke_width, effects });
+        if let (ShapeKind::Line, Some(color)) = (kind, stroke) {
+            // DrawingML's line runs from the frame's top-left corner to its bottom-right.
+            let (a, b) = ([rect.x, rect.y], [rect.right(), rect.bottom()]);
+            arrowheads(&[a, b], ends, color, stroke_width, out);
+        }
         return;
     };
     if f.is_ink() && opts.hide_ink {
@@ -1084,6 +1092,88 @@ fn shape_draws(
             segs.push(PathSeg::Close);
         }
         out.push(Draw::Path { segs, fill: if closed { fill } else { None }, stroke, stroke_width: width });
+    }
+    // A connector's arrowheads, at the ends of its one open path.
+    if !ends.is_none()
+        && let Some(color) = stroke
+        && let [(pts, false)] = f.placed(rect.x, rect.y, rect.w, rect.h).as_slice()
+    {
+        arrowheads(pts, ends, color, stroke_width, out);
+    }
+}
+
+/// The arrowheads `ends` of an open path through `pts` (page points), in the line's `color`,
+/// sized from its `width` (Word's medium size: three line widths, from a 1.5 pt floor so thin
+/// lines still show them). A path with fewer than two distinct points has none.
+fn arrowheads(pts: &[[f32; 2]], ends: LineEnds, color: Rgb, width: f32, out: &mut Vec<Draw>) {
+    if ends.is_none() {
+        return;
+    }
+    let w = if width.is_finite() { width.clamp(1.5, 50.0) } else { 1.5 };
+    // The end point and the direction the path arrives at it from (the nearest distinct point).
+    fn tip<'a>(end: [f32; 2], mut rest: impl Iterator<Item = &'a [f32; 2]>) -> Option<([f32; 2], [f32; 2])> {
+        let from = rest.find(|p| (p[0] - end[0]).hypot(p[1] - end[1]) > 0.01)?;
+        let len = (end[0] - from[0]).hypot(end[1] - from[1]);
+        (len.is_finite() && len > 0.0).then(|| (end, [(end[0] - from[0]) / len, (end[1] - from[1]) / len]))
+    }
+    let heads =
+        [(ends.head, pts.first().and_then(|e| tip(*e, pts.iter().skip(1)))), (ends.tail, pts.last().and_then(|e| tip(*e, pts.iter().rev().skip(1))))];
+    for (end, at) in heads {
+        let Some(([tx, ty], [dx, dy])) = at else { continue };
+        let (len, half) = (3.0 * w, 1.5 * w);
+        // Points along the line (`a` back from the tip) and across it (`c` to its left).
+        let p = |a: f32, c: f32| (tx - dx * a - dy * c, ty - dy * a + dx * c);
+        let poly = |pts: &[(f32, f32)]| {
+            let mut segs: Vec<PathSeg> =
+                pts.iter().enumerate().map(|(i, &(x, y))| if i == 0 { PathSeg::Move(x, y) } else { PathSeg::Line(x, y) }).collect();
+            segs.push(PathSeg::Close);
+            segs
+        };
+        let draw = match end {
+            Head::None => continue,
+            Head::Triangle => {
+                Draw::Path { segs: poly(&[p(0.0, 0.0), p(len, half), p(len, -half)]), fill: Some(color), stroke: None, stroke_width: 0.0 }
+            }
+            Head::Stealth => Draw::Path {
+                segs: poly(&[p(0.0, 0.0), p(len, half), p(len * 0.6, 0.0), p(len, -half)]),
+                fill: Some(color),
+                stroke: None,
+                stroke_width: 0.0,
+            },
+            Head::Arrow => {
+                let ((ax, ay), (bx, by), (cx, cy)) = (p(len, half), p(0.0, 0.0), p(len, -half));
+                Draw::Path {
+                    segs: vec![PathSeg::Move(ax, ay), PathSeg::Line(bx, by), PathSeg::Line(cx, cy)],
+                    fill: None,
+                    stroke: Some(color),
+                    stroke_width: width.max(0.25),
+                }
+            }
+            Head::Diamond => Draw::Path {
+                segs: poly(&[p(-half, 0.0), p(0.0, half), p(half, 0.0), p(0.0, -half)]),
+                fill: Some(color),
+                stroke: None,
+                stroke_width: 0.0,
+            },
+            Head::Oval => {
+                // A circle about the tip, as four quarter arcs.
+                const K: f32 = 0.552_284_8;
+                let r = half;
+                let pts = [p(-r, 0.0), p(0.0, r), p(r, 0.0), p(0.0, -r)];
+                let (sx, sy) = p(-r, 0.0);
+                let mut segs = vec![PathSeg::Move(sx, sy)];
+                for (a, b) in pts.iter().zip(pts.iter().cycle().skip(1)) {
+                    // Each control leaves its end along the tangent: towards the other end's
+                    // radius direction.
+                    let c1 = (a.0 + (b.0 - tx) * K, a.1 + (b.1 - ty) * K);
+                    let c2 = (b.0 + (a.0 - tx) * K, b.1 + (a.1 - ty) * K);
+                    segs.push(PathSeg::Cubic(c1.0, c1.1, c2.0, c2.1, b.0, b.1));
+                }
+                segs.push(PathSeg::Close);
+                Draw::Path { segs, fill: Some(color), stroke: None, stroke_width: 0.0 }
+            }
+        };
+        out.push(draw);
     }
 }
 
@@ -1186,10 +1276,10 @@ fn object_draws(o: &InlineObject, rect: Rect, outer: Spin, alpha: f32, opts: &Di
     let own = o.frame().map(|(_, _, f)| f.spin()).unwrap_or_default();
     match o {
         InlineObject::Image { media, crop, .. } => spun(own, rect, vec![Draw::Image { rect, media: media.clone(), crop: *crop, alpha }], out),
-        InlineObject::Shape { kind, fill, stroke, stroke_width, effects, freeform, .. } => {
+        InlineObject::Shape { kind, fill, stroke, stroke_width, effects, freeform, ends, .. } => {
             let effects = effects_in(*effects, own.within(outer));
             let mut items = Vec::new();
-            shape_draws(rect, *kind, *fill, *stroke, *stroke_width, effects, freeform.as_deref(), opts, &mut items);
+            shape_draws(rect, *kind, *fill, *stroke, *stroke_width, effects, freeform.as_deref(), *ends, opts, &mut items);
             spun(own, rect, items, out)
         }
         InlineObject::Group { .. } => {

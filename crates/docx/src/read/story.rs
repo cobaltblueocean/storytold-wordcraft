@@ -11,6 +11,7 @@ use wordcraft_doc::{Block, Blocks, InlineObject, Paragraph, PartKind, RevisionKi
 
 use super::Reader;
 use super::props::{sectpr, tcpr, trpr};
+use super::shape_style::{preset_kind, shape_paint, vml_color};
 use crate::package::{Rels, rt};
 use crate::units::{int, measure};
 use crate::xml::El;
@@ -709,6 +710,8 @@ impl Reader<'_> {
         }
         let mut obj = if let Some(g) = gd.child("wpg:wgp") {
             self.read_group(sc, g, rels, w, h, float)?
+        } else if let Some(cv) = gd.child("wpc:wpc") {
+            self.read_canvas(sc, cv, rels, w, h, float)?
         } else if gd.find("a:blip").is_some() {
             self.read_pic(gd, rels, w, h, alt, float)?
         } else {
@@ -806,6 +809,17 @@ impl Reader<'_> {
         Some(InlineObject::Group { w, h, float, ch_w, ch_h, children })
     }
 
+    /// A drawing canvas (`wpc:wpc`, `w` × `h`): its shapes, pictures and groups, placed by their
+    /// offsets from the canvas's corner, as a group. `None` when it has nothing we can show.
+    fn read_canvas(&mut self, sc: &mut StoryCtx, cv: &El, rels: &Rels, w: f32, h: f32, float: Float) -> Option<InlineObject> {
+        let mut children = Vec::new();
+        self.group_members(sc, cv, rels, (0.0, 0.0, 1.0, 1.0), 0, &mut children);
+        if children.is_empty() {
+            return None;
+        }
+        Some(InlineObject::Group { w, h, float, ch_w: w.max(1.0), ch_h: h.max(1.0), children })
+    }
+
     /// The members of group `g` into `out`, mapped into the outermost group's space by `t`
     /// (x0, y0, sx, sy: outer = x0 + inner × sx).
     fn group_members(
@@ -867,36 +881,40 @@ impl Reader<'_> {
     fn read_wsp(&mut self, sc: &mut StoryCtx, wsp: &El, rels: &Rels, w: f32, h: f32, mut float: Float) -> InlineObject {
         let sppr = wsp.child("wps:spPr");
         float.set_spin(xfrm_spin(sppr));
-        let prst = sppr.and_then(|s| s.child("a:prstGeom")).and_then(|g| g.attr("prst")).unwrap_or("rect");
+        let geom = sppr.and_then(|s| s.child("a:prstGeom"));
+        let prst = geom.and_then(|g| g.attr("prst")).unwrap_or("rect");
         let txbx = wsp.child("wps:txbx").and_then(|t| t.child("w:txbxContent"));
-        let mut kind = match prst {
-            "roundRect" => ShapeKind::RoundedRectangle,
-            "ellipse" => ShapeKind::Ellipse,
-            "triangle" | "rtTriangle" => ShapeKind::Triangle,
-            "diamond" => ShapeKind::Diamond,
-            "line" | "straightConnector1" => ShapeKind::Line,
-            "rightArrow" | "leftArrow" | "upArrow" | "downArrow" => ShapeKind::Arrow,
-            "star5" | "star4" | "star6" => ShapeKind::Star,
-            "heart" => ShapeKind::Heart,
-            _ => ShapeKind::Rectangle,
-        };
+        let mut kind = preset_kind(prst);
         let is_tb = wsp.child("wps:cNvSpPr").and_then(|c| c.attr("txBox")).is_some_and(|v| v == "1" || v == "true");
         if is_tb || (txbx.is_some() && kind == ShapeKind::Rectangle) {
             kind = ShapeKind::TextBox;
         }
-        let solid = |e: Option<&El>| {
-            e.and_then(|f| f.child("a:solidFill")).and_then(|f| f.child("a:srgbClr")).and_then(|c| c.attr("val")).and_then(Rgb::parse)
-        };
-        let fill = solid(sppr);
-        let ln = sppr.and_then(|s| s.child("a:ln"));
-        let stroke = solid(ln);
-        let stroke_width = ln.and_then(|l| l.attr("w")).and_then(|v| measure(v, 12_700.0)).unwrap_or(0.0).clamp(0.0, 100.0);
+        let theme = &self.doc.settings.theme_colors;
+        let paint = shape_paint(sppr, wsp.child("wps:style"), theme);
         let effects = sppr.and_then(|s| s.child("a:effectLst")).map(effect_list).unwrap_or_default();
         let story = match txbx {
             Some(t) if sc.story_depth < MAX_STORY_DEPTH => Some(self.read_textbox(sc, t, rels)),
             _ => None,
         };
-        InlineObject::Shape { kind, w, h, fill, stroke, stroke_width, float, story, freeform: None, effects }
+        // A bent or curved connector: its elbows, as a freeform.
+        let freeform = super::freeform::connector(prst, geom.and_then(|g| g.child("a:avLst")), w, h).map(Arc::new);
+        if freeform.is_some() {
+            kind = ShapeKind::Freeform;
+        }
+        let fill = if matches!(kind, ShapeKind::Line | ShapeKind::Freeform) { None } else { paint.fill };
+        InlineObject::Shape {
+            kind,
+            w,
+            h,
+            fill,
+            stroke: paint.stroke,
+            stroke_width: paint.stroke_width,
+            float,
+            story,
+            freeform,
+            effects,
+            ends: paint.ends,
+        }
     }
 
     fn read_textbox(&mut self, sc: &StoryCtx, content: &El, rels: &Rels) -> u32 {
@@ -907,39 +925,91 @@ impl Reader<'_> {
         self.doc.add_part(PartKind::TextBox, blocks)
     }
 
-    /// Legacy VML pictures and text boxes (best effort).
+    /// Legacy VML pictures, text boxes, lines, rectangles and ovals (best effort).
     fn read_vml(&mut self, sc: &mut StoryCtx, pict: &El, rels: &Rels) -> Option<InlineObject> {
         let shape = pict.els().find(|e| e.name.starts_with("v:") && e.local() != "shapetype")?;
         let style = shape.attr("style").unwrap_or("");
         let len = |k: &str| vml_style(style, k).and_then(|v| measure(v, 1.0)).unwrap_or(0.0).clamp(0.0, crate::units::MAX_LEN_PT);
-        let (w, h) = (len("width"), len("height"));
-        let float = vml_float(shape, style);
+        let (mut w, mut h) = (len("width"), len("height"));
+        let mut float = vml_float(shape, style);
         if let Some(img) = shape.find("v:imagedata") {
             let id = img.attr("r:id").or_else(|| img.attr("r:pict"))?;
             let media = self.media_for(rels, id)?;
             let alt = shape.attr("alt").or_else(|| img.attr("o:title")).unwrap_or("").to_string();
             return Some(InlineObject::Image { media, w, h, alt, float, crop: [0.0; 4], ole: None });
         }
+        let on = |name: &str| shape.attr(name).is_none_or(|v| !matches!(v, "f" | "false" | "0"));
+        let stroke = on("stroked").then(|| shape.attr("strokecolor").map_or(Some(Rgb::BLACK), vml_color)).flatten();
+        let stroke_width = shape.attr("strokeweight").and_then(|v| measure(v, 1.0)).unwrap_or(0.75).clamp(0.0, 100.0);
+        let fill = on("filled").then(|| shape.attr("fillcolor").map_or(Some(Rgb::WHITE), vml_color)).flatten();
         if let Some(t) = shape.find("w:txbxContent")
             && sc.story_depth < MAX_STORY_DEPTH
         {
             let story = Some(self.read_textbox(sc, t, rels));
-            let fill = shape.attr("fillcolor").and_then(Rgb::parse);
-            let stroke = shape.attr("strokecolor").and_then(Rgb::parse);
             return Some(InlineObject::Shape {
                 kind: ShapeKind::TextBox,
                 w,
                 h,
                 fill,
                 stroke,
-                stroke_width: 0.75,
+                stroke_width,
                 float,
                 story,
                 freeform: None,
                 effects: Default::default(),
+                ends: Default::default(),
             });
         }
-        None
+        let kind = match shape.local() {
+            "line" => ShapeKind::Line,
+            "rect" => ShapeKind::Rectangle,
+            "roundrect" => ShapeKind::RoundedRectangle,
+            "oval" => ShapeKind::Ellipse,
+            _ => return None,
+        };
+        let mut ends = wordcraft_doc::para::LineEnds::default();
+        if kind == ShapeKind::Line {
+            // A line runs `from` → `to` (points, offsets from where its style places it).
+            let pt = |name: &str| -> (f32, f32) {
+                let v = shape.attr(name).unwrap_or("0,0");
+                let (x, y) = v.split_once(',').unwrap_or((v, "0"));
+                let m = |s: &str| measure(s, 1.0).map_or(0.0, wordcraft_geom::finite).clamp(-crate::units::MAX_LEN_PT, crate::units::MAX_LEN_PT);
+                (m(x), m(y))
+            };
+            let ((x0, y0), (x1, y1)) = (pt("from"), pt("to"));
+            let max = crate::units::MAX_LEN_PT;
+            (w, h) = ((x1 - x0).abs().min(max), (y1 - y0).abs().min(max));
+            float.x = (float.x + x0.min(x1)).clamp(-max, max);
+            float.y = (float.y + y0.min(y1)).clamp(-max, max);
+            // Drawn top-left to bottom-right; flipped for the other directions.
+            float.flip_h ^= x1 < x0;
+            float.flip_v ^= y1 < y0;
+            let arrow = |name: &str| match shape.child("v:stroke").and_then(|s| s.attr(name)).unwrap_or("none") {
+                "block" => wordcraft_doc::para::LineEnd::Triangle,
+                "classic" => wordcraft_doc::para::LineEnd::Stealth,
+                "open" => wordcraft_doc::para::LineEnd::Arrow,
+                "diamond" => wordcraft_doc::para::LineEnd::Diamond,
+                "oval" => wordcraft_doc::para::LineEnd::Oval,
+                _ => wordcraft_doc::para::LineEnd::None,
+            };
+            ends = wordcraft_doc::para::LineEnds { head: arrow("startarrow"), tail: arrow("endarrow") };
+        }
+        if stroke.is_none() && (fill.is_none() || kind == ShapeKind::Line) {
+            return None;
+        }
+        Some(InlineObject::Shape {
+            kind,
+            w,
+            h,
+            fill: fill.filter(|_| kind != ShapeKind::Line),
+            stroke,
+            stroke_width,
+            float,
+            story: None,
+            freeform: None,
+            effects: Default::default(),
+            ends,
+        })
     }
 
     /// An OLE object (`w:object`, ECMA-376 §17.3.3.19): shown as its picture (VML, or a DrawingML

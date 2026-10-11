@@ -234,6 +234,7 @@ fn many_hidden_float_anchors_lay_out_in_linear_time() {
             story: None,
             freeform: None,
             effects: Default::default(),
+            ends: Default::default(),
         };
         let obj = wordcraft_doc::para::OBJ.to_string();
         let mut p = wordcraft_doc::Paragraph::with_text("Text ", Default::default());
@@ -1056,6 +1057,7 @@ fn text_wraps_around_square_float() {
         story: None,
         freeform: None,
         effects: Default::default(),
+        ends: Default::default(),
     };
     d.insert_object(&Pos::body(0, 0), shape, &Default::default()).unwrap();
     let l = lay(&d);
@@ -1095,6 +1097,7 @@ fn deleted_float_leaves_no_wrap_area_without_markup() {
         story: None,
         freeform: None,
         effects: Default::default(),
+        ends: Default::default(),
     };
     d.insert_object(&Pos::body(0, 0), shape, &Default::default()).unwrap();
     let obj = wordcraft_doc::para::OBJ.len_utf8();
@@ -1148,6 +1151,7 @@ fn hidden_float_leaves_no_wrap_area_when_hidden_text_is_not_shown() {
         story: None,
         freeform: None,
         effects: Default::default(),
+        ends: Default::default(),
     };
     d.insert_object(&Pos::body(0, 0), shape, &Default::default()).unwrap();
     let obj = wordcraft_doc::para::OBJ.len_utf8();
@@ -1202,6 +1206,7 @@ fn line_numbers_borders_text_boxes() {
         story: Some(id),
         freeform: None,
         effects: Default::default(),
+        ends: Default::default(),
     };
     d.insert_object(&Pos::body(2, 5), tb, &Default::default()).unwrap();
     let l = lay(&d);
@@ -1515,6 +1520,7 @@ fn text_box_at(d: &mut Document, pos: &Pos, text: &str, w: f32, h: f32, float: w
         story: Some(id),
         freeform: None,
         effects: Default::default(),
+        ends: Default::default(),
     };
     d.insert_object(pos, shape, &Default::default()).unwrap();
     id
@@ -1587,6 +1593,7 @@ fn presses_grab_pictures_anywhere_and_text_boxes_by_their_border() {
         story: None,
         freeform: None,
         effects: Default::default(),
+        ends: Default::default(),
     };
     d.insert_object(&Pos::body(0, 0), shape, &Default::default()).unwrap();
     let l = lay(&d);
@@ -1808,6 +1815,7 @@ fn box_fan_out(levels: usize, fan: usize) -> Document {
         story: Some(story),
         freeform: None,
         effects: Default::default(),
+        ends: Default::default(),
     };
     for (k, id) in ids.iter().enumerate() {
         let next = *ids.get(k + 1).unwrap_or(id);
@@ -1882,6 +1890,7 @@ fn picture(w: f32, h: f32, float: wordcraft_doc::para::Float) -> InlineObject {
         story: None,
         freeform: None,
         effects: Default::default(),
+        ends: Default::default(),
     }
 }
 
@@ -2031,6 +2040,7 @@ fn rect_shape(w: f32, h: f32, float: wordcraft_doc::para::Float) -> InlineObject
         story: None,
         freeform: None,
         effects: Default::default(),
+        ends: Default::default(),
     }
 }
 
@@ -2201,6 +2211,7 @@ fn floating_header_text_box_leaves_the_body_at_the_top_margin() {
                 story: Some(story),
                 freeform: None,
                 effects: Default::default(),
+                ends: Default::default(),
             };
             anchor.insert_object(0, tb, &Default::default()).unwrap();
         }
@@ -2811,6 +2822,7 @@ fn rotated_float_wraps_around_its_rotated_bounds() {
             story: None,
             freeform: None,
             effects: Default::default(),
+            ends: Default::default(),
         };
         d.insert_object(&Pos::body(0, 0), shape, &Default::default()).unwrap();
         let l = layout(&d, &mut LayoutCache::new(), &LayoutOptions::default());
@@ -2855,6 +2867,7 @@ fn rotated_group_turns_its_members_and_their_shadows() {
         story: None,
         freeform: None,
         effects: ShapeEffects { shadow: Some(Shadow { angle: 0.0, rot_with_shape, ..Default::default() }), ..Default::default() },
+        ends: Default::default(),
     };
     let float =
         Float { wrap: Wrap::InFrontOfText, h_rel: Anchor::Column, v_rel: Anchor::Paragraph, x: 100.0, y: 100.0, rot: 90.0, ..Default::default() };
@@ -2991,6 +3004,45 @@ fn footnote_longer_than_pages_ends() {
     assert!(pieces.windows(2).all(|w| w[0].2 == w[1].1 && w[1].0 == w[0].0 + 1), "{pieces:?}");
 }
 
+/// #611: a connector's arrowheads are drawn, in its colour, at the end its path finishes
+/// (DrawingML's line runs top-left to bottom-right; a flip turns the whole drawing).
+#[test]
+fn line_arrowheads_are_drawn_at_their_ends() {
+    use crate::display::Draw;
+    use wordcraft_doc::graphic::PathSeg;
+    use wordcraft_doc::para::{Anchor, Float, LineEnd, LineEnds, ShapeKind, Wrap};
+    use wordcraft_doc::props::Rgb;
+    let mut d = Document::from_text("Anchor");
+    let float = Float { wrap: Wrap::InFrontOfText, h_rel: Anchor::Page, v_rel: Anchor::Page, x: 100.0, y: 200.0, ..Default::default() };
+    let line = InlineObject::Shape {
+        kind: ShapeKind::Line,
+        w: 60.0,
+        h: 40.0,
+        fill: None,
+        stroke: Some(Rgb(0xFF, 0xC0, 0)),
+        stroke_width: 0.5,
+        float,
+        story: None,
+        freeform: None,
+        effects: Default::default(),
+        ends: LineEnds { head: LineEnd::None, tail: LineEnd::Triangle },
+    };
+    d.insert_object(&Pos::body(0, 0), line, &Default::default()).unwrap();
+    let l = lay(&d);
+    let draws = crate::display::page_display(&d, &l.pages[0], &Default::default());
+    let heads: Vec<&Vec<PathSeg>> = draws
+        .iter()
+        .filter_map(|dr| match dr {
+            Draw::Path { segs, fill: Some(Rgb(0xFF, 0xC0, 0)), .. } => Some(segs),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(heads.len(), 1, "one arrowhead: {draws:?}");
+    // Its tip is the bottom-right corner of the line's frame.
+    assert!(matches!(heads[0].first(), Some(PathSeg::Move(x, y)) if (*x - 160.0).abs() < 0.01 && (*y - 240.0).abs() < 0.01), "{:?}", heads[0]);
+    assert!(draws.iter().any(|dr| matches!(dr, Draw::Shape { kind: ShapeKind::Line, .. })));
+}
+
 /// The first paragraph's lines on page one: (top, bottom, left, right), relative to its column.
 fn line_spans(l: &DocLayout) -> Vec<(f32, f32, f32, f32)> {
     let Some(Placed::Lines { para, .. }) = l.pages[0].items.iter().find(|i| matches!(i, Placed::Lines { .. })) else { return Vec::new() };
@@ -3012,6 +3064,7 @@ fn wrapped_shape_doc(kind: wordcraft_doc::para::ShapeKind, w: f32, h: f32, float
         float,
         story: None,
         effects: Default::default(),
+        ends: Default::default(),
         freeform: None,
     };
     d.insert_object(&Pos::body(0, 0), shape, &Default::default()).unwrap();

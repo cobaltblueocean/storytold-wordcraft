@@ -109,3 +109,50 @@ fn bezier(c: &[[f64; 2]], t: f64) -> [f64; 2] {
     }
     p.first().copied().unwrap_or([0.0, 0.0])
 }
+
+/// The path of a bent or curved connector preset (`bentConnector2`…`5`, `curvedConnector2`…`5`,
+/// ECMA-376 Part 1 §20.1.10.56) on a `w` × `h` shape, its elbows placed by the `a:gd` adjust
+/// values in `av` (`a:avLst`; 50 000ths of the size, half way when absent). Curved connectors are
+/// flattened. `None` for any other preset.
+pub fn connector(prst: &str, av: Option<&El>, w: f32, h: f32) -> Option<Freeform> {
+    let adj = |name: &str| -> f64 {
+        av.into_iter()
+            .flat_map(|l| l.children("a:gd"))
+            .find(|g| g.attr("name") == Some(name))
+            .and_then(|g| g.attr("fmla"))
+            .and_then(|f| f.strip_prefix("val "))
+            .and_then(|v| int(v.trim()))
+            .map_or(0.5, |v| (v as f64 / 100_000.0).clamp(-10.0, 10.0))
+    };
+    let (w64, h64) = (w as f64, h as f64);
+    let (x1, y2, x3) = (w64 * adj("adj1"), h64 * adj("adj2"), w64 * adj("adj3"));
+    let pts: Vec<[f64; 2]> = match prst {
+        "bentConnector2" => vec![[0.0, 0.0], [w64, 0.0], [w64, h64]],
+        "bentConnector3" => vec![[0.0, 0.0], [x1, 0.0], [x1, h64], [w64, h64]],
+        "bentConnector4" => vec![[0.0, 0.0], [x1, 0.0], [x1, y2], [w64, y2], [w64, h64]],
+        "bentConnector5" => vec![[0.0, 0.0], [x1, 0.0], [x1, y2], [x3, y2], [x3, h64], [w64, h64]],
+        "curvedConnector2" => curve(&[[[0.0, 0.0], [w64 / 2.0, 0.0], [w64, h64 / 2.0], [w64, h64]]]),
+        "curvedConnector3" | "curvedConnector4" | "curvedConnector5" => curve(&[
+            [[0.0, 0.0], [x1 / 2.0, 0.0], [x1, h64 / 4.0], [x1, h64 / 2.0]],
+            [[x1, h64 / 2.0], [x1, h64 * 0.75], [(w64 + x1) / 2.0, h64], [w64, h64]],
+        ]),
+        _ => return None,
+    };
+    let pts = pts.into_iter().map(|[x, y]| [x as f32, y as f32]).collect();
+    let f = Freeform { w, h, paths: vec![FreePath { pts, closed: false }], alpha: 1.0, ink: None }.sanitized();
+    (!f.paths.is_empty()).then_some(f)
+}
+
+/// Cubic Bézier pieces (start, two controls, end) flattened into one polyline.
+fn curve(pieces: &[[[f64; 2]; 4]]) -> Vec<[f64; 2]> {
+    let mut pts = Vec::new();
+    for (i, c) in pieces.iter().enumerate() {
+        if i == 0 {
+            pts.push(c[0]);
+        }
+        for s in 1..=CURVE_STEPS {
+            pts.push(bezier(c, s as f64 / CURVE_STEPS as f64));
+        }
+    }
+    pts
+}

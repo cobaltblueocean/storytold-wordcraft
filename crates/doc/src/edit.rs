@@ -580,6 +580,7 @@ mod tests {
             story,
             freeform: None,
             effects: Default::default(),
+            ends: Default::default(),
         }
     }
 
