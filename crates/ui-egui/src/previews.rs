@@ -64,7 +64,7 @@ impl Previews {
                     return None;
                 }
                 let ppp = ui.ctx().pixels_per_point();
-                let img = snippet(
+                let mut img = snippet(
                     &Document::new(),
                     Paragraph::with_text(name, CharProps { font: Some(name.to_string()), size: Some(13.0), ..Default::default() }),
                     240.0,
@@ -72,6 +72,7 @@ impl Previews {
                     ppp,
                     2.0,
                 )?;
+                ink_mask(&mut img);
                 let h = ui.ctx().load_texture(&key, img, egui::TextureOptions::LINEAR);
                 ui.ctx().data_mut(|d| d.insert_temp(egui::Id::new(&key), h.clone()));
                 Some(h)
@@ -83,7 +84,7 @@ impl Previews {
                         h.id(),
                         Rect::from_min_size(pos2(r.min.x + 6.0, r.center().y - sz.y / 2.0), sz),
                         Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
-                        egui::Color32::WHITE,
+                        t.text,
                     );
                 }
                 None => {
@@ -181,6 +182,19 @@ fn math_image(nodes: &wordcraft_doc::math::Arg, display: bool, pt: f32, w: f32, 
     let img = wordcraft_render::render_area(&d, page, 0.0, mid - h / 2.0, w, h, ppp, &opts);
     let px = img.to_straight();
     Some(egui::ColorImage::from_rgba_unmultiplied([img.width as usize, img.height as usize], &px))
+}
+
+/// Turn a snippet rendered black on white paper into an ink mask: white whose alpha is the ink's
+/// coverage, on a transparent background. Painted with the theme's text colour as the tint, a font
+/// menu entry then reads like the rest of the menu in light and dark mode instead of sitting on a
+/// white strip (#535).
+pub fn ink_mask(img: &mut egui::ColorImage) {
+    for p in &mut img.pixels {
+        let [r, g, b, a] = p.to_srgba_unmultiplied();
+        let lum = (u32::from(r) * 299 + u32::from(g) * 587 + u32::from(b) * 114) / 1000;
+        let ink = 255u32.saturating_sub(lum.min(255)) * u32::from(a) / 255;
+        *p = egui::Color32::from_white_alpha(u8::try_from(ink).unwrap_or(u8::MAX));
+    }
 }
 
 /// Lay out `para` (with `base`'s styles) in a `w`×`h` pt box and rasterise it.
@@ -442,5 +456,49 @@ mod tests {
         });
         rx.recv_timeout(std::time::Duration::from_secs(30)).expect("font menu preview rendering hung or failed");
         worker.join().unwrap();
+    }
+
+    #[test]
+    fn ink_mask_keeps_the_ink_and_drops_the_paper() {
+        let mut img = egui::ColorImage::new([3, 1], vec![egui::Color32::WHITE, egui::Color32::BLACK, egui::Color32::from_gray(128)]);
+        ink_mask(&mut img);
+        assert_eq!(img.pixels[0].a(), 0, "paper becomes transparent");
+        assert_eq!(img.pixels[1], egui::Color32::from_white_alpha(255), "full ink stays opaque");
+        assert_eq!(img.pixels[2].a(), 127, "antialiased ink keeps its coverage");
+    }
+
+    /// #535: font menu entries drew on a white strip in dark mode. They are now tinted with the
+    /// theme's text colour and draw no background of their own.
+    #[test]
+    fn font_menu_entries_take_the_theme_text_colour() {
+        for theme in [egui::Theme::Dark, egui::Theme::Light] {
+            let ctx = egui::Context::default();
+            crate::theme::apply(&ctx, crate::theme::Appearance::System);
+            ctx.set_theme(theme);
+            let preview = Previews::default().font_preview_fn();
+            let mut out = None;
+            for time in [1.0, 2.0] {
+                let input = egui::RawInput { time: Some(time), ..Default::default() };
+                let mut o = ctx.run_ui(input, |ui| {
+                    preview(ui, "Source Sans 3");
+                });
+                o.textures_delta.clear();
+                out = Some(o);
+            }
+            let want = if theme == egui::Theme::Dark { Tokens::dark().text } else { Tokens::light().text };
+            let shapes = out.map(|o| o.shapes).unwrap_or_default();
+            let mut images = 0;
+            for s in &shapes {
+                match &s.shape {
+                    egui::Shape::Mesh(m) if m.texture_id != egui::TextureId::default() => {
+                        images += 1;
+                        assert!(m.vertices.iter().all(|v| v.color == want), "{theme:?}: the entry is not tinted with the text colour");
+                    }
+                    egui::Shape::Rect(r) => panic!("{theme:?}: an idle entry paints no background, got {:?}", r.fill),
+                    _ => {}
+                }
+            }
+            assert_eq!(images, 1, "{theme:?}: the entry draws its rendered name");
+        }
     }
 }
