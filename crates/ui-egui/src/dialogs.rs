@@ -43,7 +43,12 @@ pub enum Dialog {
         first: f32,
         before: f32,
         after: f32,
+        /// Line spacing as a multiple; Exactly and At Least show as 1.0.
         line: f32,
+        /// `line` when the dialog opened: OK keeps the paragraph's spacing, whatever its rule,
+        /// unless this changed (#467).
+        #[serde(skip)]
+        line_was: f32,
         keep_next: bool,
         keep_lines: bool,
         page_break: bool,
@@ -709,6 +714,7 @@ impl Dialog {
                     before: rp.space_before,
                     after: rp.space_after,
                     line,
+                    line_was: line,
                     keep_next: rp.keep_next,
                     keep_lines: rp.keep_lines,
                     page_break: rp.page_break_before,
@@ -1066,6 +1072,7 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             before,
             after,
             line,
+            line_was,
             keep_next,
             keep_lines,
             page_break,
@@ -1150,7 +1157,18 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             let tabs = ui.button(tl!("Tabs…")).clicked();
             let (ok, cancel) = buttons(ui, tl!("OK"));
             if ok || tabs {
-                apply_paragraph(app, *rtl, align, *left, *right, *first, *before, *after, *line, [*keep_next, *keep_lines, *page_break, *widow]);
+                apply_paragraph(
+                    app,
+                    *rtl,
+                    align,
+                    *left,
+                    *right,
+                    *first,
+                    *before,
+                    *after,
+                    (*line, *line_was),
+                    [*keep_next, *keep_lines, *page_break, *widow],
+                );
                 apply_asian(app, *asian, *asian_was);
             }
             // Tabs… keeps what was set here and moves on to the Tabs dialog.
@@ -2038,23 +2056,28 @@ fn apply_paragraph(
     first: f32,
     before: f32,
     after: f32,
-    line: f32,
+    line: (f32, f32),
     flags: [bool; 4],
 ) {
     let [keep_next, keep_lines, page_break, widow] = flags;
+    let (line, line_was) = line;
     // Direction first: the alignment and indents are as seen on the page, and their logical
     // values depend on it.
     let _ = app.run(if rtl { "para.rtl" } else { "para.ltr" }, json!({}));
     let _ = app.run("para.align", json!({"value": align}));
     let (start, end) = if rtl { (right, left) } else { (left, right) };
-    let _ = app.run(
-        "para.set",
-        json!({"props": {
-            "indentLeft": start * 72.0, "indentRight": end * 72.0, "indentFirst": first * 72.0,
-            "spaceBefore": before, "spaceAfter": after, "lineSpacing": {"rule": "multiple", "value": line},
-            "keepNext": keep_next, "keepLines": keep_lines, "pageBreakBefore": page_break, "widowControl": widow,
-        }}),
-    );
+    let mut props = json!({
+        "indentLeft": start * 72.0, "indentRight": end * 72.0, "indentFirst": first * 72.0,
+        "spaceBefore": before, "spaceAfter": after,
+        "keepNext": keep_next, "keepLines": keep_lines, "pageBreakBefore": page_break, "widowControl": widow,
+    });
+    // The dialog edits only multiples: an untouched value keeps Exactly and At Least.
+    if line != line_was
+        && let Some(m) = props.as_object_mut()
+    {
+        m.insert("lineSpacing".into(), json!({"rule": "multiple", "value": line}));
+    }
+    let _ = app.run("para.set", json!({"props": props}));
 }
 
 /// The Paragraph dialog's Asian Typography: sets the flags that changed since it opened, so an
@@ -2244,12 +2267,13 @@ mod tests {
 
     /// Open the Paragraph dialog and press OK without changing anything.
     fn ok_unchanged(app: &mut WordApp) {
-        let Some(Dialog::Paragraph { rtl, align, left, right, first, before, after, line, keep_next, keep_lines, page_break, widow, .. }) =
-            Dialog::open("paragraph", app)
+        let Some(Dialog::Paragraph {
+            rtl, align, left, right, first, before, after, line, line_was, keep_next, keep_lines, page_break, widow, ..
+        }) = Dialog::open("paragraph", app)
         else {
             panic!("no paragraph dialog")
         };
-        apply_paragraph(app, rtl, &align, left, right, first, before, after, line, [keep_next, keep_lines, page_break, widow]);
+        apply_paragraph(app, rtl, &align, left, right, first, before, after, (line, line_was), [keep_next, keep_lines, page_break, widow]);
     }
 
     #[test]
@@ -2279,15 +2303,56 @@ mod tests {
     }
 
     #[test]
+    fn paragraph_dialog_keeps_fixed_line_spacing() {
+        use wordcraft_doc::props::LineSpacing;
+        for (cmd, rule) in [(json!({"exactly": 24}), LineSpacing::Exactly(24.0)), (json!({"atLeast": 24}), LineSpacing::AtLeast(24.0))] {
+            // OK without changes, and OK after changing only Keep with next (#467).
+            let mut app = app_with("Example");
+            let _ = app.run("para.lineSpacing", cmd.clone());
+            ok_unchanged(&mut app);
+            assert_eq!(props(&app).line_spacing, Some(rule), "unchanged OK, {cmd}");
+            let Some(Dialog::Paragraph { rtl, align, left, right, first, before, after, line, line_was, keep_lines, page_break, widow, .. }) =
+                Dialog::open("paragraph", &mut app)
+            else {
+                panic!("no paragraph dialog")
+            };
+            apply_paragraph(&mut app, rtl, &align, left, right, first, before, after, (line, line_was), [true, keep_lines, page_break, widow]);
+            let p = props(&app);
+            assert_eq!((p.line_spacing, p.keep_next), (Some(rule), Some(true)), "Keep with next, {cmd}");
+        }
+        // A changed value still sets a multiple.
+        let mut app = app_with("Example");
+        let _ = app.run("para.lineSpacing", json!({"exactly": 24}));
+        let Some(Dialog::Paragraph { rtl, align, left, right, first, before, after, line_was, keep_next, keep_lines, page_break, widow, .. }) =
+            Dialog::open("paragraph", &mut app)
+        else {
+            panic!("no paragraph dialog")
+        };
+        apply_paragraph(&mut app, rtl, &align, left, right, first, before, after, (1.5, line_was), [keep_next, keep_lines, page_break, widow]);
+        assert_eq!(props(&app).line_spacing, Some(LineSpacing::Multiple(1.5)));
+    }
+
+    #[test]
     fn paragraph_dialog_changes_direction() {
         let mut app = app_with("Hello");
-        let Some(Dialog::Paragraph { align, left, right, first, before, after, line, keep_next, keep_lines, page_break, widow, .. }) =
+        let Some(Dialog::Paragraph { align, left, right, first, before, after, line, line_was, keep_next, keep_lines, page_break, widow, .. }) =
             Dialog::open("paragraph", &mut app)
         else {
             panic!()
         };
         // Right to left, aligned right on the page, 1" from the right edge.
-        apply_paragraph(&mut app, true, "right", left, right + 1.0, first, before, after, line, [keep_next, keep_lines, page_break, widow]);
+        apply_paragraph(
+            &mut app,
+            true,
+            "right",
+            left,
+            right + 1.0,
+            first,
+            before,
+            after,
+            (line, line_was),
+            [keep_next, keep_lines, page_break, widow],
+        );
         let _ = align;
         let p = props(&app);
         assert_eq!(p.bidi, Some(true));
