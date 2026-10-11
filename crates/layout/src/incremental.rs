@@ -38,7 +38,7 @@ pub(crate) struct PageState {
     carry: Vec<NoteBox>,
     orig_bottom: f32,
     prev: Option<(String, bool, f32)>,
-    excl: Vec<(Rect, bool)>,
+    excl: Vec<crate::WrapArea>,
     float_tables: Vec<Rect>,
     line_no: u32,
     page_items_start: usize,
