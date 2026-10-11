@@ -66,7 +66,7 @@ fn buttons(ui: &mut Ui, ok: &str, cancel: &str, ok_enabled: bool) -> (bool, bool
             if ui.button(tl!(cancel)).clicked() || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
                 r.1 = true;
             }
-            let okb = ui.add_enabled(ok_enabled, egui::Button::new(egui::RichText::new(tl!(ok)).color(Color32::WHITE)).fill(crate::theme::APP_COLOR));
+            let okb = ui.add_enabled(ok_enabled, crate::widgets::primary_button(ui, tl!(ok)));
             if okb.clicked() || (ok_enabled && ui.input(|i| i.key_pressed(egui::Key::Enter))) {
                 r.0 = true;
             }

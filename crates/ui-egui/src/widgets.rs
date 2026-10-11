@@ -708,6 +708,12 @@ pub fn drawn_state(ui: &Ui, resp: &Response, framed: bool) -> DrawnState {
     }
 }
 
+/// A dialog's primary button (OK, Save, Close): the accent fill with `on_accent` text, per theme.
+pub fn primary_button(ui: &Ui, text: impl Into<String>) -> egui::Button<'static> {
+    let t = Tokens::get(ui.ctx());
+    egui::Button::new(egui::RichText::new(text.into()).color(t.on_accent)).fill(t.accent)
+}
+
 /// A frameless 22 px icon button (pane close buttons): ribbon-style hover and press feedback.
 pub fn icon_button(ui: &mut Ui, icon: &str, tip: &str) -> Response {
     let t = Tokens::get(ui.ctx());
