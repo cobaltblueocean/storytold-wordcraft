@@ -1803,3 +1803,19 @@ preview	Title	Пример
 	Search icons	Поиск значков
 	No icons match your search.	Нет значков, соответствующих поиску.
 	Recolor a one-color picture, such as an icon	Перекрасить одноцветный рисунок, например значок
+
+# Built-in file browser (#576).
+	Documents	Документы
+	Word document	Документ Word
+	All files	Все файлы
+	Recipient lists	Списки получателей
+	The system file dialog isn't available, so WordCraft shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Системное диалоговое окно выбора файлов недоступно, поэтому WordCraft показывает собственное. Чтобы пользоваться системным, установите портал выбора файлов (например, xdg-desktop-portal-gtk) или zenity.
+	Up one level	На уровень вверх
+	Home folder	Домашняя папка
+	{name} wasn't found.	{name} не найден.
+	{name} already exists. Choose Save again to replace it.	{name} уже существует. Чтобы заменить его, снова выберите «Сохранить».
+	This folder can't be read: {error}	Не удаётся прочитать папку: {error}
+	Showing the first {count} items.	Показаны первые элементы: {count}.
+	File name:	Имя файла:
+	Browse in WordCraft…	Обзор в WordCraft…
+	Open a file with WordCraft's own browser when the system file dialog doesn't appear.	Открыть файл во встроенном обозревателе WordCraft, если системное диалоговое окно выбора файлов не появляется.

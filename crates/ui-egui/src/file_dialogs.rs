@@ -40,7 +40,7 @@ const DOCUMENTS: &[&str] = &["docx", "docm", "dotx", "dotm", "doc", "dot", "odt"
 pub fn open_filters(purpose: &str) -> &'static [(&'static str, &'static [&'static str])] {
     match purpose {
         "picture" => &[("Pictures", PICTURES)],
-        "recipients" => &[("Recipient lists", &["csv", "tsv", "txt"]), ("All files", &["*"])],
+        "recipients" => &[("Recipient lists", &["csv", "tsv", "txt", "xlsx", "xlsm", "ods"]), ("All files", &["*"])],
         _ => &[("Documents", DOCUMENTS), ("Word document", &["docx"]), ("All files", &["*"])],
     }
 }
