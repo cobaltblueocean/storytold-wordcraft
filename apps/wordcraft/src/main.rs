@@ -97,6 +97,19 @@ fn load_prefs(app: &mut WordApp) {
     }
 }
 
+/// Fonts the user added (#582) live in `fonts` in the settings folder: load them, and store fonts
+/// added later there. Runs without preferences neither read nor keep them.
+fn load_user_fonts() {
+    if !prefs_enabled() {
+        return;
+    }
+    let Some(dir) = wordcraft_control_key::settings_dir().map(|d| d.join("fonts")) else { return };
+    let (loaded, skipped) = wordcraft_fonts::FontDb::global().load_user_fonts(&dir);
+    if !loaded.is_empty() || !skipped.is_empty() {
+        log::info!("user fonts: {} loaded, {} skipped from {}", loaded.len(), skipped.len(), dir.display());
+    }
+}
+
 /// The saved window geometry, read before the window opens (`load_prefs` runs after).
 fn saved_window() -> Option<WindowGeometry> {
     if !prefs_enabled() {
@@ -210,6 +223,7 @@ fn main() -> eframe::Result {
     // DirectX 12 has no GPU driver (see graphics.rs).
     #[cfg(target_os = "windows")]
     graphics::configure(&mut options, eframe::wgpu::Backends::from_env());
+    load_user_fonts();
     let restored = saved_window();
     if let Some(window) = restored {
         options.viewport = window.apply(options.viewport);

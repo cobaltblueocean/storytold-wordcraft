@@ -350,7 +350,12 @@ pub fn combo(
     combo_impl(ui, id, width, current, items, preview, false)
 }
 
+/// What [`font_combo`] returns when its list's last entry, Add Font…, is chosen (#582): the
+/// caller runs `font.add`, which shows a file picker. Not a family name anyone can type.
+pub const ADD_FONT: &str = "\u{1}font.add";
+
 /// The font box: a [`combo`] where typing lists the matching families under the field (#359).
+/// Its list ends with Add Font… ([`ADD_FONT`]).
 /// Up/Down move the highlight, Enter or a click applies the highlighted family ("arial" applies
 /// "Arial"), Escape restores the current font. Text matching no family is applied as typed, as
 /// Word allows fonts that are not installed.
@@ -489,6 +494,13 @@ fn combo_impl(
             if let Some(v) = combo_list(ui, width, current, items, preview) {
                 out = Some(v);
                 ui.close();
+            }
+            if search {
+                ui.separator();
+                if ui.button(tl!("Add Font…")).clicked() {
+                    out = Some(ADD_FONT.to_string());
+                    ui.close();
+                }
             }
         });
         if s.open && !s.matches.is_empty() {

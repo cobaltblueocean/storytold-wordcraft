@@ -5014,6 +5014,7 @@ dependencies = [
  "wordcraft-control-key",
  "wordcraft-doc",
  "wordcraft-engine",
+ "wordcraft-fonts",
  "wordcraft-ui-egui",
 ]
 
@@ -5115,6 +5116,7 @@ dependencies = [
  "log",
  "skrifa 0.47.0",
  "unicode-bidi",
+ "wuff",
 ]
 
 [[package]]
@@ -5254,6 +5256,7 @@ dependencies = [
  "web-sys",
  "wordcraft-doc",
  "wordcraft-engine",
+ "wordcraft-fonts",
  "wordcraft-ui-egui",
 ]
 
@@ -5289,6 +5292,17 @@ name = "writeable"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ad82d2a33cdc9674dc7465672f271e096168fcdbe0f799d9e6db8c5892679dc"
+
+[[package]]
+name = "wuff"
+version = "0.2.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "200a7b806377b65f1ff9a985874332f15357c87e5dd7855f35f06dade95b8b3d"
+dependencies = [
+ "brotli-decompressor",
+ "bytes",
+ "flate2",
+]
 
 [[package]]
 name = "x11-dl"

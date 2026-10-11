@@ -12,5 +12,6 @@ workspace = true
 kurbo = { workspace = true }
 skrifa = { workspace = true }
 harfrust = { workspace = true }
+wuff = { workspace = true }
 unicode-bidi = { workspace = true }
 log = { workspace = true }
