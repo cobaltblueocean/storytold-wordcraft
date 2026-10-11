@@ -130,6 +130,7 @@ Ranked, to beta (detail and remaining milestones in [docs/roadmap.md](docs/roadm
 ## Progress log
 
 | Date | What landed |
+| 2026-10-11 | Fonts: Palatino Linotype and Book Antiqua fall back to Palatino (macOS) or TeX Gyre Pagella / P052 / URW Palladio (Linux) before generic serif (#670) |
 |---|---|
 | 2026-10-11 | Phonetic Guide (#288): ruby text over base text, `w:ruby` round trip |
 | 2026-10-11 | Customize Ribbon and the Quick Access Toolbar: custom tabs and groups, hide and reorder tabs, add or remove toolbar commands (right-click any button, or the toolbar's … menu); kept between runs (#379, #376) |
