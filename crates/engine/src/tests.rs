@@ -2861,6 +2861,8 @@ fn unknown_text_extensions_open_as_text() {
     assert!(s.run("file.open", &json!({"path": "x.bin", "data": bad})).is_err());
     assert!(text(&s).contains("Радио"), "a failed open leaves the document alone");
     let _ = std::fs::remove_dir_all(&dir);
+}
+
 /// Home › Font › Enclose Characters (#297): the selection becomes an `EQ \o\ac` field, saved the
 /// way Word stores it (the style in the code's run sizes) and read back; null takes the text out
 /// again, and each step undoes.
