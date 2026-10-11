@@ -30,6 +30,7 @@ pub mod icons;
 pub mod ink;
 pub mod keys;
 pub mod keytips;
+pub mod languagetool;
 pub mod mini_toolbar;
 pub mod objects;
 pub mod panes;
@@ -117,6 +118,8 @@ pub struct UiState {
     /// Read Aloud speed (1 = normal) and whether it skips citations and bibliographies.
     pub read_aloud_rate: f32,
     pub read_aloud_skip_citations: bool,
+    /// LanguageTool checking (File › Options › Proofing, #575): off by default.
+    pub language_tool: wordcraft_languagetool::Settings,
     /// Keytips (Alt) state; not persisted, it resets each session.
     #[serde(skip)]
     pub keytips: crate::keytips::Phase,
@@ -149,6 +152,7 @@ impl Default for UiState {
             editing: wordcraft_engine::Prefs::default(),
             read_aloud_rate: 1.0,
             read_aloud_skip_citations: true,
+            language_tool: wordcraft_languagetool::Settings::default(),
             keytips: crate::keytips::Phase::Off,
             alt_chord_used: false,
             dark_page: false,
@@ -201,6 +205,8 @@ pub struct WordApp {
     pub(crate) equation_prev_tab: Option<String>,
     /// Zotero commands in flight (`ui.zotero.*`).
     pub zotero: zotero::ZoteroLink,
+    /// LanguageTool checking in flight (`ui.languageTool`, #575).
+    pub language_tool: languagetool::LtLink,
     /// The egui context, once the first frame has run (background work wakes the UI with it).
     pub(crate) ctx: Option<egui::Context>,
     /// Read Aloud: the start of the sentence the caret was last moved to, and the last error shown.
@@ -268,6 +274,7 @@ impl WordApp {
             last_autosave: 0.0,
             equation_prev_tab: None,
             zotero: zotero::ZoteroLink::default(),
+            language_tool: languagetool::LtLink::default(),
             ctx: None,
             read_aloud_at: None,
             read_aloud_error: None,
@@ -367,6 +374,9 @@ impl WordApp {
             return self.set_autosave(&params);
         }
         if let Some(r) = table_pen::toggle(self, id, &params) {
+            return r;
+        }
+        if let Some(r) = languagetool::command(self, id, &params) {
             return r;
         }
         let ctx = self.ctx.clone();
@@ -819,6 +829,7 @@ impl WordApp {
         self.drain_control(ctx);
         zotero::poll(self, ctx);
         read_aloud::poll(self, ctx);
+        languagetool::poll(self, ctx);
         self.clear_stale_change_picture();
         let _ = self.poll_file_dialog();
         self.drain_inbox();
