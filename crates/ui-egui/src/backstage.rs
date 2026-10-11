@@ -408,9 +408,8 @@ fn options_page(app: &mut WordApp, ui: &mut Ui) {
         let _ = app.run("view.ruler", json!({"value": ruler}));
     }
     ui.add_space(10.0);
-<<<<<<< HEAD
     proofing_options(app, ui);
-=======
+    ui.add_space(10.0);
     ui.label(egui::RichText::new(tl!("Customize")).font(semibold(15.0)));
     ui.horizontal(|ui| {
         ui.label(tl!("Keyboard shortcuts:"));
@@ -424,7 +423,6 @@ fn options_page(app: &mut WordApp, ui: &mut Ui) {
             let _ = app.run("tools.customizeRibbon", json!({}));
         }
     });
->>>>>>> origin/main
     ui.add_space(10.0);
     ui.label(egui::RichText::new(tl!("Agents")).font(semibold(15.0)));
     ui.label(tl!("Every command is available to scripts and AI agents: run `wordcraft-cli mcp` for an MCP server, or start the app with `--control <port>` for the JSON control channel."));
