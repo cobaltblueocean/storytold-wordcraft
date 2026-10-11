@@ -1809,3 +1809,31 @@ preview	Title	Пример
 	Search icons	Поиск значков
 	No icons match your search.	Нет значков, соответствующих поиску.
 	Recolor a one-color picture, such as an icon	Перекрасить одноцветный рисунок, например значок
+
+# Outline view (#493).
+	Promote to Heading 1	Повысить до заголовка 1
+	Demote to Body Text	Понизить до обычного текста
+	Move Up	Переместить вверх
+	Move Down	Переместить вниз
+	Collapse	Свернуть
+	Expand or Collapse Heading	Развернуть или свернуть заголовок
+	Select Heading and Content	Выделить заголовок и содержимое
+	Show Level	Показать уровень
+	Show Level 1	Показать уровень 1
+	Show Level 2	Показать уровень 2
+	Show Level 3	Показать уровень 3
+	Show Level 4	Показать уровень 4
+	Show Level 5	Показать уровень 5
+	Show Level 6	Показать уровень 6
+	Show Level 7	Показать уровень 7
+	Show Level 8	Показать уровень 8
+	Show Level 9	Показать уровень 9
+	Show All Levels	Показать все уровни
+	All Levels	Все уровни
+	Show First Line Only	Показывать только первую строку
+	Show Text Formatting	Показывать форматирование текста
+	Close Outline View	Закрыть режим структуры
+	Outline State	Состояние структуры
+	Outlining	Структура
+	Outline Tools	Работа со структурой
+	Close Outline\nView	Закрыть режим\nструктуры

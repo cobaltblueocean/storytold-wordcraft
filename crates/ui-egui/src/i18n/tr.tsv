@@ -1428,3 +1428,31 @@
 	Search icons	Simgelerde ara
 	No icons match your search.	Aramanızla eşleşen simge yok.
 	Recolor a one-color picture, such as an icon	Simge gibi tek renkli bir resmi yeniden renklendir
+
+# Outline view (#493).
+	Promote to Heading 1	Başlık 1'e yükselt
+	Demote to Body Text	Gövde metnine düşür
+	Move Up	Yukarı taşı
+	Move Down	Aşağı taşı
+	Collapse	Daralt
+	Expand or Collapse Heading	Başlığı genişlet veya daralt
+	Select Heading and Content	Başlığı ve içeriğini seç
+	Show Level	Düzeyi göster
+	Show Level 1	Düzey 1'i göster
+	Show Level 2	Düzey 2'yi göster
+	Show Level 3	Düzey 3'ü göster
+	Show Level 4	Düzey 4'ü göster
+	Show Level 5	Düzey 5'i göster
+	Show Level 6	Düzey 6'yı göster
+	Show Level 7	Düzey 7'yi göster
+	Show Level 8	Düzey 8'i göster
+	Show Level 9	Düzey 9'u göster
+	Show All Levels	Tüm düzeyleri göster
+	All Levels	Tüm düzeyler
+	Show First Line Only	Yalnızca ilk satırı göster
+	Show Text Formatting	Metin biçimlendirmesini göster
+	Close Outline View	Anahat görünümünü kapat
+	Outline State	Anahat durumu
+	Outlining	Anahat
+	Outline Tools	Anahat araçları
+	Close Outline\nView	Anahat görünümünü\nkapat
