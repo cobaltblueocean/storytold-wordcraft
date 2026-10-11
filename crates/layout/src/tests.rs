@@ -448,6 +448,29 @@ fn tables_lay_out_cells() {
     assert!(l.cell_at(0, c.x, c.top + 2.0).is_some());
 }
 
+/// A vertical merge is one cell: its box spans the rows, a click anywhere in it finds it, and the
+/// continuation row's box is `covered` (no gridline, not a hit).
+#[test]
+fn a_vertical_merge_lays_out_as_one_cell() {
+    let mut d = Document::from_text("before\nafter");
+    let mut t = Table::new(3, 2, 468.0);
+    t.rows[0].cells[0].props.vmerge = wordcraft_doc::props::VMerge::Restart;
+    t.rows[1].cells[0].props.vmerge = wordcraft_doc::props::VMerge::Continue;
+    d.insert_block(StoryRef::Body, &Path::top(1), wordcraft_doc::Block::Table(t)).unwrap();
+    let l = lay(&d);
+    let cells: Vec<_> = l.pages[0]
+        .items
+        .iter()
+        .filter_map(|i| if let Placed::Cell { rect, row, cell: 0, covered, .. } = i { Some((*row, *rect, *covered)) } else { None })
+        .collect();
+    let (r0, r1) = (cells[0].1, cells[1].1);
+    assert!(!cells[0].2 && cells[1].2 && !cells[2].2, "{cells:?}");
+    assert!((r0.bottom() - r1.bottom()).abs() < 0.01 && r0.h > r1.h * 1.9, "{r0:?} {r1:?}");
+    // The lower half of the merge hits the restart cell (row 0), not the continuation row.
+    let hit = l.cell_at(0, r1.x + 5.0, r1.y + r1.h / 2.0).unwrap();
+    assert_eq!((hit.2, hit.3), (0, 0));
+}
+
 /// A 1×3 table after "before" whose middle cell holds `text` running `dir`.
 fn turned_table(dir: TextDirection, text: &str, row: Option<f32>) -> Document {
     let mut d = Document::from_text("before\nafter");

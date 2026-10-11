@@ -515,7 +515,7 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
             // Table Layout › View Gridlines: table cell outlines (on screen only).
             if app.session.view.table_gridlines {
                 for it in &page.items {
-                    if let Placed::Cell { rect, .. } = it {
+                    if let Placed::Cell { rect, covered: false, .. } = it {
                         let r = Rect::from_min_size(
                             pos2(visual_sr.min.x + rect.x * page_scale, visual_sr.min.y + rect.y * page_scale),
                             vec2(rect.w * page_scale, rect.h * page_scale),

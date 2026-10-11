@@ -643,7 +643,14 @@ pub fn layout_table(ctx: &mut Ctx, story: StoryRef, t: &Table, path: &[u32], ava
             if let Some(e) = b.right.filter(Border::is_visible) {
                 items.push(Placed::Rule { x0: x1, y0, x1, y1, border: e });
             }
-            items.push(Placed::Cell { rect: Rect::new(c.x, 0.0, c.w, rh), table: wordcraft_doc::Path(path.to_vec()), row: ri, cell: ci, story });
+            items.push(Placed::Cell {
+                rect: Rect::new(c.x, 0.0, c.w, if c.vmerge == VMerge::Continue { rh } else { span_h }),
+                covered: c.vmerge == VMerge::Continue,
+                table: wordcraft_doc::Path(path.to_vec()),
+                row: ri,
+                cell: ci,
+                story,
+            });
         }
         out.push(RowLayout { height: rh, items });
     }
@@ -767,9 +774,9 @@ pub fn split_row(row: &RowLayout, cut: f32) -> Option<(RowLayout, RowLayout)> {
                 a.extend(above.map(|rect| Placed::Fill { rect, color: *color }));
                 b.extend(below.map(|rect| Placed::Fill { rect, color: *color }));
             }
-            Placed::Cell { rect, table, row: r, cell, story } => {
+            Placed::Cell { rect, covered, table, row: r, cell, story } => {
                 let (above, below) = split_rect(*rect, cut, shift);
-                let cell_at = |rect| Placed::Cell { rect, table: table.clone(), row: *r, cell: *cell, story: *story };
+                let cell_at = |rect| Placed::Cell { rect, covered: *covered, table: table.clone(), row: *r, cell: *cell, story: *story };
                 a.extend(above.map(cell_at));
                 b.extend(below.map(cell_at));
             }
