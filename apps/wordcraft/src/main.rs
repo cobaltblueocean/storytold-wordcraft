@@ -207,7 +207,8 @@ fn main() -> eframe::Result {
         options.viewport = options.viewport.with_icon(icon);
     }
     // Before eframe creates the wgpu instance: default Windows to DirectX 12 only, or OpenGL when
-    // DirectX 12 has no GPU driver (see graphics.rs).
+    // DirectX 12 has no GPU driver, and compile DirectX 12 shaders with FXC, which needs no
+    // DLL of ours (#603; see graphics.rs).
     #[cfg(target_os = "windows")]
     graphics::configure(&mut options, eframe::wgpu::Backends::from_env());
     let restored = saved_window();

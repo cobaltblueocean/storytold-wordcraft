@@ -1,9 +1,10 @@
-//! Windows graphics instance configuration, applied before wgpu can initialize any driver.
+//! Windows graphics instance configuration (backends and the DirectX 12 shader compiler), applied
+//! before wgpu can initialize any driver.
 
 use eframe::{
     NativeOptions,
     egui_wgpu::WgpuSetup,
-    wgpu::{Backends, DeviceType},
+    wgpu::{Backends, DeviceType, Dx12Compiler},
 };
 
 /// What the start-up probe learned about one DirectX 12 adapter.
@@ -55,11 +56,38 @@ pub fn configure_backends(options: &mut NativeOptions, backends: Backends) {
     }
 }
 
+/// The DirectX 12 shader compiler: FXC (`d3dcompiler_47.dll`, part of Windows) unless `env`
+/// (normally `WGPU_DX12_COMPILER`, wgpu's own variable: `fxc`, `dxc`, `auto`…) names another.
+///
+/// #603: wgpu's default (`Auto`) uses DXC, loading whichever `dxcompiler.dll` the DLL search path
+/// finds first. WordCraft ships none, so that copy belongs to another program. Without a matching
+/// `dxil.dll` beside it, DXC warns that the DXIL is unsigned; wgpu takes the warning for a compile
+/// error, its own indirect-validation pipeline fails, the device is lost and eframe exits before
+/// the first frame. FXC is always there and compiles everything egui's shaders need.
+pub fn dx12_compiler(env: Option<&str>) -> Dx12Compiler {
+    let Some(value) = env else { return Dx12Compiler::Fxc };
+    value.parse().unwrap_or_else(|e| {
+        log::warn!("graphics: WGPU_DX12_COMPILER={value:?} ignored ({e}), using FXC");
+        Dx12Compiler::Fxc
+    })
+}
+
+/// Makes the wgpu instance eframe creates compile DirectX 12 shaders with `compiler`.
+pub fn configure_dx12_compiler(options: &mut NativeOptions, compiler: Dx12Compiler) {
+    if let WgpuSetup::CreateNew(create) = &mut options.wgpu_options.wgpu_setup {
+        create.instance_descriptor.backend_options.dx12.shader_compiler = compiler;
+    }
+}
+
 /// Chooses the backends ([`choose_backends`]) and applies them to `options`. Without a
 /// `backend_override` this first probes DirectX 12 with a short-lived instance of its own, which
 /// is dropped before eframe creates the real one.
 #[cfg(target_os = "windows")]
 pub fn configure(options: &mut NativeOptions, backend_override: Option<Backends>) {
+    // First, so the probe's instance doesn't load a stray `dxcompiler.dll` either.
+    let compiler = dx12_compiler(std::env::var("WGPU_DX12_COMPILER").ok().as_deref());
+    log::info!("graphics: DirectX 12 shader compiler {compiler:?}");
+    configure_dx12_compiler(options, compiler);
     let backends = match backend_override {
         Some(backends) => {
             log::info!("graphics: WGPU_BACKEND override, backends {backends:?}");
@@ -87,7 +115,11 @@ fn probe_dx12(options: &NativeOptions) -> Vec<Dx12Adapter> {
     let WgpuSetup::CreateNew(create) = &options.wgpu_options.wgpu_setup else {
         return Vec::new();
     };
-    let instance = Instance::new(InstanceDescriptor { backends: Backends::DX12, ..InstanceDescriptor::new_without_display_handle() });
+    let instance = Instance::new(InstanceDescriptor {
+        backends: Backends::DX12,
+        backend_options: create.instance_descriptor.backend_options.clone(),
+        ..InstanceDescriptor::new_without_display_handle()
+    });
     pollster::block_on(instance.enumerate_adapters(Backends::DX12))
         .iter()
         .map(|adapter| {
@@ -137,6 +169,23 @@ mod tests {
             assert_eq!(choose_backends(Some(backends), &warp_only), backends);
             assert_eq!(configured_backends(backends), backends);
         }
+    }
+
+    /// #603: DirectX 12 shaders compile with FXC, never a `dxcompiler.dll` found on the search
+    /// path, unless `WGPU_DX12_COMPILER` asks for it.
+    #[test]
+    fn dx12_compiles_with_fxc_unless_asked() {
+        assert!(matches!(dx12_compiler(None), Dx12Compiler::Fxc));
+        assert!(matches!(dx12_compiler(Some("bogus")), Dx12Compiler::Fxc));
+        assert!(matches!(dx12_compiler(Some("FXC")), Dx12Compiler::Fxc));
+        assert!(matches!(dx12_compiler(Some("dxc")), Dx12Compiler::DynamicDxc { .. }));
+        assert!(matches!(dx12_compiler(Some("auto")), Dx12Compiler::Auto));
+        let mut options = NativeOptions::default();
+        configure_dx12_compiler(&mut options, dx12_compiler(None));
+        let WgpuSetup::CreateNew(create) = options.wgpu_options.wgpu_setup else {
+            panic!("default native options must create a wgpu instance");
+        };
+        assert!(matches!(create.instance_descriptor.backend_options.dx12.shader_compiler, Dx12Compiler::Fxc));
     }
 
     #[test]
