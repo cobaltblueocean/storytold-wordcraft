@@ -1504,6 +1504,43 @@ fn wrap_polygons_round_trip() {
     assert_eq!(floats[1].wrap_polygon.as_deref(), ellipse.as_ref());
 }
 
+#[test]
+fn ruby_phonetic_guide_round_trips_as_w_ruby() {
+    use wordcraft_doc::para::RubyAlign;
+    let mut p = Paragraph::with_text("Read  daily.", CharProps::default());
+    let bold = CharProps { bold: Some(true), ..Default::default() };
+    let ruby = InlineObject::Ruby {
+        base: "漢字".into(),
+        ruby: "かんじ".into(),
+        align: RubyAlign::DistributeSpace,
+        size: 5.5,
+        raise: 10.0,
+        base_size: 11.0,
+        lang: "ja-JP".into(),
+        props: Box::new(CharProps { font: Some("Noto Sans CJK JP".into()), ..Default::default() }),
+    };
+    p.insert_object(5, ruby.clone(), &bold).unwrap();
+    let d = doc_with(vec![p]);
+    let bytes = wordcraft_docx::write(&d).expect("write");
+    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(&bytes)).unwrap();
+    let mut xml = String::new();
+    std::io::Read::read_to_string(&mut zip.by_name("word/document.xml").unwrap(), &mut xml).unwrap();
+    for part in [
+        r#"<w:rubyAlign w:val="distributeSpace"/><w:hps w:val="11"/><w:hpsRaise w:val="20"/><w:hpsBaseText w:val="22"/><w:lid w:val="ja-JP"/>"#,
+        "<w:rt><w:r>",
+        ">かんじ</w:t>",
+        "<w:rubyBase><w:r><w:rPr><w:b/>",
+        ">漢字</w:t>",
+    ] {
+        assert!(xml.contains(part), "missing {part}: {xml}");
+    }
+    let r = wordcraft_docx::read(&bytes).expect("read");
+    let q = paras(&r)[0];
+    assert_eq!(q.plain_text(), "Read 漢字 daily.");
+    assert_eq!(q.objects, vec![ruby]);
+    assert_eq!(q.props_of_char(5).bold, Some(true));
+}
+
 /// #354: the sides text wraps on (`@wrapText`) are read and written for Square, Tight and
 /// Through; both sides is the default.
 #[test]
