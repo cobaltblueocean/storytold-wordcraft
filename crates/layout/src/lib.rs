@@ -358,8 +358,14 @@ fn env_hash(doc: &Document, opts: &LayoutOptions) -> u64 {
         opts.proofing,
         opts.field_codes,
         wordcraft_proof::user_dictionary().len(),
-        doc.settings.auto_hyphenation,
+        hyphenation_key(doc),
     ))
+}
+
+/// The hyphenation settings, hashable (the zone as its bits).
+fn hyphenation_key(doc: &Document) -> (bool, u32, bool, u32) {
+    let s = &doc.settings;
+    (s.auto_hyphenation, s.hyphenation_zone.to_bits(), s.hyphenate_caps, s.consecutive_hyphen_limit)
 }
 
 fn has_page_fields(p: &Paragraph) -> bool {

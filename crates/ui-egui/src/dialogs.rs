@@ -298,6 +298,8 @@ pub enum Dialog {
         text: String,
         shape: String,
     },
+    /// Line Numbers, Hyphenation, Language, Envelopes and Labels (#407).
+    Layout(Box<crate::dialogs_layout::LayoutDialog>),
 }
 
 /// The Table Properties dialog's fields. Lengths are in the interface unit
@@ -711,6 +713,7 @@ impl Dialog {
             Dialog::CustomizeKeyboard { .. } => "customizeKeyboard",
             Dialog::CustomizeRibbon { .. } => "customizeRibbon",
             Dialog::Enclose { .. } => "enclose",
+            Dialog::Layout(d) => d.name(),
         }
     }
 
@@ -733,6 +736,9 @@ impl Dialog {
     pub fn open(name: &str, app: &mut WordApp) -> Option<Dialog> {
         if let Some(d) = crate::dialogs_insert::open(name, app) {
             return Some(Dialog::Insert(Box::new(d)));
+        }
+        if let Some(d) = crate::dialogs_layout::open(name, app) {
+            return Some(Dialog::Layout(Box::new(d)));
         }
         let st = app.session.run("format.state", &json!({})).unwrap_or_default();
         let s = |k: &str| st.get(k).and_then(Value::as_str).unwrap_or("").to_string();
@@ -1072,6 +1078,7 @@ pub fn show(app: &mut WordApp, ctx: &egui::Context) {
         Dialog::CustomizeKeyboard { .. } => "Customize Keyboard",
         Dialog::CustomizeRibbon { .. } => "Customize Ribbon",
         Dialog::Enclose { .. } => "Enclose Characters",
+        Dialog::Layout(d) => d.title(),
     };
     let id = egui::Id::new(("dialog", title));
     let shown = place_dialog(ctx, id, egui::Window::new(tl!(title)).id(id).collapsible(false).resizable(false)).open(&mut open).show(ctx, |ui| {
@@ -2050,6 +2057,7 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             }
             cancel
         }
+        Dialog::Layout(d) => crate::dialogs_layout::body(app, ui, d),
         Dialog::FindRecipient { text, message } => {
             ui.horizontal(|ui| {
                 ui.label(tl!("Find:"));
