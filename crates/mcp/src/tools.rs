@@ -80,7 +80,7 @@ pub fn tool_definitions() -> Value {
         tool(
             "open_document",
             "Open",
-            "Open a .docx, .odt, .rtf, .md, .tex, .html, .txt or .json file.",
+            "Open a .docx, .doc, .odt, .rtf, .md, .tex, .html, .txt or .json file, or any other text file (.m3u, .log, .ini…) as plain text.",
             obj(json!({"path": s("File path")}), &["path"]),
             false
         ),

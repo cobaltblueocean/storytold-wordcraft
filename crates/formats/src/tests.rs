@@ -280,6 +280,26 @@ fn txt_round_trip() {
     assert_eq!(import("txt", &[0x63, 0x61, 0x66, 0xE9, 0x80]).unwrap().unwrap().plain_text(Default::default()), "café€");
 }
 
+/// #569: a file with an extension we don't know opens as text when it is text (a playlist), and
+/// a binary file is told apart.
+#[test]
+fn text_sniffing() {
+    use crate::txt::is_text;
+    assert!(is_text(b""));
+    assert!(is_text(b"#EXTM3U\r\n#EXTINF:123,Artist - Title\r\nC:\\Music\\song.mp3\r\n"));
+    assert!(is_text("#EXTM3U\n#EXTINF:-1,Мелодия — ünïcødé\nhttp://x/y.mp3\n".as_bytes()));
+    assert!(is_text(&[0x23, 0x45, 0x58, 0x54, 0xE9, 0x0D, 0x0A, 0x1A])); // Windows-1252, DOS ^Z
+    assert!(is_text(&[0xEF, 0xBB, 0xBF, b'a']));
+    let u16le: Vec<u8> = "#EXTM3U\r\n".encode_utf16().flat_map(|u| u.to_le_bytes()).collect();
+    assert!(is_text(&u16le));
+    assert!(!is_text(b"\x89PNG\r\n\x1a\n\0\0\0\rIHDR"));
+    assert!(!is_text(b"PK\x03\x04\x14\0\x06\0"));
+    assert!(!is_text(b"%PDF-1.7\n%\xE2\xE3\xCF\xD3\n"));
+    assert!(!is_text(&[0x7F, b'E', b'L', b'F', 2, 1, 1, 3, 4, 5, 6, 7, 8]));
+    // Odd-length bytes with zeros mixed in: binary, not UTF-16.
+    assert!(!is_text(&[1, 0, 2, 0, 3]));
+}
+
 #[test]
 fn dispatch_unknown() {
     assert!(import("xyz", b"").is_none());

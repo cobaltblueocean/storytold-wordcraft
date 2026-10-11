@@ -2732,3 +2732,58 @@ fn deleting_the_last_cell_column_never_leaves_a_table_without_rows() {
     run(&mut s, "edit.undo", json!({}));
     assert!(s.doc.body.iter().any(|b| b.as_table().is_some_and(|t| !t.rows.is_empty())));
 }
+
+/// #569: a playlist (.m3u / .m3u8) — or any file with an extension WordCraft doesn't know —
+/// opens as plain text with its encoding detected, like Word's text import; a binary file is a
+/// clean error, never garbage or a panic.
+#[test]
+fn unknown_text_extensions_open_as_text() {
+    let lines = |doc: &wordcraft_doc::Document| doc.plain_text(StoryRef::Body);
+    let m3u8 = "#EXTM3U\r\n#EXTINF:215,Björk — Jóga\r\nmusic/Jóga.mp3\r\n#EXTINF:-1,Радио\r\nhttp://example.org/live\r\n";
+    let doc = crate::io::open_bytes("Mix.M3U8", m3u8.as_bytes()).unwrap();
+    assert!(
+        lines(&doc).starts_with("#EXTM3U\n#EXTINF:215,Björk — Jóga\nmusic/Jóga.mp3\n#EXTINF:-1,Радио\nhttp://example.org/live"),
+        "{:?}",
+        lines(&doc)
+    );
+    assert!(!lines(&doc).contains('\r'));
+    // With a BOM, which must not show up as a character.
+    let bom = [&[0xEF, 0xBB, 0xBF][..], m3u8.as_bytes()].concat();
+    assert!(lines(&crate::io::open_bytes("a.m3u8", &bom).unwrap()).starts_with("#EXTM3U\n"));
+    // A plain .m3u in Windows-1252 (é = E9, — = 97).
+    let cp1252 = b"#EXTM3U\r\n#EXTINF:100,Caf\xE9 \x97 Live\r\nC:\\Music\\caf\xE9.mp3\r\n";
+    assert_eq!(lines(&crate::io::open_bytes("old.m3u", cp1252).unwrap()), "#EXTM3U\n#EXTINF:100,Café — Live\nC:\\Music\\café.mp3\n");
+    // Other text files, a file without an extension, a dot in a folder name only.
+    for name in ["server.log", "settings.ini", "subs.srt", "README", "/home/a.b/README", "C:\\v1.2\\notes"] {
+        assert_eq!(lines(&crate::io::open_bytes(name, b"one\ntwo").unwrap()), "one\ntwo", "{name}");
+    }
+    // Binary files: an error naming the file, no panic.
+    for (name, bytes) in
+        [("song.mp3", &b"ID3\x04\0\0\0\0\x01\x02\x03"[..]), ("pic.dat", b"\x89PNG\r\n\x1a\n\0\0\0\rIHDR"), ("blob", &[0u8, 1, 2, 3, 0, 255])]
+    {
+        let err = crate::io::open_bytes(name, bytes).unwrap_err();
+        assert!(err.contains(name) && err.contains("not a document"), "{name}: {err}");
+    }
+    assert!(crate::io::open_bytes("x.pdf", b"%PDF-1.7\n1 0 obj\n").is_err());
+    // A Word document or RTF file with the wrong extension opens by what it holds.
+    let docx = crate::io::save_bytes("x.docx", &crate::sample::letter()).unwrap();
+    assert_eq!(lines(&crate::io::open_bytes("letter.bak", &docx).unwrap()), lines(&crate::io::open_bytes("x.docx", &docx).unwrap()));
+    let rtf = crate::io::open_bytes("note.tmp", br"{\rtf1\ansi Hello {\b bold}\par}").unwrap();
+    assert!(lines(&rtf).starts_with("Hello bold"), "{:?}", lines(&rtf));
+    // Through file.open, both from disk and with the bytes (the web's picker and drops).
+    let dir = std::env::temp_dir().join(format!("wordcraft-569-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("road trip.m3u");
+    std::fs::write(&path, cp1252).unwrap();
+    let mut s = s();
+    let r = run(&mut s, "file.open", json!({"path": path.to_string_lossy()}));
+    assert_eq!(r["paragraphs"], 4);
+    assert!(text(&s).contains("Café — Live"));
+    let data = crate::cmd::insert::base64_encode(m3u8.as_bytes());
+    run(&mut s, "file.open", json!({"path": "Mix.m3u8", "data": data}));
+    assert!(text(&s).contains("Радио"));
+    let bad = crate::cmd::insert::base64_encode(b"\0\x01\x02binary\0");
+    assert!(s.run("file.open", &json!({"path": "x.bin", "data": bad})).is_err());
+    assert!(text(&s).contains("Радио"), "a failed open leaves the document alone");
+    let _ = std::fs::remove_dir_all(&dir);
+}
