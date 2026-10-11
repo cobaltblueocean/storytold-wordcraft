@@ -759,6 +759,20 @@ fn draw(app: &mut WordApp, ui: &mut Ui) {
     });
 }
 
+/// The Design tab's style set gallery in a box of its own, sized from its thumbnails and clipped
+/// to it, with a gap on each side: the Colors and Fonts column can't be drawn over, or cut by,
+/// the thumbnails (#638). Returns the box and the space the thumbnails used.
+fn style_set_box(app: &mut WordApp, ui: &mut Ui) -> (Rect, Rect) {
+    ui.add_space(4.0);
+    let (gallery, _) = ui.allocate_exact_size(vec2(crate::previews::STYLE_SET_GALLERY_W, CONTENT_H), Sense::hover());
+    let mut gui = ui.new_child(egui::UiBuilder::new().max_rect(gallery).layout(egui::Layout::left_to_right(egui::Align::Min)));
+    gui.set_clip_rect(gallery.intersect(ui.clip_rect()));
+    gui.spacing_mut().item_spacing = vec2(1.0, 1.0);
+    crate::previews::style_set_gallery(app, &mut gui);
+    ui.add_space(8.0);
+    (gallery, gui.min_rect())
+}
+
 fn design(app: &mut WordApp, ui: &mut Ui) {
     group(ui, "Themes", None, app, |ui, app| {
         menu_button(ui, app, "themes", Some("Themes"), "Themes", true, |ui, app| {
@@ -768,7 +782,7 @@ fn design(app: &mut WordApp, ui: &mut Ui) {
         });
     });
     group(ui, "Document Formatting", None, app, |ui, app| {
-        crate::previews::style_set_gallery(app, ui);
+        style_set_box(app, ui);
         stack(ui, |ui| {
             menu_button(ui, app, "colors", Some("Colors"), "Theme Colors", false, |ui, app| {
                 for (name, ..) in wordcraft_engine::cmd::design::THEMES {
@@ -1780,6 +1794,26 @@ mod tests {
         let mut b = Vec::new();
         image::DynamicImage::ImageRgba8(img).write_to(&mut std::io::Cursor::new(&mut b), image::ImageFormat::Png).unwrap();
         wordcraft_engine::cmd::insert::base64_encode(&b)
+    }
+
+    /// The style set gallery fills exactly its own box and the next control starts after a gap,
+    /// so Colors and Fonts can't overlap the thumbnails (#638).
+    #[test]
+    fn design_style_set_gallery_stays_in_its_box() {
+        let mut app = WordApp::new(Session::new(wordcraft_doc::Document::new()), crate::Services::default());
+        let mut seen = None;
+        let mut h = egui_kittest::Harness::builder().with_size(vec2(1440.0, 200.0)).build_ui(|ui| {
+            ui.horizontal_top(|ui| {
+                let (gallery, used) = style_set_box(&mut app, ui);
+                seen = Some((gallery, used, ui.cursor().min.x));
+            });
+        });
+        h.run_steps(2);
+        drop(h);
+        let (gallery, used, next_x) = seen.unwrap();
+        assert!((gallery.width() - crate::previews::STYLE_SET_GALLERY_W).abs() < 0.01);
+        assert!(used.right() <= gallery.right() + 0.01, "{used:?} {gallery:?}");
+        assert!(next_x >= gallery.right() + 8.0 - 0.01, "{next_x} {gallery:?}");
     }
 
     #[test]
