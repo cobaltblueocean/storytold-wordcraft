@@ -1416,3 +1416,8 @@
 	Language:	Jezik:
 	Paragraphs checked: {count}	Provereno pasusa: {count}
 	LanguageTool checking needs the desktop app; the browser version can't send text to a checking server yet.	Provera pomoću alata LanguageTool zahteva desktop aplikaciju; verzija u pregledaču još ne može da šalje tekst serveru za proveru.
+	Enclose Characters	Uokviri znakove
+	Shrink text	Smanji tekst
+	Enlarge symbol	Uvećaj simbol
+	Enclosure	Okvir
+	Circle	Krug

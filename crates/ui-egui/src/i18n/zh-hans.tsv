@@ -1418,3 +1418,8 @@
 	Language:	语言：
 	Paragraphs checked: {count}	已检查段落：{count}
 	LanguageTool checking needs the desktop app; the browser version can't send text to a checking server yet.	LanguageTool 检查需要桌面应用；浏览器版本暂时无法将文本发送到检查服务器。
+	Enclose Characters	带圈字符
+	Shrink text	缩小文字
+	Enlarge symbol	增大圈号
+	Enclosure	圈号
+	Circle	圆形

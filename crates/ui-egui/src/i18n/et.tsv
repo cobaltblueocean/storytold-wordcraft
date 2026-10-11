@@ -1408,6 +1408,11 @@
 	Language:	Keel:
 	Paragraphs checked: {count}	Kontrollitud lõike: {count}
 	LanguageTool checking needs the desktop app; the browser version can't send text to a checking server yet.	LanguageTooli kontroll vajab töölauarakendust; brauseriversioon ei saa veel teksti kontrollserverisse saata.
+	Enclose Characters	Ümbritsetud märgid
+	Shrink text	Vähenda teksti
+	Enlarge symbol	Suurenda sümbolit
+	Enclosure	Ümbris
+	Circle	Ring
 	Base text:	Alustekst:
 	Distribute letters	Jaota tähed
 	Distribute spacing	Jaota vahed

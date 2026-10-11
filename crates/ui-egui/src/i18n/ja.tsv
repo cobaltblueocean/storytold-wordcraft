@@ -1406,3 +1406,8 @@
 	Language:	言語:
 	Paragraphs checked: {count}	チェック済みの段落: {count}
 	LanguageTool checking needs the desktop app; the browser version can't send text to a checking server yet.	LanguageTool によるチェックにはデスクトップ版が必要です。ブラウザー版はまだチェック用サーバーにテキストを送信できません。
+	Enclose Characters	囲い文字
+	Shrink text	文字を縮小
+	Enlarge symbol	記号を拡大
+	Enclosure	囲い
+	Circle	円

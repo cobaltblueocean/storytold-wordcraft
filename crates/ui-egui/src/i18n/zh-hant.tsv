@@ -1407,3 +1407,8 @@
 	Language:	語言：
 	Paragraphs checked: {count}	已檢查段落：{count}
 	LanguageTool checking needs the desktop app; the browser version can't send text to a checking server yet.	LanguageTool 檢查需要桌面應用程式；瀏覽器版本暫時無法將文字傳送到檢查伺服器。
+	Enclose Characters	圍繞字元
+	Shrink text	縮小文字
+	Enlarge symbol	放大符號
+	Enclosure	圍繞符號
+	Circle	圓形

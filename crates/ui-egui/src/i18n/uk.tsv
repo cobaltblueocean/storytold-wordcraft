@@ -1418,3 +1418,8 @@
 	Language:	Мова:
 	Paragraphs checked: {count}	Перевірено абзаців: {count}
 	LanguageTool checking needs the desktop app; the browser version can't send text to a checking server yet.	Перевірка з LanguageTool потребує настільного застосунку; версія для браузера поки що не може надсилати текст на сервер перевірки.
+	Enclose Characters	Обведення символів
+	Shrink text	Зменшити текст
+	Enlarge symbol	Збільшити символ
+	Enclosure	Обведення
+	Circle	Коло
