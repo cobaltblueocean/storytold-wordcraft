@@ -861,7 +861,7 @@ fn web_view_is_one_page() {
     let l = layout(
         &d,
         &mut c,
-        &LayoutOptions { view: ViewMode::Web, web_width: 800.0, show_hidden: false, hide_deleted: false, proofing: false, field_codes: false },
+        &LayoutOptions { view: ViewMode::Web, web_width: 800.0, show_hidden: false, hide_deleted: false, proofing: false, ..Default::default() },
     );
     assert_eq!(l.pages.len(), 1);
     assert!(l.pages[0].h > 800.0);

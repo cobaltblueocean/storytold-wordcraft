@@ -1432,3 +1432,47 @@
 	Search icons	Simgelerde ara
 	No icons match your search.	Aramanızla eşleşen simge yok.
 	Recolor a one-color picture, such as an icon	Simge gibi tek renkli bir resmi yeniden renklendir
+
+# File > Options panes (#485).
+	As you type	Yazarken
+	AutoSave writes your changes to the file a moment after you stop typing.	Otomatik kaydetme, yazmayı bıraktıktan kısa süre sonra değişikliklerinizi dosyaya yazar.
+	Centimeters	Santimetre
+	Check spelling as you type	Yazarken yazımı denetle
+	Click to switch back to inserting	Eklemeye geri dönmek için tıklayın
+	Custom dictionary	Özel sözlük
+	Formatting marks	Biçimlendirme işaretleri
+	Hidden text	Gizli metin
+	Ignore web and file addresses	Web ve dosya adreslerini yoksay
+	Ignore words in capitals	Büyük harfli sözcükleri yoksay
+	Ignore words with numbers	Rakam içeren sözcükleri yoksay
+	Inches	İnç
+	Initials:	Baş harfler:
+	Interface	Arayüz
+	Interface language	Arayüz dili
+	Mark grammar errors as you type	Yazarken dil bilgisi hatalarını işaretle
+	Measurement units:	Ölçü birimleri:
+	Millimeters	Milimetre
+	New comments and tracked changes are recorded under this name and these initials.	Yeni açıklamalar ve izlenen değişiklikler bu ad ve baş harflerle kaydedilir.
+	New word	Yeni sözcük
+	No words yet. Add to Dictionary on a misspelled word puts it here.	Henüz sözcük yok. Yanlış yazılmış bir sözcükte «Sözlüğe ekle» onu buraya koyar.
+	Overtype	Üzerine yaz
+	Overtype (typing replaces the characters after the caret)	Üzerine yazma (yazılan metin imleçten sonraki karakterlerin yerine geçer)
+	Page display	Sayfa görünümü
+	Paragraph marks	Paragraf işaretleri
+	Personalize	Kişiselleştir
+	Picas	Pika
+	Points	Punto
+	Print the page color	Sayfa rengini yazdır
+	Printing	Yazdırma
+	Proofing language	Yazım denetimi dili
+	Recent documents to show:	Gösterilecek son belge sayısı:
+	Save documents	Belgeleri kaydet
+	Show the mini toolbar when text is selected	Metin seçildiğinde mini araç çubuğunu göster
+	Spaces	Boşluklar
+	Spelling	Yazım
+	Spelling and grammar are checked in English (United States).	Yazım ve dil bilgisi İngilizce (Amerika Birleşik Devletleri) için denetlenir.
+	Tab characters	Sekme karakterleri
+	These marks show even when Show/Hide ¶ is off.	Bu işaretler, Göster/Gizle ¶ kapalıyken de görünür.
+	Typing replaces selected text	Yazmak seçili metnin yerine geçer
+	Update fields before printing	Yazdırmadan önce alanları güncelle
+	Use the Insert key to switch overtype on and off	Üzerine yazmayı açıp kapatmak için Insert tuşunu kullan

@@ -53,11 +53,27 @@ pub struct LayoutOptions {
     pub show_hidden: bool,
     /// Final text ("No Markup"): tracked deletions take no space and draw nothing.
     pub hide_deleted: bool,
-    /// Check spelling and grammar (squiggles).
+    /// Check spelling as you type (squiggles).
     pub proofing: bool,
     /// Show field codes (`{ PAGE }`, shaded) instead of field results (View › Field Codes, Alt+F9).
     /// A field whose own `code` flag is set shows the other one.
     pub field_codes: bool,
+    /// What the spelling check skips, and whether grammar is marked too (File › Options › Proofing).
+    pub proof: ProofOptions,
+}
+
+/// File › Options › Proofing choices that change the squiggles.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct ProofOptions {
+    /// Mark grammar errors as you type.
+    pub grammar: bool,
+    pub spelling: wordcraft_proof::Options,
+}
+
+impl Default for ProofOptions {
+    fn default() -> Self {
+        ProofOptions { grammar: true, spelling: wordcraft_proof::Options::default() }
+    }
 }
 
 /// Something placed on a page (page coordinates, points, y down).
@@ -357,7 +373,8 @@ fn env_hash(doc: &Document, opts: &LayoutOptions) -> u64 {
         opts.hide_deleted,
         opts.proofing,
         opts.field_codes,
-        wordcraft_proof::user_dictionary().len(),
+        opts.proof,
+        wordcraft_proof::dictionary_generation(),
         doc.settings.auto_hyphenation,
     ))
 }
@@ -426,7 +443,7 @@ impl Ctx<'_> {
             field_codes: false,
             hide_deleted: false,
             table: None,
-            proofing: false,
+            proofing: None,
             exclusions: &[],
             eq_number: 0,
         };
@@ -489,7 +506,7 @@ impl Ctx<'_> {
             field_codes: self.opts.field_codes,
             hide_deleted: self.opts.hide_deleted,
             table,
-            proofing: self.opts.proofing,
+            proofing: self.opts.proofing.then_some(self.opts.proof),
             exclusions,
             eq_number,
         };
@@ -2270,7 +2287,7 @@ fn next_first_line(ctx: &mut Ctx, block: usize, width: f32) -> f32 {
                 field_codes: ctx.opts.field_codes,
                 hide_deleted: ctx.opts.hide_deleted,
                 table: None,
-                proofing: false,
+                proofing: None,
                 exclusions: &[],
                 eq_number: ctx.eq_count,
             };
