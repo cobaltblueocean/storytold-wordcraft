@@ -37,6 +37,8 @@ pub struct CanvasState {
     pub focused: bool,
     pub render_ms: f64,
     pub ime_preedit: String,
+    /// Document faces added to the interface fonts to draw the input method's composition (#565).
+    pub(crate) ime_faces: Vec<std::sync::Arc<wordcraft_fonts::FontFace>>,
     pub want_focus: bool,
     pub context_issue: Option<serde_json::Value>,
     pub context_synonyms: Option<serde_json::Value>,
@@ -100,6 +102,7 @@ impl Default for CanvasState {
             focused: false,
             render_ms: 0.0,
             ime_preedit: String::new(),
+            ime_faces: Vec::new(),
             want_focus: true,
             context_issue: None,
             context_synonyms: None,
@@ -644,6 +647,19 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
                 });
             }
             if !app.canvas.ime_preedit.is_empty() {
+                // The composition is interface text, but it may be in a script the interface fonts lack
+                // (Bangla, Thai ...): borrow the document fonts' fallback faces, or it draws as boxes (#565).
+                let new = crate::theme::faces_for_preedit(
+                    &app.canvas.ime_preedit,
+                    &app.canvas.ime_faces,
+                    |c| (c as u32) < 0x250,
+                    |c| wordcraft_fonts::FontDb::global().fallback_for(c, u32::MAX),
+                );
+                if !new.is_empty() {
+                    app.canvas.ime_faces.extend(new);
+                    crate::theme::install_fonts_extra(ui.ctx(), app.fonts_hans, app.fonts_system_cjk, &app.canvas.ime_faces);
+                    ui.ctx().request_repaint();
+                }
                 let g = painter.text(pos2(x, y1), egui::Align2::LEFT_BOTTOM, &app.canvas.ime_preedit, regular(c.height * scale * 0.8), caret_color);
                 painter.line_segment([pos2(g.min.x, g.max.y), pos2(g.max.x, g.max.y)], Stroke::new(1.0, caret_color));
             }

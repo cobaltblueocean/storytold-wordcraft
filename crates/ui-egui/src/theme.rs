@@ -275,7 +275,52 @@ pub fn install_fonts_for(ctx: &egui::Context, prefer_hans: bool) {
 /// for it only when CJK text is on screen: a CJK interface language, or the language names in
 /// Options.
 pub fn install_fonts_with(ctx: &egui::Context, prefer_hans: bool, system_cjk: bool) {
-    ctx.set_fonts(font_definitions(prefer_hans, system_cjk));
+    install_fonts_extra(ctx, prefer_hans, system_cjk, &[]);
+}
+
+/// [`install_fonts_with`], also adding document-font `faces` as last-resort fallbacks (#565): the
+/// faces that cover the text an input method is composing.
+pub fn install_fonts_extra(ctx: &egui::Context, prefer_hans: bool, system_cjk: bool, faces: &[Arc<wordcraft_fonts::FontFace>]) {
+    let mut fonts = font_definitions(prefer_hans, system_cjk);
+    add_fallback_faces(&mut fonts, faces);
+    ctx.set_fonts(fonts);
+}
+
+/// Add `faces` after every other font of the interface families.
+pub fn add_fallback_faces(fonts: &mut FontDefinitions, faces: &[Arc<wordcraft_fonts::FontFace>]) {
+    for f in faces {
+        let name = format!("fallback {} {} {}", f.family, f.style, f.id());
+        let mut data = FontData::from_owned(f.data().to_vec());
+        data.index = f.index();
+        fonts.font_data.insert(name.clone(), Arc::new(data));
+        for fam in [FontFamily::Proportional, FontFamily::Name("medium".into()), FontFamily::Name("semibold".into())] {
+            if let Some(v) = fonts.families.get_mut(&fam) {
+                v.push(name.clone());
+            }
+        }
+    }
+}
+
+/// Document faces needed to draw `text` (the input method's composition), one for each character
+/// the interface fonts cannot draw, skipping faces in `have` (#565). Characters of the embedded
+/// interface fonts are not looked up; very large faces (system CJK collections) are left to the CJK
+/// fallback.
+pub fn faces_for_preedit(
+    text: &str,
+    have: &[Arc<wordcraft_fonts::FontFace>],
+    covered: impl Fn(char) -> bool,
+    lookup: impl Fn(char) -> Option<Arc<wordcraft_fonts::FontFace>>,
+) -> Vec<Arc<wordcraft_fonts::FontFace>> {
+    let mut out: Vec<Arc<wordcraft_fonts::FontFace>> = Vec::new();
+    for c in text.chars().filter(|c| !c.is_ascii() && !c.is_whitespace() && !covered(*c)) {
+        if have.iter().chain(&out).any(|f| f.covers(c)) {
+            continue;
+        }
+        if let Some(f) = lookup(c).filter(|f| f.data().len() <= 16 << 20 && !have.iter().chain(&out).any(|h| h.id() == f.id())) {
+            out.push(f);
+        }
+    }
+    out
 }
 
 /// The interface fonts; see [`install_fonts_with`].
@@ -494,6 +539,26 @@ pub fn c32(c: wordcraft_doc::Rgb) -> Color32 {
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeSet;
+
+    /// #565: the composition of an input method (Bangla through ibus) drew as boxes because only the
+    /// interface fonts were used. Faces found for the uncovered characters are added as fallbacks,
+    /// once, and not for characters the interface fonts draw.
+    #[test]
+    fn preedit_gets_document_fallback_faces() {
+        let face = wordcraft_fonts::FontDb::global().face("Source Sans 3", "Regular");
+        let lookup = |_: char| Some(face.clone());
+        let bangla = "\u{0986}\u{09AE}\u{09BF}";
+        let got = super::faces_for_preedit(bangla, &[], |_| false, lookup);
+        assert_eq!(got.len(), 1, "one face, not one per character");
+        assert!(super::faces_for_preedit(bangla, &got, |_| false, lookup).is_empty(), "already added");
+        assert!(super::faces_for_preedit(bangla, &[], |_| true, lookup).is_empty(), "the interface fonts draw it");
+        assert!(super::faces_for_preedit("abc", &[], |_| false, lookup).is_empty(), "ASCII never needs one");
+        let mut defs = super::font_definitions(false, false);
+        let before = defs.font_data.len();
+        super::add_fallback_faces(&mut defs, &got);
+        assert_eq!(defs.font_data.len(), before + 1);
+        assert!(defs.families[&egui::FontFamily::Proportional].last().is_some_and(|n| n.starts_with("fallback ")));
+    }
 
     /// Symbols written as text in the interface code must exist in the interface fonts (Inter and
     /// egui's emoji fallbacks); a missing glyph draws as an empty box, as the panes' "✕" close
