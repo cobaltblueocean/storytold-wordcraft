@@ -62,8 +62,7 @@ fn math_menu_button(ui: &mut Ui, app: &mut WordApp, picture: &str, label: &str, 
     let lines: Vec<&str> = label.split('\n').collect();
     let mut y = r.min.y + 43.0;
     for (i, l) in lines.iter().enumerate() {
-        let txt = if i + 1 == lines.len() { format!("{l} ▾") } else { (*l).to_string() };
-        ui.painter().text(pos2(r.center().x, y), Align2::CENTER_TOP, txt, regular(11.5), t.text);
+        crate::widgets::label_line(ui, r.center().x, y, l, regular(11.5), t.text, i + 1 == lines.len());
         y += 13.0;
     }
     let resp = resp.on_hover_text(label.replace('\n', " "));
@@ -163,7 +162,7 @@ pub fn insert_button(ui: &mut Ui, app: &mut WordApp) {
         }
     }
     crate::icons::paint(ui.painter(), Rect::from_center_size(pos2(r.center().x, r.min.y + 20.0), vec2(32.0, 32.0)), "equation", t.icon, t.accent);
-    ui.painter().text(pos2(r.center().x, r.min.y + 43.0), Align2::CENTER_TOP, format!("{label} ▾"), regular(11.5), t.text);
+    crate::widgets::label_line(ui, r.center().x, r.min.y + 43.0, label, regular(11.5), t.text, true);
     if rt.on_hover_text(tl!("Insert a new equation (Alt+=)")).clicked() {
         let _ = app.run("insert.equation", json!({}));
         app.canvas.want_focus = true;

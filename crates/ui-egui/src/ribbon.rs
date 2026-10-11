@@ -135,12 +135,8 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
                     }
                     ui.add_space(6.0);
                     let track = app.session.doc.settings.track_changes;
-                    let mode = crate::widgets::icon_text_button(
-                        ui,
-                        "pencil",
-                        &format!("{} ▾", if track { tl!("Reviewing") } else { tl!("Editing") }),
-                        regular(12.0),
-                    );
+                    let mode =
+                        crate::widgets::icon_text_menu_button(ui, "pencil", if track { tl!("Reviewing") } else { tl!("Editing") }, regular(12.0));
                     egui::Popup::menu(&mode).show(|ui| {
                         if ui.selectable_label(!track, tl!(tl!("Editing — edit the document directly"))).clicked() {
                             let _ = app.run("review.trackChanges", json!({"value": false}));
