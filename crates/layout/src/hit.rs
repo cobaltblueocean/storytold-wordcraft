@@ -137,6 +137,25 @@ fn items_of(page: &Page, story: StoryRef) -> Box<dyn Iterator<Item = &Placed> + 
     }
 }
 
+/// Whether header/footer part `id` has text near (x, y) on the page (its header or footer
+/// lines). Used so an object behind the header text is only grabbed where there's no text,
+/// mirroring `text_at` for the body.
+fn hf_text_at(p: &Page, id: u32, x: f32, y: f32) -> bool {
+    let story = StoryRef::Part(id);
+    p.header
+        .iter()
+        .chain(p.footer.iter())
+        .filter_map(|it| match it {
+            Placed::Lines { story: s, para, l0, l1, x: lx, y: ly, .. } if *s == story => Some((para, l0, l1, lx, ly)),
+            _ => None,
+        })
+        .any(|(para, l0, l1, lx, ly)| {
+            let (Some(first), Some(last)) = (para.lines.get(*l0), para.lines.get(l1.checked_sub(1).unwrap_or(0))) else { return false };
+            let bottom = ly + last.top + last.height - first.top;
+            y >= *ly - 2.0 && y <= bottom + 2.0 && x >= *lx - 40.0 && x <= lx + last.right + 40.0
+        })
+}
+
 /// Every upright line on a page that belongs to `story` (body, or a header/footer part).
 /// Turned lines (see [`turned_hit`]) are left out.
 pub fn page_lines(page: &Page, story: StoryRef) -> Vec<LineHit<'_>> {
@@ -215,15 +234,32 @@ impl DocLayout {
     /// border (within `edge` points either side; inside is its text). Topmost first; objects
     /// behind the text only where there's no text.
     pub fn object_at(&self, page: usize, x: f32, y: f32, edge: f32) -> Option<ObjectHit> {
+        self.object_at_in(page, x, y, edge, StoryRef::Body)
+    }
+
+    /// The object of `story` a press at (x, y) grabs. Body looks only at the page's own items
+    /// (as before); a header/footer part looks only at that part's objects in the page's
+    /// header and footer, so a header picture placed over the body never steals body clicks.
+    pub fn object_at_in(&self, page: usize, x: f32, y: f32, edge: f32, story: StoryRef) -> Option<ObjectHit> {
         let p = self.pages.get(page)?;
         // A rotated object is grabbed on its rotated shape: the point is taken into its frame.
         let grabs = |o: &ObjectHit| {
             let pt = o.unspin(x, y);
             o.rect.expand(edge).contains(pt) && (o.text_box.is_none() || !o.rect.expand(-edge).contains(pt) || o.rect.w.min(o.rect.h) <= edge * 3.0)
         };
-        objects(p, page)
+        let cands: Vec<ObjectHit> = match story {
+            StoryRef::Body => objects(p, page).collect(),
+            StoryRef::Part(_) => all_objects(p, page).filter(|o| o.story == story).collect(),
+        };
+        let text_here = match story {
+            StoryRef::Body => text_at(p, page, x, y).is_some(),
+            StoryRef::Part(id) => hf_text_at(p, id, x, y),
+        };
+        cands
+            .iter()
             .find(|o| !o.behind() && grabs(o))
-            .or_else(|| if text_at(p, page, x, y).is_some() { None } else { objects(p, page).find(|o| o.behind() && grabs(o)) })
+            .or_else(|| if text_here { None } else { cands.iter().find(|o| o.behind() && grabs(o)) })
+            .cloned()
     }
 
     /// The text box in the header or footer at (x, y) on `page`.

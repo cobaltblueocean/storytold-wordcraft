@@ -1459,7 +1459,7 @@ fn part_kind(app: &WordApp, s: StoryRef) -> Option<PartKind> {
 }
 
 /// The story a text box's story sits in (where the box is), when the caret is in a text box.
-fn text_box_host(app: &WordApp, layout: &DocLayout) -> Option<StoryRef> {
+pub(crate) fn text_box_host(app: &WordApp, layout: &DocLayout) -> Option<StoryRef> {
     match app.session.sel.focus.story {
         StoryRef::Part(id) if in_text_box(app) => layout.text_box(id, app.session.page_hint).map(|o| o.story),
         _ => None,

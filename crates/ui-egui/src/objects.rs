@@ -35,9 +35,31 @@ pub struct ObjectDrag {
     picture: bool,
 }
 
-/// The selected object: the selection is exactly one picture, shape or text box in the body.
+/// The selected object: the selection is exactly one picture, shape or text box, in the body
+/// or in a header/footer.
 pub fn selected(app: &WordApp) -> Option<(Pos, &InlineObject)> {
-    wordcraft_engine::cmd::objects::object_selection(&app.session).filter(|(p, _)| p.story == StoryRef::Body)
+    wordcraft_engine::cmd::objects::object_selection(&app.session).filter(|(p, _)| selectable_story(app, p.story))
+}
+
+/// Whether objects of `story` can be selected and dragged on the canvas: the body and
+/// headers/footers.
+fn selectable_story(app: &WordApp, story: StoryRef) -> bool {
+    match story {
+        StoryRef::Body => true,
+        StoryRef::Part(id) => app.session.doc.parts.get(&id).is_some_and(|p| matches!(p.kind, PartKind::Header | PartKind::Footer)),
+    }
+}
+
+/// The story whose objects the canvas handles: the header/footer being edited, else the body.
+fn active_story(app: &WordApp, layout: &DocLayout) -> StoryRef {
+    let story = crate::canvas::text_box_host(app, layout).unwrap_or(app.session.sel.focus.story);
+    match story {
+        StoryRef::Body => StoryRef::Body,
+        StoryRef::Part(id) if selectable_story(app, StoryRef::Part(id)) => StoryRef::Part(id),
+        // Notes and text-box text: no top-level objects live here, so grabs find nothing and
+        // the press falls through to text handling.
+        other => other,
+    }
 }
 
 /// Whether the object under `hit` keeps its place and size: charts and diagrams can be selected
@@ -95,7 +117,7 @@ pub fn pointer(app: &mut WordApp, ui: &Ui, resp: &egui::Response, pages: &[Rect]
     }
     let pressed = ui.input(|i| i.pointer.primary_pressed()) && resp.contains_pointer();
     let multi = resp.double_clicked() || resp.triple_clicked();
-    if !(pressed || multi) || crate::canvas::editing_header_footer(app, layout) {
+    if !(pressed || multi) {
         return false;
     }
     let Some((object, grab)) = grab_at(app, layout, pages, scale, at) else { return false };
@@ -114,16 +136,18 @@ pub fn pointer(app: &mut WordApp, ui: &Ui, resp: &egui::Response, pages: &[Rect]
             None => return true,
         };
         // Objects in table cells can be selected and resized, not moved; charts neither.
-        if !fixed(app, &object) && (grab != Grab::Move || movable(&object)) {
+        if !fixed(app, &object) && (grab != Grab::Move || movable(app, &object)) {
             app.canvas.obj_drag = Some(ObjectDrag { drag: Drag::new(grab, object.page, object.rect, object.spin.deg, at), object, min, picture });
         }
     }
     true
 }
 
-/// What a press at `at` would grab: a handle of the shown frame, else an object.
+/// What a press at `at` would grab: a handle of the shown frame, else an object of the story
+/// being edited (body, or the header/footer).
 fn grab_at(app: &WordApp, layout: &DocLayout, pages: &[Rect], scale: f32, at: Pos2) -> Option<(ObjectHit, Grab)> {
-    let handle = active(app, layout).filter(|(o, _)| o.story == StoryRef::Body && !fixed(app, o)).and_then(|(o, _)| {
+    let story = active_story(app, layout);
+    let handle = active(app, layout).filter(|(o, _)| o.story == story && !fixed(app, o)).and_then(|(o, _)| {
         let f = screen(pages, scale, o.page, o.rect)?;
         if frame::rotate_handle_at(f, o.spin.deg, at) {
             return Some((o, Grab::Rotate));
@@ -132,14 +156,16 @@ fn grab_at(app: &WordApp, layout: &DocLayout, pages: &[Rect], scale: f32, at: Po
     });
     handle.or_else(|| {
         let (page, x, y) = crate::canvas::page_at(pages, layout, scale, at)?;
-        // Selectable: body objects (table cells too); notes' objects aren't yet.
-        layout.object_at(page, x, y, EDGE / scale.max(0.01)).filter(|o| o.story == StoryRef::Body).map(|o| (o, Grab::Move))
+        // Selectable: body objects (table cells too) or the header/footer's own objects;
+        // notes' objects aren't yet.
+        layout.object_at_in(page, x, y, EDGE / scale.max(0.01), story).map(|o| (o, Grab::Move))
     })
 }
 
-/// Objects that can be dragged to a new place: those in the body's own paragraphs.
-fn movable(o: &ObjectHit) -> bool {
-    o.story == StoryRef::Body && o.path.depth() == 0
+/// Objects that can be dragged to a new place: those in the own paragraphs of the body or of a
+/// header/footer.
+fn movable(app: &WordApp, o: &ObjectHit) -> bool {
+    o.path.depth() == 0 && selectable_story(app, o.story)
 }
 
 /// Commit a finished drag as one command.
@@ -155,7 +181,9 @@ fn drop(app: &mut WordApp, d: &ObjectDrag) {
         }
         Grab::Move => json!({"page": d.drag.to_page, "x": r.x, "y": r.y}),
         // An inline object stays in the text; a floating one keeps its far edges put.
-        Grab::Resize(_) if d.object.floating() && movable(&d.object) => json!({"width": r.w, "height": r.h, "page": d.drag.page, "x": r.x, "y": r.y}),
+        Grab::Resize(_) if d.object.floating() && movable(app, &d.object) => {
+            json!({"width": r.w, "height": r.h, "page": d.drag.page, "x": r.x, "y": r.y})
+        }
         Grab::Resize(_) => json!({"width": r.w, "height": r.h}),
     };
     let _ = app.run("arrange.bounds", params);
@@ -200,9 +228,9 @@ pub fn paint(app: &WordApp, painter: &Painter, t: &Tokens, layout: &DocLayout, p
     if let Some((o, editing)) = active(app, layout)
         && let Some(f) = screen(pages, scale, o.page, o.rect)
     {
-        // Handles where it can be resized and turned (body objects, not charts): else a plain
-        // frame.
-        let handles = o.story == StoryRef::Body && !fixed(app, &o);
+        // Handles where it can be resized and turned (body and header/footer objects,
+        // not charts): else a plain frame.
+        let handles = selectable_story(app, o.story) && !fixed(app, &o);
         frame::paint(painter, t, f, o.spin.deg, editing, handles, handles);
     }
 }
@@ -211,9 +239,6 @@ pub fn paint(app: &WordApp, painter: &Painter, t: &Tokens, layout: &DocLayout, p
 pub fn cursor(app: &WordApp, layout: &DocLayout, pages: &[Rect], scale: f32, at: Pos2) -> Option<egui::CursorIcon> {
     if let Some(d) = &app.canvas.obj_drag {
         return Some(d.drag.grab.cursor());
-    }
-    if crate::canvas::editing_header_footer(app, layout) {
-        return None;
     }
     grab_at(app, layout, pages, scale, at).map(|(o, g)| if fixed(app, &o) { egui::CursorIcon::Default } else { g.cursor() })
 }
