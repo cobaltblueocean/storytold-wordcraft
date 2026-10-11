@@ -20,6 +20,7 @@
 //!
 //! # Looking strings up
 //! - [`tl!`](crate::tl) / [`t`]: a string in the current language. [`tr`]: in a given one.
+//! - [`tc`] / [`trc`]: worded for a context (`preview`), for text that must fit a tight spot.
 //! - [`location`]: a ribbon location such as `Home › Font`, segment by segment.
 //! - [`fmt`]: fill `{name}` placeholders after a lookup; translators may reorder them.
 
@@ -47,7 +48,7 @@ pub struct LangInfo {
 }
 
 /// The registry. English first: it is the fallback and the source language.
-pub static LANGUAGES: [LangInfo; 10] = [
+pub static LANGUAGES: [LangInfo; 12] = [
     LangInfo { code: "en", name: "English", source: "", prefer_hans: false, catalog: OnceLock::new() },
     // Simplified Chinese; `zh`, `zh-CN`, `zh-SG` and `zh-Hans-*` resolve here (see `candidates`).
     LangInfo { code: "zh-hans", name: "简体中文", source: include_str!("zh-hans.tsv"), prefer_hans: true, catalog: OnceLock::new() },
@@ -67,6 +68,9 @@ pub static LANGUAGES: [LangInfo; 10] = [
     // matching — no special-casing needed, unlike Chinese's script-by-region fallback).
     LangInfo { code: "sr-latn", name: "Srpski (latinica)", source: include_str!("sr-latn.tsv"), prefer_hans: false, catalog: OnceLock::new() },
     LangInfo { code: "et", name: "Eesti", source: include_str!("et.tsv"), prefer_hans: false, catalog: OnceLock::new() },
+    // Russian; `ru`, `ru-RU`, `ru_RU.UTF-8` and other regions resolve here.
+    LangInfo { code: "ru", name: "Русский", source: include_str!("ru.tsv"), prefer_hans: false, catalog: OnceLock::new() },
+    LangInfo { code: "tr", name: "Türkçe", source: include_str!("tr.tsv"), prefer_hans: false, catalog: OnceLock::new() },
 ];
 
 impl LangInfo {
@@ -227,6 +231,40 @@ pub fn t(s: &str) -> &str {
     tr(current(), s)
 }
 
+/// `s` in the current language as worded for `context` (one of [`catalog::CONTEXTS`]), falling
+/// back to the plain translation and then to English.
+pub fn tc<'a>(context: &str, s: &'a str) -> &'a str {
+    trc(current(), context, s)
+}
+
+/// [`tc`] in a given language.
+pub fn trc<'a>(lang: Lang, context: &str, s: &'a str) -> &'a str {
+    #[cfg(test)]
+    if pseudo::on() {
+        return pseudo::mark(s);
+    }
+    lang.catalog().in_context(context, s).unwrap_or(s)
+}
+
+/// Lowercase translated interface labels and UI search queries in the current language.
+/// Turkish has two distinct I pairs: `İ`/`i` and `I`/`ı`. Unicode's default casing turns `İ`
+/// into `i` plus a combining dot, which would prevent `italik` from finding `İtalik`.
+/// Command IDs and document text keep their own existing casing semantics.
+pub fn lowercase(s: &str) -> String {
+    if current().code() != "tr" {
+        return s.to_lowercase();
+    }
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        match c {
+            'İ' => out.push('i'),
+            'I' => out.push('ı'),
+            _ => out.extend(c.to_lowercase()),
+        }
+    }
+    out
+}
+
 /// `s` in `lang`; strings without a translation come back unchanged.
 pub fn tr(lang: Lang, s: &str) -> &str {
     #[cfg(test)]
@@ -234,6 +272,31 @@ pub fn tr(lang: Lang, s: &str) -> &str {
         return pseudo::mark(s);
     }
     lang.catalog().plain(s).unwrap_or(s)
+}
+
+/// A style's name as the interface shows it: built-in styles (`Normal`, `Heading 2`, `TOC 3`) in
+/// the current language, styles the author made exactly as named. Display only: the document,
+/// commands and saved files keep the English name.
+pub fn style_name(style: &wordcraft_doc::Style) -> String {
+    if style.builtin { builtin_style_name(&style.name) } else { style.name.clone() }
+}
+
+/// A built-in style's English name in the current language; numbered families go through one
+/// template each (`Heading {n}`), and names without a translation stay English.
+pub fn builtin_style_name(name: &str) -> String {
+    let direct = t(name);
+    if direct != name {
+        return direct.to_string();
+    }
+    for (prefix, template) in [("Heading ", "Heading {n}"), ("TOC ", "TOC {n}"), ("Index ", "Index {n}")] {
+        if let Some(n) = name.strip_prefix(prefix)
+            && !n.is_empty()
+            && n.chars().all(|c| c.is_ascii_digit())
+        {
+            return fmt(t(template), &[("n", n)]);
+        }
+    }
+    name.to_string()
 }
 
 /// A ribbon location (`Home › Font`) in the current language, segment by segment.
