@@ -438,7 +438,8 @@ fn default_app_button(app: &mut WordApp, ui: &mut Ui) {
             tl!("Opens .docx, .doc, .rtf and .odt files and Word templates with WordCraft from now on.")
         };
         if ui.button(tl!("Make WordCraft the default for Word documents…")).on_hover_text(hint).clicked() {
-            let _ = app.run("ui.makeDefaultApp", json!({}));
+            // Straight to the hook, not through `run`: only a click may change system defaults.
+            let _ = app.make_default_app();
         }
     } else if cfg!(target_os = "macos") {
         ui.label(

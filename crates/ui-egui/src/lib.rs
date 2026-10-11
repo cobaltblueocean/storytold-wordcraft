@@ -83,9 +83,10 @@ pub struct Services {
     /// (#45). Read when Paste finds no text; see [`paste_picture`].
     pub clipboard_picture: Option<Box<dyn Fn() -> Option<paste_picture::ClipboardPicture>>>,
     /// Desktop: File › Options › General › Make WordCraft the default for Word documents (#295),
-    /// through `ui.makeDefaultApp`. Windows opens the Settings app's Default apps page (apps can't
-    /// set defaults themselves); Linux and BSD set it with `xdg-mime`. `None` (web, macOS) hides
-    /// the button; macOS shows how to do it in Finder instead. An error means nothing changed.
+    /// only from that button (never a programmatic command). Windows opens the Settings app's
+    /// Default apps page (apps can't set defaults themselves); Linux and BSD set it with
+    /// `xdg-mime`. `None` (web, macOS) hides the button; macOS shows how to do it in Finder
+    /// instead. An error means nothing changed.
     pub make_default_app: Option<Box<dyn Fn() -> Result<DefaultApp, String>>>,
 }
 
@@ -705,9 +706,16 @@ impl WordApp {
             // page; this is the button on it, and the one programmatic call that opens system UI
             // here, like `ui.openFileDialog` — only when the host can print.
             "ui.print" => return Some(self.print_to_system()),
-            // File › Options › General: make WordCraft the default app for Word documents
-            // (#295). Opens system settings on Windows, like `ui.print` — only with the host hook.
-            "ui.makeDefaultApp" => return Some(self.make_default_app()),
+            // File › Options › General › Make WordCraft the default… changes the user's system
+            // default apps (Linux) or opens system settings (Windows), so only a click on that
+            // button does it ([`WordApp::make_default_app`]); scripts, the control channel and
+            // MCP get an error.
+            "ui.makeDefaultApp" => {
+                return Some(Err(
+                    "making WordCraft the default app needs a click in File › Options › General; scripts and agents can't change system defaults"
+                        .into(),
+                ));
+            }
             "ui.discord" => {
                 self.canvas.open_url = Some("https://discord.gg/artcraft".into());
                 json!({})
@@ -747,9 +755,11 @@ impl WordApp {
         }
     }
 
-    /// `ui.makeDefaultApp`: hand over to the host's [`Services::make_default_app`] and say in the
-    /// status bar what happened. An error when the host has no hook (web, macOS).
-    fn make_default_app(&mut self) -> Result<Value, String> {
+    /// File › Options › General › Make WordCraft the default…: hand over to the host's
+    /// [`Services::make_default_app`] and say in the status bar what happened. An error when the
+    /// host has no hook (web, macOS). Only the button calls this: it is deliberately not a
+    /// command, so nothing programmatic (control channel, MCP, macros) can change system defaults.
+    pub(crate) fn make_default_app(&mut self) -> Result<Value, String> {
         let Some(hook) = self.services.make_default_app.as_ref() else {
             return Err("WordCraft can't change the default apps here; use your system's settings".into());
         };
@@ -1792,12 +1802,12 @@ mod tests {
         assert!(a.status_msg.as_ref().is_some_and(|(m, _)| m.contains("blocked by the browser")), "the status bar says why");
     }
 
-    /// `ui.makeDefaultApp` (#295) goes through the host's hook and reports the outcome in the
-    /// status bar; without a hook (web, macOS) it's an error and nothing runs.
+    /// Make WordCraft the default… (#295) goes through the host's hook and reports the outcome in
+    /// the status bar; without a hook (web, macOS) it's an error and nothing runs.
     #[test]
     fn make_default_app_needs_the_hosts_hook_and_reports_the_outcome() {
         let mut a = app();
-        assert!(a.run("ui.makeDefaultApp", json!({})).is_err(), "no hook: an error");
+        assert!(a.make_default_app().is_err(), "no hook: an error");
 
         let calls = std::rc::Rc::new(std::cell::Cell::new(0));
         let seen = calls.clone();
@@ -1805,19 +1815,35 @@ mod tests {
             seen.set(seen.get() + 1);
             Ok(DefaultApp::MadeDefault)
         }));
-        assert_eq!(a.run("ui.makeDefaultApp", json!({})).unwrap()["default"], true);
+        assert_eq!(a.make_default_app().unwrap()["default"], true);
         assert_eq!(calls.get(), 1);
         assert!(a.status_msg.as_ref().is_some_and(|(m, _)| m.contains("now the default")), "{:?}", a.status_msg);
 
         a.services.make_default_app = Some(Box::new(|| Ok(DefaultApp::SettingsOpened)));
-        assert_eq!(a.run("ui.makeDefaultApp", json!({})).unwrap()["settingsOpened"], true);
+        assert_eq!(a.make_default_app().unwrap()["settingsOpened"], true);
         assert!(a.status_msg.as_ref().is_some_and(|(m, _)| m.contains("Default apps")), "{:?}", a.status_msg);
 
         a.services.make_default_app = Some(Box::new(|| Err("xdg-mime isn't installed".into())));
-        let e = a.run("ui.makeDefaultApp", json!({})).unwrap_err();
+        let e = a.make_default_app().unwrap_err();
         assert!(e.contains("xdg-mime isn't installed"), "{e}");
         assert!(a.status_msg.as_ref().is_some_and(|(m, _)| m.contains("xdg-mime isn't installed")), "the status bar says why");
         assert!(!a.session.dirty, "the document is untouched");
+    }
+
+    /// Changing the system's default apps needs the user's click: `ui.makeDefaultApp` through
+    /// `run` (what the control channel, MCP and macros use) is refused and never reaches the hook.
+    #[test]
+    fn programmatic_calls_cannot_change_the_default_apps() {
+        let mut a = app();
+        let calls = std::rc::Rc::new(std::cell::Cell::new(0));
+        let seen = calls.clone();
+        a.services.make_default_app = Some(Box::new(move || {
+            seen.set(seen.get() + 1);
+            Ok(DefaultApp::MadeDefault)
+        }));
+        let e = a.run("ui.makeDefaultApp", json!({})).unwrap_err();
+        assert!(e.contains("click"), "{e}");
+        assert_eq!(calls.get(), 0, "the hook never ran");
     }
 
     /// The Print page shows the Print button only when the host can print, and the button
@@ -1861,7 +1887,7 @@ mod tests {
     }
 
     /// File › Options shows Make WordCraft the default… only when the host can do it (#295), and
-    /// the button goes through `ui.makeDefaultApp`.
+    /// the button runs the host's hook.
     #[test]
     fn the_default_app_button_shows_only_with_the_hosts_hook() {
         use egui_kittest::kittest::Queryable;
