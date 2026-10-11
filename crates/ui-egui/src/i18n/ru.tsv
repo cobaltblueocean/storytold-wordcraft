@@ -1813,6 +1813,13 @@ preview	Title	Пример
 	Search icons	Поиск значков
 	No icons match your search.	Нет значков, соответствующих поиску.
 	Recolor a one-color picture, such as an icon	Перекрасить одноцветный рисунок, например значок
+	WordCraft {version} is available.	Доступна WordCraft {version}.
+	Download	Скачать
+	Open the release page in your browser	Открыть страницу выпуска в браузере
+	Skip this version	Пропустить эту версию
+	Dismiss	Закрыть
+	Check for updates	Проверять обновления
+	Once a day, ask GitHub whether a newer WordCraft release is out and show a notice. Nothing else is sent.	Раз в день спрашивать GitHub, вышла ли новая версия WordCraft, и показывать уведомление. Больше ничего не отправляется.
 	Align Text	Выравнивание текста
 	Create Link	Создать связь
 	Break Link	Разорвать связь
