@@ -12,7 +12,7 @@ own (`AGENTS.md`: no Microsoft iconography, ever).
 |---|---|---|---|---|
 | Ribbon tabs and groups | All Word tabs including contextual Table Design/Layout, Picture Format, Shape Format, Header & Footer, Equation; ribbon overflow (#43, #129). Draw tab: Select, Eraser, Pen, Pencil, Highlighter with colour and thickness (#307); missing: Lasso, Add Pen, Ink to Shape/Math, Ink Replay | Same plus Draw | 85% | (Draw in features) |
 | Keytips (Alt / ⌃⌥ letters) | ✅ (#43) | ✅ | 85% | 1–2 |
-| Mini-toolbar on selection | ✅ (#43) | ✅ | 80% | 1–2 |
+| Mini-toolbar on selection | ✅ (#43, two rows #535) | ✅ | 80% | 1–2 |
 | Quick Access Toolbar | AutoSave, then the user's commands (Save, Undo, Redo by default); add, remove and reorder from its … menu (common commands, More Commands…), right-click on any ribbon button, or Customize Ribbon; saved per user (#379, #376). Not shown below the ribbon | customizable | 90% | 0.5 |
 | Customize Ribbon / Customize Keyboard | Customize Keyboard (#368): categories, a command's keys, press a combination to see which command uses it, Assign / Remove / Reset All; custom keys override built-ins, removed built-ins do nothing, saved per user; `tools.customizeKeyboard` for agents. Customize Ribbon (#379): show, hide and reorder tabs, custom tabs and custom groups (on any tab) holding any commands, rename, remove, Reset; right-click on the ribbon; saved per user; `tools.customizeRibbon` for agents. Built-in tabs can't be renamed; no import/export file | ✅ | 85% | 1–2 |
 | Keyboard shortcuts | **125** commands bound in `CommandSpec::key`, 144 key combinations (measured on Linux/Windows); styles, spacing, symbols, fields, views, mail merge (#330); field keys Alt+F9, Shift+F9, Ctrl+Shift+F9, Ctrl+F11, Ctrl+Shift+F11, F11, Shift+F11 (#339); Alt+Shift+arrows (move paragraphs, promote/demote), Shift+F5 Go Back and Alt+X (#343). Missing: en dash on the numeric keypad | ~250 default shortcuts | ~70% | 2–4 |
@@ -37,6 +37,7 @@ own (`AGENTS.md`: no Microsoft iconography, ever).
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | trivial | Mini toolbar in two rows like Word's (font, size, grow, shrink; B I U S, highlight, font colour, four alignments) with every button inside the bar; font and size lists drop from the box's left edge; dropdown arrows a readable size; font list entries take the theme's text colour in dark mode (#535) |
 | 2026-10-11 | trivial | Customize Ribbon (custom tabs and groups, hidden and reordered tabs) and a customizable Quick Access Toolbar with a working … menu (#379, #376) |
 | 2026-10-11 | trivial | Customize Keyboard dialog (Tools › Customize Keyboard, File › Options › Keyboard shortcuts): custom keys override built-ins and persist (#368) |
 | 2026-10-11 | minor | Keyboard shortcuts 101 → 125 commands (#330): Reset Paragraph/Character Formatting, symbols, DATE/TIME/PAGE fields, view switches, Word Count, mail merge, F4 Repeat now reachable |
