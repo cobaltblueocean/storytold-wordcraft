@@ -412,6 +412,55 @@ fn lists_get_labels_and_indent() {
 }
 
 #[test]
+fn chinese_counting_list_labels_and_their_font_runs() {
+    // Issue #534: a "一、" list showed digits, drawn with glyph ids of another font.
+    use wordcraft_doc::section::NumFormat;
+    let mut d = Document::from_text("甲\n乙\n丙");
+    let id = d.numbering.add_list(wordcraft_doc::ListKind::Numbered);
+    for a in &mut d.numbering.abstracts {
+        if let Some(l) = a.levels.first_mut() {
+            l.format = NumFormat::ChineseCounting;
+            l.text = "%1、".into();
+        }
+    }
+    d.format_paragraphs(&Pos::body(0, 0), &Pos::body(2, 0), &|p| p.numbering = Some(wordcraft_doc::props::NumRef { num: id, level: 0 })).unwrap();
+    let labels = |d: &Document| -> Vec<(String, Vec<(String, bool)>)> {
+        let l = lay(d);
+        l.pages[0]
+            .items
+            .iter()
+            .filter_map(|it| if let Placed::Lines { para, .. } = it { Some(para.clone()) } else { None })
+            .filter_map(|pl| {
+                let lab = pl.label.clone()?;
+                // Every run draws glyphs of its own face.
+                let runs = lab
+                    .runs
+                    .iter()
+                    .map(|r| {
+                        let face = &pl.styles[r.style as usize].face;
+                        let gids: Vec<u32> = lab.glyphs[r.glyphs.clone()].iter().map(|g| g.gid).collect();
+                        (r.text.clone(), r.text.chars().all(|c| gids.contains(&face.glyph_for(c))))
+                    })
+                    .collect();
+                Some((lab.text, runs))
+            })
+            .collect()
+    };
+    let got = labels(&d);
+    assert_eq!(got.iter().map(|(t, _)| t.as_str()).collect::<Vec<_>>(), ["一、", "二、", "三、"]);
+    // A decimal label next to a CJK comma mixes faces when the Latin face lacks the comma.
+    for a in &mut d.numbering.abstracts {
+        if let Some(l) = a.levels.first_mut() {
+            l.format = NumFormat::Decimal;
+        }
+    }
+    for (text, runs) in labels(&d).into_iter().chain(got) {
+        assert_eq!(runs.iter().map(|(t, _)| t.as_str()).collect::<String>(), text);
+        assert!(runs.iter().all(|(_, own)| *own), "{text}: {runs:?}");
+    }
+}
+
+#[test]
 fn symbol_font_bullet_without_the_font_draws_a_bullet() {
     // Word's default bullet: U+F0B7 in Symbol.
     let mut d = Document::from_text("one");
