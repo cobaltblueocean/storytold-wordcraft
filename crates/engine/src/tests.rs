@@ -2732,3 +2732,56 @@ fn deleting_the_last_cell_column_never_leaves_a_table_without_rows() {
     run(&mut s, "edit.undo", json!({}));
     assert!(s.doc.body.iter().any(|b| b.as_table().is_some_and(|t| !t.rows.is_empty())));
 }
+
+/// #549: after a double-click, dragging extends the selection by whole words; after a
+/// triple-click by whole paragraphs; after Ctrl/⌘+click by whole sentences. Forward drags keep
+/// the first unit's start as the anchor, backward drags its end.
+#[test]
+fn drag_after_multi_click_extends_by_units() {
+    let mut s = s();
+    run(&mut s, "text.insert", json!({"text": "Alpha beta gamma. Delta epsilon.\rSecond para here.\rThird one."}));
+    let drag = |s: &mut Session, unit: &str, start: Pos, end: Pos, pos: Pos| {
+        run(s, "select.dragUnit", json!({"unit": unit, "start": start, "end": end, "pos": pos}));
+        (s.sel.anchor.clone(), s.sel.focus.clone())
+    };
+    // Double-click "beta" (6..11 with its trailing space).
+    run(&mut s, "caret.set", json!({"pos": Pos::body(0, 7)}));
+    run(&mut s, "select.word", json!({}));
+    let (a, b) = s.sel.ordered();
+    assert_eq!((a.off, b.off), (6, 11));
+    // Forward into the middle of "gamma": the whole word joins.
+    assert_eq!(drag(&mut s, "word", a.clone(), b.clone(), Pos::body(0, 13)), (Pos::body(0, 6), Pos::body(0, 16)));
+    // Back into "Alpha": anchored at the end of "beta ", focus at the start of "Alpha".
+    assert_eq!(drag(&mut s, "word", a.clone(), b.clone(), Pos::body(0, 2)), (Pos::body(0, 11), Pos::body(0, 0)));
+    // Back inside the first word: just that word.
+    assert_eq!(drag(&mut s, "word", a.clone(), b.clone(), Pos::body(0, 8)), (Pos::body(0, 6), Pos::body(0, 11)));
+    // Into the next paragraph: whole word there.
+    assert_eq!(drag(&mut s, "word", a.clone(), b.clone(), Pos::body(1, 8)), (Pos::body(0, 6), Pos::body(1, 12)));
+
+    // Ctrl+click a sentence, drag into the next sentence.
+    run(&mut s, "caret.set", json!({"pos": Pos::body(0, 3)}));
+    run(&mut s, "select.sentence", json!({}));
+    let (a, b) = s.sel.ordered();
+    let (_, f) = drag(&mut s, "sentence", a, b, Pos::body(0, 20));
+    assert_eq!(f.off, 32, "the second sentence is selected to its end");
+
+    // Triple-click the second paragraph, drag up into the first and down into the third.
+    run(&mut s, "caret.set", json!({"pos": Pos::body(1, 3)}));
+    run(&mut s, "select.paragraph", json!({}));
+    let (a, b) = s.sel.ordered();
+    assert_eq!((a.clone(), b.clone()), (Pos::body(1, 0), Pos::body(2, 0)));
+    assert_eq!(drag(&mut s, "paragraph", a.clone(), b.clone(), Pos::body(0, 5)), (Pos::body(2, 0), Pos::body(0, 0)));
+    assert_eq!(drag(&mut s, "paragraph", a.clone(), b.clone(), Pos::body(2, 2)), (Pos::body(1, 0), Pos::body(2, 10)));
+
+    // Junk never panics and leaves the document alone.
+    let before = text(&s);
+    for v in [
+        json!({}),
+        json!({"unit": "line", "start": Pos::body(0, 0), "end": Pos::body(0, 1), "pos": Pos::body(0, 1)}),
+        json!({"unit": "word", "start": Pos::body(99, 999), "end": Pos::body(0, 0), "pos": Pos::body(77, usize::MAX)}),
+        json!({"unit": "word", "start": {"block": 0, "off": 9_999}, "end": {"block": 0, "off": 1}, "pos": {"block": 5}}),
+    ] {
+        let _ = s.run("select.dragUnit", &v);
+    }
+    assert_eq!(text(&s), before);
+}

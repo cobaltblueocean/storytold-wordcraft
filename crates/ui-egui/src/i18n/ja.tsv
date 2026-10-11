@@ -324,6 +324,7 @@
 	Export PDF	PDF にエクスポート
 	Exported {path}	{path} にエクスポートしました
 	Extend Selection	選択範囲の拡張
+	Extend Selection by Units	単位ごとに選択範囲を拡張
 	Field	フィールド
 	File	ファイル
 	Find	検索

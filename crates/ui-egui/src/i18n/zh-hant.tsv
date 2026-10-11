@@ -325,6 +325,7 @@
 	Export PDF	匯出 PDF
 	Exported {path}	已匯出 {path}
 	Extend Selection	擴大選取範圍
+	Extend Selection by Units	按單位擴大選取範圍
 	Field	功能變數
 	File	檔案
 	Find	尋找

@@ -1,6 +1,6 @@
 # UI parity with Microsoft Word
 
-> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-10 · **Change:** major (first version; ribbon, dialogs, shortcuts and on-canvas interaction measured from `crates/ui-egui` and the command registry) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
+> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-11 · **Change:** trivial (drag after a double/triple-click extends by words/paragraphs, #549; previously major: first version; ribbon, dialogs, shortcuts and on-canvas interaction measured from `crates/ui-egui` and the command registry) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
 
 How WordCraft looks and feels next to Word: ribbon, dialogs, panes, keyboard, mouse and touch.
 Typing behaviour has its own checklist ([`typing-parity.md`](typing-parity.md)). All assets are our
@@ -25,7 +25,7 @@ own (`AGENTS.md`: no Microsoft iconography, ever).
 | Rulers: indents, tabs, margins, table columns | indents draggable (one undo, #62); tabs; table column drag pending (#49) | ✅ | 70% | 2–3 |
 | On-canvas objects: select, drag, resize handles, nudge | ✅ tested (#228) | ✅ | 75% | — |
 | Rotation handle, crop handles on canvas, alignment guides, smart guides | rotation handle (Shift: 15° steps), turned frames resize along their axes (#332); crop handles and guides missing | ✅ | 25% | 3–5 |
-| Selection: word/sentence/paragraph clicks, Shift extend, F8 extend mode, column (Alt+drag, #237) | ✅ | ✅ | 85% | 1 |
+| Selection: word/sentence/paragraph clicks, dragging after a double-click/triple-click/Ctrl+click extends by whole words/paragraphs/sentences (#549), Shift extend, F8 extend mode, column (Alt+drag, #237) | ✅ | ✅ | 90% | 1 |
 | Zoom: Ctrl+scroll, pinch (#179), zoom buttons (#232), pages side by side when zoomed out (#251) | ✅ | ✅ | 85% | — |
 | Touchpad smooth/inertial scroll | ✅ (#252) | ✅ | 90% | — |
 | Status bar (page x of y, words, language, view buttons, zoom slider) | ✅ | ✅ | 80% | — |
@@ -39,6 +39,7 @@ own (`AGENTS.md`: no Microsoft iconography, ever).
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | trivial | Selection by units: double-click and drag extends by whole words, triple-click and drag by paragraphs, Ctrl/⌘+click and drag by sentences; `select.dragUnit` (#549) |
 | 2026-10-11 | trivial | Interface size setting in File › Options › General (80–200 %), kept between runs and applied on top of the system's display scale; `ui.interfaceSize` for agents (#475) |
 | 2026-10-11 | trivial | Font box (ribbon and mini toolbar): typing lists the matching fonts (prefix first, then any part of the name); Up/Down, Enter or a click picks one, Escape cancels (#359) |
 | 2026-10-10 | trivial | Tabs dialog (Paragraph › Tabs…, double-click a ruler tab) and Borders and Shading with Borders, Page Border and Shading tabs (#320) |

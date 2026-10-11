@@ -25,6 +25,12 @@ pub struct CanvasState {
     dragging: bool,
     /// Alt+drag: where the column (block) selection started (page, x, y) and its last end.
     column_drag: Option<((usize, f32, f32), (usize, f32, f32))>,
+    /// The last primary press on the page (time, screen point, clicks in a row), to count
+    /// double- and triple-presses as they go down (egui reports them on release).
+    last_press: Option<(f64, Pos2, u8)>,
+    /// A drag after a double-click, triple-click or Ctrl/⌘+click: the unit it extends by, the
+    /// unit first selected, and the last position the pointer hit.
+    unit_drag: Option<UnitDrag>,
     pub last_highlight: String,
     pub last_font_color: String,
     pub last_shading: String,
@@ -90,6 +96,8 @@ impl Default for CanvasState {
             caret_visible_since: 0.0,
             dragging: false,
             column_drag: None,
+            last_press: None,
+            unit_drag: None,
             last_highlight: "yellow".into(),
             last_font_color: "C00000".into(),
             last_shading: "FFF2CC".into(),
@@ -121,6 +129,25 @@ impl Default for CanvasState {
             table_tool: None,
             table_stroke: None,
         }
+    }
+}
+
+/// See [`CanvasState::unit_drag`].
+struct UnitDrag {
+    unit: &'static str,
+    /// Clicks in a row that made it (2 or 3; 1 for Ctrl/⌘+click).
+    clicks: u8,
+    start: Pos,
+    end: Pos,
+    last: Pos,
+}
+
+/// Clicks in a row for a press at `at` (time `now`) after `last`: within the double-click
+/// delay and distance it counts up to 3 (a triple-click), otherwise it starts again at 1.
+fn press_count(last: Option<(f64, Pos2, u8)>, now: f64, at: Pos2, delay: f64, dist: f32) -> u8 {
+    match last {
+        Some((t, p, n)) if now - t >= 0.0 && now - t < delay && p.distance(at) <= dist => n.saturating_add(1).min(3),
+        _ => 1,
     }
 }
 
@@ -1063,6 +1090,19 @@ fn mouse(app: &mut WordApp, ui: &Ui, resp: &egui::Response, rects: &[Rect], layo
     if (resp.double_clicked() || resp.triple_clicked()) && layout.equation_hit(page, x, y, story).is_some() {
         return;
     }
+    // The press already selected the word or paragraph (and a drag may have grown it).
+    let released_clicks = if resp.triple_clicked() {
+        3
+    } else if resp.double_clicked() {
+        2
+    } else {
+        0
+    };
+    if released_clicks > 0 && app.canvas.unit_drag.as_ref().is_some_and(|d| d.clicks == released_clicks) {
+        app.canvas.unit_drag = None;
+        app.canvas.dragging = false;
+        return;
+    }
     // Double-click in the header/footer area edits it; double-click in the body leaves it.
     if resp.double_clicked() {
         if let Some((s, header)) = layout.header_footer_at(page, y)
@@ -1092,6 +1132,14 @@ fn mouse(app: &mut WordApp, ui: &Ui, resp: &egui::Response, rects: &[Rect], layo
     }
     let pressed = ui.input(|i| i.pointer.primary_pressed()) && resp.contains_pointer();
     if pressed {
+        let now = ui.input(|i| i.time);
+        let (delay, dist) = ui.ctx().options(|o| (o.input_options.max_double_click_delay, o.input_options.max_click_dist));
+        let clicks = press_count(app.canvas.last_press, now, p, delay, dist);
+        app.canvas.last_press = Some((now, p, clicks));
+        app.canvas.unit_drag = None;
+        // A double-click that enters or leaves a header/footer is handled on release.
+        let hf_switch = (layout.header_footer_at(page, y).is_some() && story == StoryRef::Body)
+            || (matches!(story, StoryRef::Part(_)) && !in_text_box(app) && layout.header_footer_at(page, y).is_none());
         // Clicking into a footnote/endnote or a text box edits it; clicking outside a text box goes
         // back to where it is. While editing a header/footer, only its own text boxes are in reach.
         let story = {
@@ -1145,8 +1193,19 @@ fn mouse(app: &mut WordApp, ui: &Ui, resp: &egui::Response, rects: &[Rect], layo
         }
         app.canvas.column_drag = None;
         let _ = app.run("caret.set", json!({"pos": pj, "extend": mods.shift}));
-        if mods.command && !mods.shift {
-            let _ = app.run("select.sentence", json!({}));
+        // Double-click selects a word, triple-click a paragraph, Ctrl/⌘+click a sentence; holding
+        // the button and dragging then extends by whole units (Word, #549).
+        let unit = match clicks {
+            _ if mods.shift => None,
+            3 if !hf_switch => Some("paragraph"),
+            2 if !hf_switch => Some("word"),
+            1 if mods.command => Some("sentence"),
+            _ => None,
+        };
+        if let Some(unit) = unit {
+            let _ = app.run(&format!("select.{unit}"), json!({}));
+            let (start, end) = app.session.sel.ordered();
+            app.canvas.unit_drag = Some(UnitDrag { unit, clicks, start, end, last: pos });
         }
         app.session.page_hint = page;
         app.canvas.dragging = true;
@@ -1163,6 +1222,19 @@ fn mouse(app: &mut WordApp, ui: &Ui, resp: &egui::Response, rects: &[Rect], layo
                 json!({"from": {"page": from.0, "x": from.1, "y": from.2}, "to": {"page": page, "x": x, "y": y}, "story": story}),
             );
         }
+    } else if app.canvas.dragging
+        && ui.input(|i| i.pointer.primary_down())
+        && let Some(d) = app.canvas.unit_drag.as_mut()
+    {
+        if let Some(pos) = layout.hit(page, x, y, story)
+            && pos != d.last
+        {
+            d.last = pos.clone();
+            let params = json!({"unit": d.unit, "start": d.start, "end": d.end, "pos": pos});
+            let _ = app.run("select.dragUnit", params);
+            app.session.page_hint = page;
+            app.canvas.caret_visible_since = crate::now_ms();
+        }
     } else if app.canvas.dragging && ui.input(|i| i.pointer.primary_down()) {
         if let Some(pos) = layout.hit(page, x, y, story)
             && pos != app.session.sel.focus
@@ -1175,6 +1247,7 @@ fn mouse(app: &mut WordApp, ui: &Ui, resp: &egui::Response, rects: &[Rect], layo
     } else if app.canvas.dragging && ui.input(|i| i.pointer.primary_released()) {
         app.canvas.dragging = false;
         app.canvas.column_drag = None;
+        app.canvas.unit_drag = None;
         if app.session.painter.is_some() && !app.session.sel.is_collapsed() {
             let _ = app.run("edit.pasteFormat", json!({}));
         }
@@ -1697,6 +1770,87 @@ mod tests {
         assert!(after.page_w - after.margin_left - after.margin_right - after.gutter >= MIN_TEXT - 0.01);
         assert!(app.session.undo());
         assert_eq!(wordcraft_engine::cmd::page::sect(&app.session).margin_left, sect.margin_left);
+    }
+
+    /// #549: presses count as double/triple as they go down; slow or far presses start again.
+    #[test]
+    fn presses_count_up_to_three() {
+        let at = pos2(100.0, 100.0);
+        assert_eq!(press_count(None, 5.0, at, 0.3, 6.0), 1);
+        assert_eq!(press_count(Some((5.0, at, 1)), 5.1, at, 0.3, 6.0), 2);
+        assert_eq!(press_count(Some((5.1, at, 2)), 5.2, at + vec2(3.0, 0.0), 0.3, 6.0), 3);
+        assert_eq!(press_count(Some((5.2, at, 3)), 5.3, at, 0.3, 6.0), 3, "stays a triple");
+        assert_eq!(press_count(Some((5.0, at, 1)), 5.5, at, 0.3, 6.0), 1, "too slow");
+        assert_eq!(press_count(Some((5.0, at, 1)), 5.1, at + vec2(20.0, 0.0), 0.3, 6.0), 1, "too far");
+        assert_eq!(press_count(Some((5.0, at, 1)), 4.0, at, 0.3, 6.0), 1, "the clock went back");
+    }
+
+    /// #549: double-click a word and drag: the selection grows by whole words; triple-click and
+    /// drag: by whole paragraphs (Word's behaviour).
+    #[test]
+    fn multi_click_drag_extends_by_units() {
+        use egui::{Event, PointerButton};
+        let mut a = WordApp::new(wordcraft_engine::Session::new(wordcraft_doc::Document::new()), Default::default());
+        a.run("text.insert", json!({"text": "Alpha beta gamma delta\rSecond para\rThird para"})).unwrap();
+        a.run("view.commentsPane", json!({"value": false})).unwrap();
+        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).with_step_dt(1.0 / 60.0).build_ui_state(
+            |ui, app: &mut WordApp| {
+                let ctx = ui.ctx().clone();
+                app.logic(&ctx);
+                app.ui(ui);
+            },
+            a,
+        );
+        for _ in 0..6 {
+            h.step();
+        }
+        let screen = |h: &mut egui_kittest::Harness<'_, WordApp>, pos: Pos| {
+            let c = h.state_mut().session.layout().caret(&pos).expect("caret");
+            page_to_screen(h.state_mut(), c.page, c.x + 1.0, c.top + c.height / 2.0).expect("on screen")
+        };
+        let button =
+            |at: Pos2, pressed: bool| Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers: Default::default() };
+        let multi_drag = |h: &mut egui_kittest::Harness<'_, WordApp>, from: Pos2, to: Pos2, clicks: usize| {
+            h.event(Event::PointerMoved(from));
+            for i in 0..clicks {
+                h.event(button(from, true));
+                h.step();
+                if i + 1 < clicks {
+                    h.event(button(from, false));
+                    h.step();
+                }
+            }
+            for k in 1..=4 {
+                h.event(Event::PointerMoved(from + (to - from) * (k as f32 / 4.0)));
+                h.step();
+            }
+            h.event(button(to, false));
+            for _ in 0..3 {
+                h.step();
+            }
+        };
+        // Double-click inside "beta", drag into "gamma": "beta gamma " is selected.
+        let (from, to) = (screen(&mut h, Pos::body(0, 8)), screen(&mut h, Pos::body(0, 13)));
+        multi_drag(&mut h, from, to, 2);
+        let (s, e) = h.state().session.sel.ordered();
+        assert_eq!((s, e), (Pos::body(0, 6), Pos::body(0, 17)), "whole words");
+        // Let the double-click time pass, then triple-click the second paragraph and drag into the third.
+        for _ in 0..40 {
+            h.step();
+        }
+        let (from, to) = (screen(&mut h, Pos::body(1, 3)), screen(&mut h, Pos::body(2, 2)));
+        multi_drag(&mut h, from, to, 3);
+        let sel = h.state().session.sel.clone();
+        assert_eq!((sel.anchor, sel.focus), (Pos::body(1, 0), Pos::body(2, 10)), "whole paragraphs");
+        // A plain double-click (no drag) still selects just the word.
+        h.state_mut().run("select.collapse", json!({})).unwrap();
+        for _ in 0..40 {
+            h.step();
+        }
+        let at = screen(&mut h, Pos::body(0, 1));
+        multi_drag(&mut h, at, at, 2);
+        let (s, e) = h.state().session.sel.ordered();
+        assert_eq!((s, e), (Pos::body(0, 0), Pos::body(0, 6)));
     }
 
     /// #167: a comment balloon edits in place like Word's: click it, type, leave it, and the
