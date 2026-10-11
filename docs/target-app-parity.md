@@ -1,6 +1,6 @@
 # WordCraft parity with Microsoft Word
 
-> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-11 · **Change:** trivial (English spelling knows common modern words, #520; previously trivial: all 12 bibliography styles, #383; previously trivial: formatting revisions landed, #41; previously trivial: Draw Table and Eraser landed, #303; previously minor: readiness table with hours per audience; full number back to the additive weighted sum, 60%; mainstream and essentials numbers added; alpha gate checked; previously major: full re-measure against Word for Mac 16.113.4; replaces the parity tables that lived in ROADMAP.md) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
+> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-11 · **Change:** trivial (Outline view depth, #493; previously trivial: English spelling knows common modern words, #520; previously trivial: all 12 bibliography styles, #383; previously trivial: formatting revisions landed, #41; previously trivial: Draw Table and Eraser landed, #303; previously minor: readiness table with hours per audience; full number back to the additive weighted sum, 60%; mainstream and essentials numbers added; alpha gate checked; previously major: full re-measure against Word for Mac 16.113.4; replaces the parity tables that lived in ROADMAP.md) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
 
 The authoritative assessment of how close WordCraft is to Microsoft Word. [`ROADMAP.md`](../ROADMAP.md)
 summarizes it; [`gaps.md`](gaps.md) itemizes every shortfall; the deep checklists are
@@ -71,7 +71,7 @@ full parity for the area.
 | Pictures, shapes, text boxes, WordArt | 6 | 60% | 60% | 20–30 | Insert, crop, recolour, styles, floating placement like Word (#136), wrap (square/top-bottom/behind/front), text boxes edit and overflow (#46), VML text boxes (#242), free rotation and flips with a rotation handle (#332). Missing: tight/through contour wrap, rotated text-box text, group (#267 open), shape effects, WordArt, connectors, Drawing Canvas, Icons, online pictures, screenshot. |
 | Equations | 1 | 75% | 20% (with Draw) | 4–8 | OMML read/write, OpenType MATH layout, in-place editor with an Equation tab (#191). Missing: line breaking of long display equations, ink equations. |
 | Charts, SmartArt, Draw/ink, 3D models, icons | 4 | 3% | (20% with equations) | 70–110 | Draw: pens, pencil, highlighter, stroke eraser and Hide Ink (#307), ink saved as DrawingML freeforms; lasso, ink to shape/math and replay missing; charts and SmartArt are dropped on DOCX read (no `c:chart`/`dgm` handling in `crates/docx`). |
-| View (modes, zoom, panes, windows) | 3 | 72% | 70% | 6–10 | Print/web/draft/read/focus, dark page (#194), pages side by side when zoomed out (#251), navigation pane. Missing: View Side by Side, Synchronous Scrolling, Arrange All, Switch Windows, Outline view depth, Immersive Reader depth. |
+| View (modes, zoom, panes, windows) | 3 | 72% | 70% | 6–10 | Print/web/draft/read/focus, dark page (#194), pages side by side when zoomed out (#251), navigation pane; Outline view with the Outlining tab: levels, promote/demote, moving with collapsed content, expand/collapse, Show Level, first line only, text formatting (#493). Missing: View Side by Side, Synchronous Scrolling, Arrange All, Switch Windows, Master Document, Immersive Reader depth. |
 | Backstage, printing, options | 3 | 58% | 55% | 12–20 | New/Home pages (#254), save prompts (#151), web printing via the browser (#209). Desktop printing still goes through PDF; Options has a fraction of Word's panes. |
 | Right-to-left and complex scripts | 1 | 50% | 55% | 15–25 | UAX #9, Arabic shaping, RTL paragraphs (#207). No RTL sections/tables, kashida justification or mirrored UI; open bug reports (#215, #211, #199, #66, #63, #48, #19) need re-testing against #207. |
 | East Asian typography | 1 | 15% | not rated | 20–30 | IME input works (winit fixes pending, #155–#164). No vertical text, ruby/phonetic guide, document grid, `w:eastAsianLayout`, enclose characters, Asian line-break options. |
@@ -249,6 +249,7 @@ can be used without committing Word output.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | trivial | Outline view depth (#493): View row updated; catalog 418/448 → 431/461 (93.5%) with the Outlining tab rows |
 | 2026-10-11 | trivial | Shortcut count 101 → 125 (#330) |
 | 2026-10-11 | trivial | Equation fixes: removing numbers keeps every row (#444), caret moves keep imported OMML (#446), build-up on a caret move is an undoable edit (#447), LaTeX `\text{}` keeps its spaces (#448); no percentage change |
 | 2026-10-11 | trivial | English spelling (#520): common modern words ("desktop", "download", "email"…) recognised via our supplement list; Proofing row updated, no percentage change |

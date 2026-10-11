@@ -86,6 +86,9 @@ pub struct ViewState {
     /// Show field codes instead of their results (`view.fieldCodes`, Alt+F9).
     #[serde(default)]
     pub field_codes: bool,
+    /// Outline view: collapsed headings, Show Level, first lines, text formatting.
+    #[serde(default)]
+    pub outline: crate::cmd::outline::OutlineState,
 }
 
 fn on() -> bool {
@@ -118,6 +121,7 @@ impl Default for ViewState {
             hide_ink: false,
             draw: Default::default(),
             field_codes: false,
+            outline: Default::default(),
         }
     }
 }
@@ -228,7 +232,7 @@ pub struct Session {
     /// mail merge, recover), never on an edit.
     document_id: u64,
     cache: LayoutCache,
-    layout: Option<(u64, f32, ViewMode, Arc<DocLayout>, bool)>,
+    layout: Option<(u64, f32, ViewMode, Arc<DocLayout>, bool, Option<wordcraft_layout::outline::OutlineView>)>,
     /// Picture edits: edited media key → original media key (Reset Picture).
     pub originals: std::collections::HashMap<String, String>,
     /// Last mutating command (Repeat).
@@ -436,11 +440,13 @@ impl Session {
     /// The current layout (recomputed when the document or view changed).
     pub fn layout(&mut self) -> Arc<DocLayout> {
         let ww = self.view.web_width;
-        if let Some((r, w, m, l, pf)) = &self.layout
+        let outline = (self.view.mode == ViewMode::Outline).then(|| self.view.outline.view());
+        if let Some((r, w, m, l, pf, o)) = &self.layout
             && *r == self.rev
             && (*w == ww || self.view.mode == ViewMode::Print)
             && *m == self.view.mode
             && *pf == self.view.proofing
+            && *o == outline
         {
             return l.clone();
         }
@@ -451,15 +457,15 @@ impl Session {
             hide_deleted: !self.view.show_markup || self.prefs.markup.hides_deletions(),
             proofing: self.view.proofing,
             field_codes: self.view.field_codes,
+            outline: outline.clone(),
         };
         let l = Arc::new(wordcraft_layout::layout(&self.doc, &mut self.cache, &opts));
-        self.layout = Some((self.rev, ww, self.view.mode, l.clone(), self.view.proofing));
+        self.layout = Some((self.rev, ww, self.view.mode, l.clone(), self.view.proofing, outline));
         l
     }
     /// A layout for output (PDF, images, print): no proofing marks, print view.
     pub fn export_layout(&self) -> Arc<DocLayout> {
-        let opts =
-            LayoutOptions { view: ViewMode::Print, web_width: 0.0, show_hidden: false, hide_deleted: false, proofing: false, field_codes: false };
+        let opts = LayoutOptions { view: ViewMode::Print, ..Default::default() };
         Arc::new(wordcraft_layout::layout(&self.doc, &mut LayoutCache::new(), &opts))
     }
 
@@ -569,6 +575,7 @@ impl Session {
         self.column_mode = false;
         self.edit_marks.clear();
         self.go_back_step = 0;
+        self.view.outline.collapsed.clear();
         self.reset_history();
         self.touch();
         self.dirty = false;
@@ -800,6 +807,8 @@ impl Session {
                 if spec.mutates && !matches!(id, "edit.undo" | "edit.redo") {
                     self.note_edit();
                 }
+                // Outline view: collapsed headings follow edits; the caret stays where it shows.
+                crate::cmd::outline::after_command(self, &sel_before);
                 // Extra selected objects last until something else is edited or selected.
                 if !matches!(id, "select.addObject" | "arrange.ungroup") && (spec.mutates || self.sel != sel_before) {
                     self.also_selected.clear();
