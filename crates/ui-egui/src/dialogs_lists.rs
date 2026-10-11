@@ -416,8 +416,10 @@ fn choice(ui: &mut Ui, id: &str, value: &mut String, options: &[(&str, &str)]) {
 /// A colour: `none_label` (by author, or `auto` when given) or a colour from the grid. `value` is
 /// hex.
 fn color(ui: &mut Ui, theme: &[wordcraft_doc::Rgb], value: &mut String, none_label: &str, auto: Option<wordcraft_doc::Rgb>) {
-    let c = wordcraft_doc::Rgb::parse(value);
     ui.horizontal(|ui| {
+        let id = ui.id().with("colorField");
+        crate::colors::take_field(ui.ctx(), id, value);
+        let c = wordcraft_doc::Rgb::parse(value);
         let (r, _) = ui.allocate_exact_size(vec2(16.0, 16.0), Sense::hover());
         let t = Tokens::get(ui.ctx());
         match c.or(auto) {
@@ -440,10 +442,7 @@ fn color(ui: &mut Ui, theme: &[wordcraft_doc::Rgb], value: &mut String, none_lab
                 value.clear();
                 ui.close();
             }
-            if let Some(hex) = crate::widgets::color_grid(ui, theme) {
-                *value = hex;
-                ui.close();
-            }
+            crate::colors::field_menu(ui, theme, id, value);
         });
     });
 }

@@ -584,8 +584,16 @@ fn region_changes(r: &TableRegion, basis: &TableRegion) -> Value {
 
 /// A colour menu: a swatch with the colour grid and No Color. `value` is hex, empty for none.
 pub(crate) fn color_menu(ui: &mut Ui, theme: &[wordcraft_doc::Rgb], value: &mut String) {
-    let c = wordcraft_doc::Rgb::parse(value);
+    color_field(ui, theme, value, "No Color", "");
+}
+
+/// A colour field: a swatch and a drop-down with `none_label` (which sets `none_value`), the
+/// colour grid, Recent Colors and More Colors… (#606). `value` is hex or `none_value`.
+pub(crate) fn color_field(ui: &mut Ui, theme: &[wordcraft_doc::Rgb], value: &mut String, none_label: &str, none_value: &str) {
     ui.horizontal(|ui| {
+        let id = ui.id().with("colorField");
+        crate::colors::take_field(ui.ctx(), id, value);
+        let c = wordcraft_doc::Rgb::parse(value);
         let (r, _) = ui.allocate_exact_size(vec2(16.0, 16.0), Sense::hover());
         let t = Tokens::get(ui.ctx());
         match c {
@@ -597,16 +605,13 @@ pub(crate) fn color_menu(ui: &mut Ui, theme: &[wordcraft_doc::Rgb], value: &mut 
             }
         }
         ui.painter().rect_stroke(r, 2.0, egui::Stroke::new(1.0, t.border_strong), egui::StrokeKind::Inside);
-        let label = if c.is_some() { value.clone() } else { tl!("No Color").to_string() };
+        let label = if c.is_some() { value.clone() } else { tl!(none_label).to_string() };
         ui.menu_button(label, |ui| {
-            if ui.button(tl!("No Color")).clicked() {
-                value.clear();
+            if ui.button(tl!(none_label)).clicked() {
+                *value = none_value.to_string();
                 ui.close();
             }
-            if let Some(hex) = crate::widgets::color_grid(ui, theme) {
-                *value = hex;
-                ui.close();
-            }
+            crate::colors::field_menu(ui, theme, id, value);
         });
     });
 }
@@ -961,11 +966,13 @@ pub(crate) fn buttons(ui: &mut Ui, ok: &str) -> (bool, bool) {
     ui.add_space(8.0);
     ui.horizontal(|ui| {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if ui.button(tl!("Cancel")).clicked() || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+            // Enter and Escape belong to the Colors dialog while it is open above this one.
+            let keys = !crate::colors::is_open(ui.ctx());
+            if ui.button(tl!("Cancel")).clicked() || (keys && ui.input(|i| i.key_pressed(egui::Key::Escape))) {
                 r.1 = true;
             }
             let okb = ui.add(egui::Button::new(egui::RichText::new(ok).color(egui::Color32::WHITE)).fill(crate::theme::APP_COLOR));
-            if okb.clicked() || ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+            if okb.clicked() || (keys && ui.input(|i| i.key_pressed(egui::Key::Enter))) {
                 r.0 = true;
             }
         });
@@ -1005,7 +1012,8 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                 ui.text_edit_singleline(size);
                 ui.end_row();
                 ui.label(tl!("Font color:"));
-                ui.text_edit_singleline(color);
+                let theme = app.session.doc.settings.theme_colors.clone();
+                color_field(ui, &theme, color, "Automatic", "auto");
                 ui.end_row();
                 ui.label(tl!("Spacing (pt):"));
                 ui.add(egui::DragValue::new(spacing).speed(0.1).range(-20.0..=20.0));
@@ -1052,6 +1060,8 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                 }
                 if let Some(c) = wordcraft_doc::Rgb::parse(color) {
                     props["color"] = json!({"Rgb": [c.0, c.1, c.2]});
+                } else if color.eq_ignore_ascii_case("auto") {
+                    props["color"] = json!("Auto");
                 }
                 let _ = app.run("format.set", json!({"props": props}));
             }

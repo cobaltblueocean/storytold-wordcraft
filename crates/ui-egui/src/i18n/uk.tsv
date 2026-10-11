@@ -1325,3 +1325,16 @@
 	Formatted	Відформатовано
 	Interface size:	Розмір інтерфейсу:
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	Збільшує або зменшує стрічку, меню й діалогові вікна понад системне масштабування екрана. Масштаб документа налаштовується окремо.
+	Recent Colors	Останні кольори
+	More Colors…	Інші кольори…
+	Standard	Стандартні
+	Current	Поточний
+	Colors:	Кольори:
+	Color model:	Колірна модель:
+	Red:	Червоний:
+	Green:	Зелений:
+	Blue:	Синій:
+	Hue:	Відтінок:
+	Sat:	Насиченість:
+	Lum:	Яскравість:
+	Hex:	Hex:

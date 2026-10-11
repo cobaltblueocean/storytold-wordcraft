@@ -1313,3 +1313,16 @@
 	Formatted	書式変更
 	Interface size:	表示サイズ:
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	リボン、メニュー、ダイアログを、システムの表示倍率に加えて拡大または縮小します。文書のズームは別に設定します。
+	Recent Colors	最近使用した色
+	More Colors…	その他の色…
+	Standard	標準
+	Current	現在
+	Colors:	色:
+	Color model:	カラー モデル:
+	Red:	赤:
+	Green:	緑:
+	Blue:	青:
+	Hue:	色合い:
+	Sat:	鮮やかさ:
+	Lum:	明るさ:
+	Hex:	16 進数:

@@ -324,7 +324,7 @@ pub fn color_grid(ui: &mut Ui, theme: &[wordcraft_doc::Rgb]) -> Option<String> {
     picked
 }
 
-fn swatch(ui: &mut Ui, c: wordcraft_doc::Rgb) -> bool {
+pub(crate) fn swatch(ui: &mut Ui, c: wordcraft_doc::Rgb) -> bool {
     let (r, resp) = ui.allocate_exact_size(vec2(15.0, 15.0), Sense::click());
     ui.painter().rect_filled(r, 0.0, Color32::from_rgb(c.0, c.1, c.2));
     let t = Tokens::get(ui.ctx());

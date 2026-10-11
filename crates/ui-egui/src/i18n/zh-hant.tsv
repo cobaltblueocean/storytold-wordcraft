@@ -1314,3 +1314,16 @@
 	Formatted	已設定格式
 	Interface size:	介面大小：
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	在系統顯示縮放的基礎上放大或縮小功能區、功能表與對話方塊。文件縮放另行設定。
+	Recent Colors	最近使用的色彩
+	More Colors…	其他色彩…
+	Standard	標準
+	Current	目前
+	Colors:	色彩:
+	Color model:	色彩模式:
+	Red:	紅色:
+	Green:	綠色:
+	Blue:	藍色:
+	Hue:	色調:
+	Sat:	飽和度:
+	Lum:	亮度:
+	Hex:	十六進位:

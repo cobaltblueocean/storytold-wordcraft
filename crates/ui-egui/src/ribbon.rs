@@ -3,8 +3,9 @@
 use egui::{Align2, Rect, Sense, Stroke, Ui, pos2, vec2};
 use serde_json::{Value, json};
 
+use crate::colors::{Remember, Target};
 use crate::theme::{Tokens, medium, regular, semibold};
-use crate::widgets::{CONTENT_H, LABEL_H, big, big_toggle, color_grid, combo, font_combo, group, menu_button, small, split};
+use crate::widgets::{CONTENT_H, LABEL_H, big, big_toggle, combo, font_combo, group, menu_button, small, split};
 use crate::{WordApp, icons};
 
 pub const TABS: [&str; 12] = ["File", "Home", "Insert", "Draw", "Design", "Layout", "References", "Mailings", "Review", "View", "Zotero", "Help"];
@@ -363,11 +364,7 @@ fn home(app: &mut WordApp, ui: &mut Ui) {
                 split(ui, app, "fontcolor", "Font Color", "format.color", json!({"color": fc}), false, sw, |ui, app| {
                     mi(ui, app, "Automatic", "format.color", json!({"color": "auto"}));
                     let theme = app.session.doc.settings.theme_colors.clone();
-                    if let Some(hex) = color_grid(ui, &theme) {
-                        app.canvas.last_font_color = hex.clone();
-                        let _ = app.run("format.color", json!({"color": hex}));
-                        ui.close();
-                    }
+                    crate::colors::menu(ui, app, &theme, Target::cmd("format.color").remember(Remember::FontColor));
                 });
             });
         });
@@ -456,11 +453,7 @@ fn home(app: &mut WordApp, ui: &mut Ui) {
                 split(ui, app, "shading", "Shading", "para.shading", json!({"color": app.canvas.last_shading.clone()}), false, None, |ui, app| {
                     mi(ui, app, "No Color", "para.shading", json!({"color": null}));
                     let theme = app.session.doc.settings.theme_colors.clone();
-                    if let Some(hex) = color_grid(ui, &theme) {
-                        app.canvas.last_shading = hex.clone();
-                        let _ = app.run("para.shading", json!({"color": hex}));
-                        ui.close();
-                    }
+                    crate::colors::menu(ui, app, &theme, Target::cmd("para.shading").remember(Remember::Shading));
                 });
                 split(ui, app, "borders", "Borders", "para.borders", json!({"kind": "bottom"}), false, None, |ui, app| {
                     for (l, k) in [
@@ -672,10 +665,7 @@ fn draw(app: &mut WordApp, ui: &mut Ui) {
             let sw = Some(crate::theme::c32(set.color));
             split(ui, app, "fontcolor", "Color", pen_id(tool), json!({}), false, sw, |ui, app| {
                 let theme = app.session.doc.settings.theme_colors.clone();
-                if let Some(hex) = color_grid(ui, &theme) {
-                    let _ = app.run(pen_id(tool), json!({"color": hex}));
-                    ui.close();
-                }
+                crate::colors::menu(ui, app, &theme, Target::cmd(pen_id(tool)));
             });
             menu_button(ui, app, "thickness", None, "Thickness", false, |ui, app| {
                 let widths: &[f32] = if tool == InkTool::Highlighter { &[4.0, 8.0, 12.0, 18.0, 24.0] } else { &[0.5, 1.0, 1.5, 2.5, 3.5, 5.0] };
@@ -750,10 +740,7 @@ fn design(app: &mut WordApp, ui: &mut Ui) {
         menu_button(ui, app, "pageColor", Some("Page\nColor"), "Page Color", true, |ui, app| {
             mi(ui, app, "No Color", "design.pageColor", json!({"color": null}));
             let theme = app.session.doc.settings.theme_colors.clone();
-            if let Some(hex) = color_grid(ui, &theme) {
-                let _ = app.run("design.pageColor", json!({"color": hex}));
-                ui.close();
-            }
+            crate::colors::menu(ui, app, &theme, Target::cmd("design.pageColor"));
         });
         big(ui, app, "pageBorders", "Page\nBorders", "design.pageBorders", json!({}), false);
     });
@@ -1223,17 +1210,11 @@ fn shape_format(app: &mut WordApp, ui: &mut Ui) {
         stack(ui, |ui| {
             menu_button(ui, app, "shading", Some("Shape Fill"), "Shape Fill", false, |ui, app| {
                 mi(ui, app, "No Color", "shape.fill", json!({"color": null}));
-                if let Some(hex) = color_grid(ui, &theme) {
-                    let _ = app.run("shape.fill", json!({"color": hex}));
-                    ui.close();
-                }
+                crate::colors::menu(ui, app, &theme, Target::cmd("shape.fill"));
             });
             menu_button(ui, app, "pen", Some("Shape Outline"), "Shape Outline", false, |ui, app| {
                 mi(ui, app, "No Color", "shape.outline", json!({"color": null}));
-                if let Some(hex) = color_grid(ui, &theme) {
-                    let _ = app.run("shape.outline", json!({"color": hex}));
-                    ui.close();
-                }
+                crate::colors::menu(ui, app, &theme, Target::cmd("shape.outline"));
                 ui.separator();
                 ui.menu_button(tl!("Weight"), |ui| {
                     let color = stroke.unwrap_or(wordcraft_doc::Rgb::BLACK).hex();
@@ -1295,10 +1276,8 @@ fn shape_effects_menu(ui: &mut Ui, app: &mut WordApp, theme: &[wordcraft_doc::Rg
         }
         ui.separator();
         ui.menu_button(tl!("Glow Colors"), |ui| {
-            if let Some(hex) = color_grid(ui, theme) {
-                let _ = app.run("shape.effects", json!({"glow": {"color": hex, "size": glow_size.unwrap_or(8.0)}}));
-                ui.close();
-            }
+            let target = Target::at("shape.effects", json!({"glow": {"color": null, "size": glow_size.unwrap_or(8.0)}}), "/glow/color");
+            crate::colors::menu(ui, app, theme, target);
         });
     });
     ui.menu_button(tl!("Soft Edges"), |ui| {
@@ -1514,11 +1493,7 @@ fn table_design(app: &mut WordApp, ui: &mut Ui) {
             split(ui, app, "shading", "Shading", "table.shading", json!({"color": app.canvas.last_shading.clone()}), false, None, |ui, app| {
                 mi(ui, app, "No Color", "table.shading", json!({"color": null}));
                 let theme = app.session.doc.settings.theme_colors.clone();
-                if let Some(hex) = color_grid(ui, &theme) {
-                    app.canvas.last_shading = hex.clone();
-                    let _ = app.run("table.shading", json!({"color": hex}));
-                    ui.close();
-                }
+                crate::colors::menu(ui, app, &theme, Target::cmd("table.shading").remember(Remember::Shading));
             });
         });
     });

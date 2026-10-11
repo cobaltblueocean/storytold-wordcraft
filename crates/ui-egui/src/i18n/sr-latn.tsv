@@ -1323,3 +1323,16 @@
 	Formatted	Formatirano
 	Interface size:	Veličina interfejsa:
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	Povećava ili smanjuje traku, menije i dijaloge, povrh skaliranja ekrana u sistemu. Zumiranje dokumenta je zasebno.
+	Recent Colors	Nedavne boje
+	More Colors…	Još boja…
+	Standard	Standardne
+	Current	Trenutna
+	Colors:	Boje:
+	Color model:	Model boja:
+	Red:	Crvena:
+	Green:	Zelena:
+	Blue:	Plava:
+	Hue:	Nijansa:
+	Sat:	Zasićenost:
+	Lum:	Osvetljenost:
+	Hex:	Heks:

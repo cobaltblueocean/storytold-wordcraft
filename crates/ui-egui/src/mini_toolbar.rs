@@ -43,7 +43,7 @@ pub fn anchor_rect(selection_top: f32, selection_left: f32, viewport: Rect) -> O
 /// Whether the bar may be shown for the current app state.
 pub fn visible(app: &WordApp) -> bool {
     // Never over a modal dialog or the Backstage.
-    if app.dialog.is_some() || app.ui.backstage {
+    if app.dialog.is_some() || app.colors.is_some() || app.ui.backstage {
         return false;
     }
     // Never while the right-click context menu is open: it owns the pointer and would double up.
@@ -166,7 +166,7 @@ fn highlight_menu(ui: &mut egui::Ui, app: &mut WordApp) {
     }
 }
 
-/// Font colour: Automatic plus the standard colour grid.
+/// Font colour: Automatic, the colour grid, Recent Colors and More Colors… (#606).
 fn font_color_menu(ui: &mut egui::Ui, app: &mut WordApp) {
     egui::ScrollArea::vertical().max_height(280.0).show(ui, |ui| {
         if ui.selectable_label(false, "Automatic").clicked() {
@@ -175,11 +175,8 @@ fn font_color_menu(ui: &mut egui::Ui, app: &mut WordApp) {
             return;
         }
         let theme = app.session.doc.settings.theme_colors.clone();
-        if let Some(hex) = widgets::color_grid(ui, &theme) {
-            app.canvas.last_font_color = hex.clone();
-            let _ = app.run("format.color", json!({"color": hex}));
-            ui.close();
-        }
+        let target = crate::colors::Target::cmd("format.color").remember(crate::colors::Remember::FontColor);
+        crate::colors::menu(ui, app, &theme, target);
     });
 }
 

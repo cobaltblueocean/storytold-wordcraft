@@ -16,6 +16,7 @@ macro_rules! tl {
 pub mod backstage;
 pub mod canvas;
 pub mod chrome;
+pub mod colors;
 pub mod control;
 pub mod credits;
 pub mod dialogs;
@@ -96,6 +97,8 @@ pub struct UiState {
     pub recent: Vec<String>,
     /// Symbols inserted from the Symbol dialog, most recent first (#321).
     pub recent_symbols: Vec<dialogs_insert::RecentSymbol>,
+    /// Colours picked in the Colors dialog (More Colors…), most recent first (#606).
+    pub recent_colors: Vec<String>,
     /// Interface theme: light, dark, or follow the OS appearance (#115).
     pub theme: theme::Appearance,
     /// Interface size in percent (#475): scales the whole interface on top of the system's
@@ -138,6 +141,7 @@ impl Default for UiState {
             ribbon_collapsed: false,
             recent: Vec::new(),
             recent_symbols: Vec::new(),
+            recent_colors: Vec::new(),
             theme: theme::Appearance::default(),
             interface_size: theme::InterfaceSize::default(),
             legacy_dark: None,
@@ -163,6 +167,8 @@ pub struct WordApp {
     pub services: Services,
     pub canvas: canvas::CanvasState,
     pub dialog: Option<dialogs::Dialog>,
+    /// The Colors dialog (More Colors…), shown above any other dialog (#606).
+    pub colors: Option<colors::ColorsDialog>,
     pub status_msg: Option<(String, f64)>,
     pub previews: previews::Previews,
     /// Media key of the picture a pending Change Picture replaces (#147).
@@ -245,6 +251,7 @@ impl WordApp {
             services,
             canvas: canvas::CanvasState::default(),
             dialog: None,
+            colors: None,
             status_msg: None,
             previews: previews::Previews::default(),
             integrated_titlebar: false,
@@ -586,12 +593,25 @@ impl WordApp {
                 }
                 json!({"backstage": self.ui.backstage})
             }
+            "ui.dialog" if s("name") == Some("colors") => {
+                // The font colour's More Colors… (#606); `tab`: standard or custom.
+                let target = colors::Target::cmd("format.color").remember(colors::Remember::FontColor);
+                let current =
+                    self.session.run("format.state", &json!({})).ok().and_then(|st| st.get("color").and_then(Value::as_str).and_then(colors::parse));
+                let mut d = colors::ColorsDialog::new(current, target);
+                if s("tab") == Some("custom") {
+                    d.tab = colors::ColorsTab::Custom;
+                }
+                self.colors = Some(d);
+                json!({"dialog": "colors"})
+            }
             "ui.dialog" => {
                 self.dialog = dialogs::Dialog::open(s("name").unwrap_or(""), self);
                 json!({"dialog": self.dialog.as_ref().map(|d| d.name())})
             }
             "ui.closeDialog" => {
                 self.dialog = None;
+                self.colors = None;
                 json!({})
             }
             "ui.changePicture" => {
@@ -947,6 +967,7 @@ impl WordApp {
             });
         }
         dialogs::show(self, &ctx);
+        colors::show(self, &ctx);
         zotero::show_alert(self, &ctx);
         read_aloud::show(self, &ctx);
         crate::keytips::show(self, &ctx, ui);
