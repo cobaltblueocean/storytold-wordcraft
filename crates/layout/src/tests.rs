@@ -3424,3 +3424,47 @@ fn columns_before_a_page_break_or_a_column_break_are_not_balanced() {
     // The next section starts below the taller column.
     assert!(br > bl + 50.0 && after >= br - 0.5, "columns end at {bl} and {br}, next section at {after}");
 }
+
+#[test]
+fn multiple_line_spacing_adds_its_space_below_the_text() {
+    use wordcraft_doc::props::LineSpacing;
+    let first_line = |spacing: LineSpacing| {
+        let mut d = Document::from_text(&"Words that wrap onto a second line of text. ".repeat(4));
+        if let Some(wordcraft_doc::Block::Para(p)) = d.body.get_mut(0).map(std::sync::Arc::make_mut) {
+            p.props.line_spacing = Some(spacing);
+            p.props.space_before = Some(0.0);
+        }
+        let l = lay(&d);
+        let Some(Placed::Lines { para, y, .. }) = l.pages[0].items.iter().find(|i| matches!(i, Placed::Lines { .. })) else { panic!() };
+        (*y, para.lines[0].baseline - para.lines[0].top, para.lines[1].baseline - para.lines[0].baseline)
+    };
+    let (y1, base1, pitch1) = first_line(LineSpacing::Multiple(1.0));
+    let (y2, base2, pitch2) = first_line(LineSpacing::Multiple(1.5));
+    // Word: the first baseline stays one ascent below the paragraph's top; only the pitch grows.
+    assert_eq!(y1, y2);
+    assert!((base2 - base1).abs() < 0.01, "first baseline {base2} with 1.5 spacing, {base1} single");
+    assert!((pitch2 - pitch1 * 1.5).abs() < 0.01, "pitch {pitch2} vs {pitch1}");
+}
+
+#[test]
+fn multiple_line_spacing_keeps_the_empty_line_after_a_break_on_the_text_baseline() {
+    // The empty last line after a line break (Shift+Enter) sits like a text line: its baseline is
+    // one ascent below its top, the extra space of multiple spacing below it, so its mark and the
+    // caret line up with the text above.
+    use wordcraft_doc::props::LineSpacing;
+    let mut d = Document::from_text("");
+    let mut p = wordcraft_doc::Paragraph::with_text("Words\n", Default::default());
+    p.props.line_spacing = Some(LineSpacing::Multiple(2.0));
+    d.body = vec![wordcraft_doc::para_block(p)];
+    let l = lay(&d);
+    let Some(Placed::Lines { para, .. }) = l.pages[0].items.iter().find(|i| matches!(i, Placed::Lines { .. })) else { panic!() };
+    assert_eq!(para.lines.len(), 2, "a text line and the empty line after the break");
+    let (text, empty) = (&para.lines[0], &para.lines[1]);
+    assert!((text.height - empty.height).abs() < 0.01, "{} vs {}", text.height, empty.height);
+    assert!(
+        ((empty.baseline - empty.top) - (text.baseline - text.top)).abs() < 0.01,
+        "empty line baseline {} below its top, text line {}",
+        empty.baseline - empty.top,
+        text.baseline - text.top
+    );
+}
