@@ -2857,6 +2857,8 @@ fn print_markup_exports_comments() {
     let narrow = s.run("file.exportPng", &json!({"path": png.to_string_lossy(), "scale": 1.0})).unwrap()["width"].as_u64().unwrap();
     assert!(wide > narrow + 200, "{wide} vs {narrow}");
     let _ = std::fs::remove_dir_all(&dir);
+}
+
 /// Home › Font › Enclose Characters (#297): the selection becomes an `EQ \o\ac` field, saved the
 /// way Word stores it (the style in the code's run sizes) and read back; null takes the text out
 /// again, and each step undoes.
