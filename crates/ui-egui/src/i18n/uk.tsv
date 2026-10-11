@@ -1398,3 +1398,18 @@
 	New Group	Нова група
 	Rename…	Перейменувати…
 	Ribbon and Quick Access Toolbar:	Стрічка й панель швидкого доступу:
+	All pages	Усі сторінки
+	Current page	Поточна сторінка
+	Selected pages	Вибрані сторінки
+	Custom range	Власний діапазон
+	All pages in the range	Усі сторінки діапазону
+	Odd pages only	Лише непарні сторінки
+	Even pages only	Лише парні сторінки
+	Copies	Копії
+	Collate copies	Розсортувати копії
+	Pages like 1-3, 5	Сторінки, наприклад 1-3, 5
+	{count} of {total} pages will print	Буде надруковано {count} зі сторінок: {total}
+	Save these pages as PDF…	Зберегти ці сторінки як PDF…
+	The printer, two-sided printing and pages per sheet are chosen in that dialog.	Принтер, двобічний друк і кількість сторінок на аркуші вибирають у цьому діалозі.
+	Previous Page	Попередня сторінка
+	Print to PDF	Друк у PDF

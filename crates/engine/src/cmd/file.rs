@@ -54,6 +54,11 @@ pub fn specs() -> Vec<CommandSpec> {
         CommandSpec::new("file.exportPng", "Export Page as PNG", "File › Export", export_png)
             .params(r#"{"path": string, "page"?: n (1-based), "scale"?: px per pt}"#)
             .pure(),
+        CommandSpec::new("file.printPdf", "Print to PDF", "File › Print", crate::print::print_pdf_to_file)
+            .params(
+                r#"{"path": string, "range"?: "all" | "current" | "selection" (the pages the selection touches) | "custom", "pages"?: "1-3,5" (implies custom), "parity"?: "all" | "odd" | "even", "copies"?: 1-999, "collate"?: bool (default true)}"#,
+            )
+            .pure(),
         CommandSpec::new("file.print", "Print", "File", |s, _| {
             s.ui_requests.push(json!({"open": "print"}));
             sel_result(s)

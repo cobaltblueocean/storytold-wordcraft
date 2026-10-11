@@ -331,38 +331,15 @@ fn info_page(app: &mut WordApp, ui: &mut Ui) {
 }
 
 fn export_page(app: &mut WordApp, ui: &mut Ui) {
-    let is_print = app.ui.backstage_page == "print";
-    heading(ui, if is_print { "Print" } else { "Export" });
-    if is_print && app.services.print.is_some() {
-        ui.label(tl!("Send the document straight to the system print dialog, or save a copy in another format below."));
-        ui.add_space(12.0);
-        if ui.add(egui::Button::new(egui::RichText::new(tl!("Print")).font(medium(13.5))).min_size(vec2(320.0, 34.0))).clicked() {
-            let _ = app.run("ui.print", json!({}));
-        }
-        ui.add_space(12.0);
-        ui.separator();
-        ui.add_space(12.0);
-        ui.label(tl!("Or save a copy in another format:"));
-    } else {
-        ui.label(tl!("Save a copy in another format. Printing goes through a PDF you can print from any viewer."));
+    if app.ui.backstage_page == "print" {
+        heading(ui, "Print");
+        crate::print_page::show(app, ui);
+        return;
     }
+    heading(ui, "Export");
+    ui.label(tl!("Save a copy in another format. Printing goes through a PDF you can print from any viewer."));
     ui.add_space(12.0);
-    for (label, ext) in [
-        ("PDF document (*.pdf)", "pdf"),
-        ("Word document (*.docx)", "docx"),
-        ("OpenDocument Text (*.odt)", "odt"),
-        ("Rich Text Format (*.rtf)", "rtf"),
-        ("Web page (*.html)", "html"),
-        ("Markdown (*.md)", "md"),
-        ("LaTeX (*.tex)", "tex"),
-        ("Plain text (*.txt)", "txt"),
-        ("Page image (*.png)", "png"),
-    ] {
-        if ui.add(egui::Button::new(egui::RichText::new(tl!(label)).font(medium(13.5))).min_size(vec2(320.0, 34.0))).clicked() {
-            app.export_dialog(ext);
-        }
-        ui.add_space(4.0);
-    }
+    crate::print_page::export_formats(app, ui);
 }
 
 fn options_page(app: &mut WordApp, ui: &mut Ui) {
