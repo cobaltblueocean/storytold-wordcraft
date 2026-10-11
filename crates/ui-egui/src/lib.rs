@@ -24,6 +24,7 @@ pub mod dialogs_keyboard;
 pub mod dialogs_lists;
 pub mod dialogs_para;
 pub mod dialogs_ribbon;
+pub mod dialogs_templates;
 pub mod equation_tab;
 pub mod file_dialogs;
 pub mod frame;
@@ -179,6 +180,9 @@ pub struct WordApp {
     /// Web: a recipient list was asked for (Select Recipients › Use an Existing List…), so the
     /// next text file from the picker loads as recipients instead of opening (#240).
     pub recipient_list_pending: bool,
+    /// A file picked for the open dialog (Templates and Add-ins › Attach…, Organizer ›
+    /// Browse…); the dialog takes it on its next frame.
+    pub(crate) dialog_pick: Option<String>,
     /// macOS: the window has no title bar; leave room for the traffic lights.
     pub integrated_titlebar: bool,
     control_rx: Option<std::sync::mpsc::Receiver<ControlRequest>>,
@@ -283,6 +287,7 @@ impl WordApp {
             autosave_path: None,
             change_picture_target: None,
             recipient_list_pending: false,
+            dialog_pick: None,
             file_dialog: None,
             info_editing: None,
         }
@@ -1190,6 +1195,9 @@ fn input_dialog(id: &str, params: &Value) -> Option<&'static str> {
         "review.wordCount" if params.as_object().is_none_or(|m| m.is_empty()) => Some("wordCount"),
         // Enclose Characters without a shape (null is one: it takes the enclosure away).
         "format.enclose" if params.get("shape").is_none() => Some("enclose"),
+        // Templates and Add-ins, and the Organizer without a file to list (#377).
+        "tools.templates" => Some("templates"),
+        "styles.organizer" if !has("path") => Some("organizer"),
         _ => None,
     }
 }
