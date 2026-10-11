@@ -39,6 +39,7 @@ pub mod paste_picture;
 pub mod previews;
 pub mod read_aloud;
 pub mod ribbon;
+pub mod ribbon_fit;
 pub mod scroll;
 pub mod table_pen;
 pub mod theme;
