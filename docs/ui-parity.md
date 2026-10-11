@@ -1,6 +1,6 @@
 # UI parity with Microsoft Word
 
-> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-11 · **Change:** trivial (ribbon labels clear the group titles, #653; previously trivial: menu buttons grey out, #658; previously trivial: one drop-down marker, #659; previously trivial: Customize Ribbon and the Quick Access Toolbar, #379; previously: major, first version; ribbon, dialogs, shortcuts and on-canvas interaction measured from `crates/ui-egui` and the command registry) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
+> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-11 · **Change:** trivial (Layout › Paragraph fields fit and align, #654; previously trivial: ribbon labels clear the group titles, #653; previously trivial: menu buttons grey out, #658; previously trivial: one drop-down marker, #659; previously trivial: Customize Ribbon and the Quick Access Toolbar, #379; previously: major, first version; ribbon, dialogs, shortcuts and on-canvas interaction measured from `crates/ui-egui` and the command registry) · **Target:** Microsoft Word (Microsoft 365) for Mac 16.113.4
 
 How WordCraft looks and feels next to Word: ribbon, dialogs, panes, keyboard, mouse and touch.
 Typing behaviour has its own checklist ([`typing-parity.md`](typing-parity.md)). All assets are our
@@ -37,6 +37,7 @@ own (`AGENTS.md`: no Microsoft iconography, ever).
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | trivial | Layout › Paragraph: Indent and Spacing fields fit above the group title, on shared label and field columns, all the same width (#654) |
 | 2026-10-11 | trivial | Two-line labels on large ribbon buttons end above the group title row (icon and label moved up, title row 18 px; shared constants with a compile-time check) (#653) |
 | 2026-10-11 | trivial | Menu buttons (Header, Page Number, Breaks, Wrap Text, table Select/Delete/AutoFit…) grey out and don't open while the command their menu is about is disabled, like the other ribbon buttons (#658) |
 | 2026-10-11 | trivial | One drop-down marker everywhere: large ribbon buttons, Equation and the Editing/Reviewing button draw the `dropdown` icon after their label, like split and menu buttons, instead of a text glyph (#659) |
