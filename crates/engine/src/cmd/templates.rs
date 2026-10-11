@@ -206,7 +206,13 @@ pub fn local_path(target: &str, base: Option<&Path>) -> Option<PathBuf> {
     let lower = t.to_ascii_lowercase();
     let path = if lower.starts_with("file:") {
         let rest = percent_decode(t.get(5..)?);
-        let rest = rest.strip_prefix("//").map(|r| r.strip_prefix("localhost").unwrap_or(r)).unwrap_or(&rest).to_string();
+        let rest = match rest.strip_prefix("//") {
+            // `file:///x` and `file://localhost/x` are local; `file://host/share/x` names another machine.
+            Some(r) if r.starts_with('/') => r.to_string(),
+            Some(r) if r.len() >= 10 && r.get(..10).is_some_and(|h| h.eq_ignore_ascii_case("localhost/")) => r.get(9..)?.to_string(),
+            Some(_) => return None,
+            None => rest,
+        };
         // `file:///C:/x` → `C:/x`.
         let b = rest.as_bytes();
         if b.first() == Some(&b'/') && b.get(1).is_some_and(u8::is_ascii_alphabetic) && b.get(2) == Some(&b':') {
@@ -219,7 +225,9 @@ pub fn local_path(target: &str, base: Option<&Path>) -> Option<PathBuf> {
     } else {
         t.to_string()
     };
-    if path.is_empty() {
+    // Never follow a template path to another machine: opening `\\host\share\T.dotx` (or `//host/…`) from a
+    // hostile document would make Windows authenticate to that host and leak the user's NTLM credentials.
+    if path.is_empty() || is_network_path(&path) {
         return None;
     }
     let p = PathBuf::from(&path);
@@ -230,6 +238,11 @@ pub fn local_path(target: &str, base: Option<&Path>) -> Option<PathBuf> {
         return Some(dir.join(p));
     }
     Some(p)
+}
+
+fn is_network_path(p: &str) -> bool {
+    let b = p.as_bytes();
+    matches!((b.first(), b.get(1)), (Some(b'\\' | b'/'), Some(b'\\' | b'/')))
 }
 
 fn is_windows_absolute(p: &str) -> bool {
@@ -482,6 +495,18 @@ mod tests {
         assert_eq!(local_path("file:///home/a/T.dotx", None), Some(PathBuf::from("/home/a/T.dotx")));
         assert_eq!(local_path("https://example.com/T.dotx", None), None);
         assert_eq!(local_path("T.dotx", Some(Path::new("/docs/Letter.docx"))), Some(PathBuf::from("/docs/T.dotx")));
+        assert_eq!(local_path("file://localhost/home/a/T.dotx", None), Some(PathBuf::from("/home/a/T.dotx")));
+        // A hostile document must not send us to another machine (NTLM credential leak over SMB on Windows).
+        for remote in [
+            "\\\\evil.example\\share\\T.dotx",
+            "//evil.example/share/T.dotx",
+            "\\\\?\\UNC\\evil.example\\share\\T.dotx",
+            "file://evil.example/share/T.dotx",
+            "file:////evil.example/share/T.dotx",
+            "FILE://Evil.Example/T.dotx",
+        ] {
+            assert_eq!(local_path(remote, Some(Path::new("/docs/Letter.docx"))), None, "{remote}");
+        }
         assert_eq!(percent_decode("100%"), "100%");
         assert_eq!(percent_decode("%zz%4"), "%zz%4");
     }
