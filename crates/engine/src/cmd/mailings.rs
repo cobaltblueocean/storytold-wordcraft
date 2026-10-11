@@ -56,13 +56,15 @@ pub fn specs() -> Vec<CommandSpec> {
             Ok(json!({"headers": s.merge.headers, "rows": s.merge.rows}))
         })
         .params(r#"{"rows"?: [{field: value}] | [[value]], "fields"?: [string]}"#)
+        .key(super::non_mac("Alt+Shift+E"))
         .when(has_list)
         .pure(),
         CommandSpec::new("mailings.insertField", "Insert Merge Field", "Mailings › Write & Insert Fields", |s, v| {
             let f = p::req_str(v, "field")?.to_string();
             insert_field(s, &format!("MERGEFIELD {}", quote(&f)), &format!("«{f}»"))
         })
-        .params(r#"{"field": string}"#),
+        .params(r#"{"field": string}"#)
+        .key(super::non_mac("Alt+Shift+F")),
         CommandSpec::new("mailings.addressBlock", "Address Block", "Mailings › Write & Insert Fields", |s, _| {
             insert_field(s, "ADDRESSBLOCK", "«AddressBlock»")
         }),
@@ -102,6 +104,7 @@ pub fn specs() -> Vec<CommandSpec> {
             refresh(s);
             Ok(json!({"preview": s.merge.preview, "record": s.merge.record + 1}))
         })
+        .key(super::non_mac("Alt+Shift+K"))
         .when(has_recipients),
         CommandSpec::new("mailings.next", "Next Record", "Mailings › Preview Results", |s, _| step(s, 1)).when(has_recipients),
         CommandSpec::new("mailings.previous", "Previous Record", "Mailings › Preview Results", |s, _| step(s, -1)).when(has_recipients),
@@ -131,6 +134,7 @@ pub fn specs() -> Vec<CommandSpec> {
         .pure(),
         CommandSpec::new("mailings.finish", "Finish & Merge", "Mailings › Finish", finish)
             .params(r#"{"path"?: string (save the merged document), "from"?: n, "to"?: n}"#)
+            .key(super::non_mac("Alt+Shift+N"))
             .when(has_recipients),
         CommandSpec::new("mailings.envelopes", "Envelopes", "Mailings › Create", envelopes)
             .params(r#"{"delivery": string, "return"?: string, "size"?: "Envelope #10|Envelope DL"}"#),
@@ -146,7 +150,11 @@ fn quote(f: &str) -> String {
 fn insert_field(s: &mut Session, instr: &str, placeholder: &str) -> CmdResult {
     let props = s.typing_props();
     let at = delete_selection(s)?;
-    let end = s.doc.insert_object(&at, InlineObject::Field { instr: instr.to_string(), result: placeholder.to_string(), locked: false }, &props)?;
+    let end = s.doc.insert_object(
+        &at,
+        InlineObject::Field { instr: instr.to_string(), result: placeholder.to_string(), locked: false, code: false },
+        &props,
+    )?;
     s.sel = Selection::caret(end);
     refresh(s);
     sel_result(s)

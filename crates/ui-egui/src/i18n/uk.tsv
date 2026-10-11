@@ -553,6 +553,16 @@
 	Open	Відкрити
 	OpenDocument Text (*.odt)	Текст OpenDocument (*.odt)
 	Optional Hyphen	М'який перенос
+	Copyright Sign	Знак авторського права
+	Ellipsis	Три крапки
+	Em Dash	Довге тире
+	Insert Date Field	Вставити поле дати
+	Insert Page Field	Вставити поле сторінки
+	Insert Time Field	Вставити поле часу
+	Registered Sign	Знак зареєстрованої торгової марки
+	Reset Character Formatting	Скинути форматування символів
+	Reset Paragraph Formatting	Скинути форматування абзацу
+	Trademark Sign	Знак торгової марки
 	Options	Параметри
 	Orientation	Орієнтація
 	Outline	План
@@ -1151,8 +1161,6 @@
 	Document Information	Відомості про документ
 	Double Closing Quote	Закривні подвійні лапки
 	Double Opening Quote	Відкривні подвійні лапки
-	Ellipsis	Три крапки
-	Em Dash	Довге тире
 	En Dash	Коротке тире
 	Em Space	Широкий пробіл
 	En Space	Пробіл середньої ширини
@@ -1316,12 +1324,77 @@
 	South	Південь
 	West	Захід
 	Total	Разом
+
+# Table Layout › Draw (#308)
+	Draw\nTable	Намалювати\nтаблицю
 	Rotation	Поворот
 	Rotation:	Поворот:
 	Rotate Right 90°	Повернути праворуч на 90°
 	Rotate Left 90°	Повернути ліворуч на 90°
 	Flip Vertical	Віддзеркалити по вертикалі
 	Flip Horizontal	Віддзеркалити по горизонталі
+	Move Paragraph Up	Перемістити абзац угору
+	Move Paragraph Down	Перемістити абзац униз
+	Promote	Підвищити рівень
+	Demote	Понизити рівень
+	Go Back	Повернутися назад
+	Toggle Unicode Character	Перемкнути символ Unicode
+	Toggle Field Codes	Перемкнути коди полів
+	Edit Field Code	Змінити код поля
+	Unlink Fields	Від’єднати поля
+	Lock Fields	Заблокувати поля
+	Unlock Fields	Розблокувати поля
+	Next Field	Наступне поле
+	Previous Field	Попереднє поле
+	Selected Fields	Вибрані поля
+	Edit Field…	Змінити поле…
 	Formatted	Відформатовано
 	Interface size:	Розмір інтерфейсу:
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	Збільшує або зменшує стрічку, меню й діалогові вікна понад системне масштабування екрана. Масштаб документа налаштовується окремо.
+	In Line with Text	У рядку з текстом
+	Square	Квадрат
+	Through	Наскрізне
+	Top and Bottom	Зверху і знизу
+	Behind Text	За текстом
+	In Front of Text	Перед текстом
+	Wrap Text Sides	Сторони обтікання
+	Both Sides	З обох боків
+	Left Only	Лише ліворуч
+	Right Only	Лише праворуч
+	Largest Only	Лише з ширшого боку
+	Customize Keyboard	Настроювання клавіатури
+	Choose a command	Виберіть команду
+	Choose a shortcut	Виберіть сполучення клавіш
+	All Commands	Усі команди
+	Commands:	Команди:
+	Keys for this command:	Клавіші цієї команди:
+	New shortcut:	Нове сполучення клавіш:
+	Now used by {command}	Зараз використовує: {command}
+	Not used by any command	Не використовується жодною командою
+	Remove every custom shortcut and restore the built-in keys?	Видалити всі власні сполучення клавіш і відновити вбудовані?
+	Assign	Призначити
+	Remove	Видалити
+	Reset All…	Скинути все…
+	Press a key combination	Натисніть сполучення клавіш
+	Customize	Настроювання
+	Keyboard shortcuts:	Сполучення клавіш:
+	Customize…	Настроїти…
+	Customize Ribbon	Налаштувати стрічку
+	Add to Quick Access Toolbar	Додати на панель швидкого доступу
+	Remove from Quick Access Toolbar	Видалити з панелі швидкого доступу
+	Customize the Ribbon…	Налаштувати стрічку…
+	Customize Quick Access Toolbar…	Налаштувати панель швидкого доступу…
+	More Commands…	Інші команди…
+	Ribbon	Стрічка
+	(Custom)	(Користувацька)
+	Remove every custom tab and group and show all tabs again?	Видалити всі користувацькі вкладки й групи та знову показати всі вкладки?
+	Put the default commands back on the Quick Access Toolbar?	Повернути стандартні команди на панель швидкого доступу?
+	Reset…	Скинути…
+	Add >>	Додати >>
+	<< Remove	<< Видалити
+	Pick a custom group (New Group makes one)	Виберіть користувацьку групу (її створює «Нова група»)
+	Ribbon tabs	Вкладки стрічки
+	New Tab	Нова вкладка
+	New Group	Нова група
+	Rename…	Перейменувати…
+	Ribbon and Quick Access Toolbar:	Стрічка й панель швидкого доступу:

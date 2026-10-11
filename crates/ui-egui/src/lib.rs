@@ -20,8 +20,10 @@ pub mod control;
 pub mod credits;
 pub mod dialogs;
 pub mod dialogs_insert;
+pub mod dialogs_keyboard;
 pub mod dialogs_lists;
 pub mod dialogs_para;
+pub mod dialogs_ribbon;
 pub mod equation_tab;
 pub mod file_dialogs;
 pub mod frame;
@@ -127,6 +129,11 @@ pub struct UiState {
     /// View › Switch Modes: show pages dark (white text on black), kept between runs. Only the
     /// pages: the interface follows [`UiState::theme`] (#312).
     pub dark_page: bool,
+    /// Custom keyboard shortcuts (Customize Keyboard, #368); the session owns them while running.
+    pub keyboard: wordcraft_engine::KeyMap,
+    /// Custom ribbon tabs and groups, hidden tabs and the Quick Access Toolbar (Customize Ribbon,
+    /// #379); the session owns them while running.
+    pub ribbon: wordcraft_engine::RibbonLayout,
 }
 
 impl Default for UiState {
@@ -152,6 +159,8 @@ impl Default for UiState {
             keytips: crate::keytips::Phase::Off,
             alt_chord_used: false,
             dark_page: false,
+            keyboard: wordcraft_engine::KeyMap::default(),
+            ribbon: wordcraft_engine::RibbonLayout::default(),
         }
     }
 }
@@ -293,6 +302,8 @@ impl WordApp {
         ui.read_aloud_rate = self.session.read_aloud.rate();
         ui.read_aloud_skip_citations = self.session.read_aloud.skip_citations;
         ui.dark_page = self.session.view.dark_mode;
+        ui.keyboard = self.session.keymap.clone();
+        ui.ribbon = self.session.ribbon.clone();
         ui
     }
 
@@ -313,6 +324,13 @@ impl WordApp {
         self.session.read_aloud.set_rate(self.ui.read_aloud_rate);
         self.session.read_aloud.skip_citations = self.ui.read_aloud_skip_citations;
         self.session.view.dark_mode = self.ui.dark_page;
+        // Keys for commands this version doesn't have are dropped.
+        self.session.keymap = std::mem::take(&mut self.ui.keyboard);
+        let reg = self.session.registry.clone();
+        self.session.keymap.retain_known(&reg);
+        // So are ribbon and toolbar commands.
+        self.session.ribbon = std::mem::take(&mut self.ui.ribbon);
+        self.session.ribbon.retain_known(&reg);
     }
 
     /// Run a command the user asked for (ribbon, shortcut, Backstage, file drop). New, Open,
@@ -1123,6 +1141,8 @@ fn input_dialog(id: &str, params: &Value) -> Option<&'static str> {
         // Symbol without a character and Field without a code show their dialogs (#321).
         "insert.symbol" if !has("char") => Some("symbol"),
         "insert.field" if !has("instr") => Some("field"),
+        // Edit Field Code shows the selected field's code (#339).
+        "fields.setCode" if !has("code") => Some("editFieldCode"),
         // Table Properties without settings shows the dialog (with settings it applies them).
         "table.properties" if params.as_object().is_none_or(|m| m.is_empty()) => Some("tableProperties"),
         // Tabs, Borders and Shading, and Page Borders without settings show their dialogs (#320).
@@ -1134,6 +1154,9 @@ fn input_dialog(id: &str, params: &Value) -> Option<&'static str> {
         // Define New Multilevel List and Track Changes Options without settings show their dialogs.
         "list.define" if params.get("levels").is_none() => Some("defineList"),
         "review.trackingOptions" if params.as_object().is_none_or(|m| m.is_empty()) => Some("trackChangesOptions"),
+        "insert.bookmark" if !has("name") => Some("bookmark"),
+        // Word Count from the keyboard or command search shows its dialog, as the ribbon does.
+        "review.wordCount" if params.as_object().is_none_or(|m| m.is_empty()) => Some("wordCount"),
         _ => None,
     }
 }
@@ -1753,6 +1776,36 @@ mod tests {
         h.step();
         assert!(h.state().session.dirty, "the keystroke reached the document");
         assert_eq!(reported.get(), Some(true), "the host was told before the frame ended");
+    }
+
+    /// #330: Word's shortcuts work from the keyboard — Ctrl+Alt+1 (⌘⌥1) applies Heading 1, and
+    /// an Alt shortcut doesn't also type the character its key would produce.
+    #[test]
+    fn word_shortcuts_run_from_the_keyboard() {
+        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
+            |ui, app: &mut WordApp| {
+                let ctx = ui.ctx().clone();
+                app.logic(&ctx);
+                app.ui(ui);
+            },
+            app(),
+        );
+        for _ in 0..6 {
+            h.step();
+        }
+        let key = |key, modifiers| egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers };
+        h.event(egui::Event::Text("Kilns".into()));
+        h.step();
+        h.event(key(egui::Key::Num1, egui::Modifiers::COMMAND | egui::Modifiers::ALT));
+        h.step();
+        let style =
+            |h: &egui_kittest::Harness<WordApp>| h.state().session.doc.para_at(&wordcraft_doc::Pos::body(0, 0)).and_then(|p| p.props.style.clone());
+        assert_eq!(style(&h).as_deref(), Some("Heading1"));
+        // Alt+F7 (next misspelling) can come with key text on some platforms; none is typed.
+        h.event(key(egui::Key::F7, egui::Modifiers::ALT));
+        h.event(egui::Event::Text("x".into()));
+        h.step();
+        assert_eq!(h.state().session.doc.plain_text(wordcraft_doc::StoryRef::Body), "Kilns");
     }
 
     /// Save writes the document first, then carries on with what the user asked for.
@@ -2500,6 +2553,24 @@ mod tests {
         // Programmatic calls never open dialogs.
         let mut b = app();
         assert!(b.execute("mailings.recipients", json!({})).is_err());
+        assert!(b.dialog.is_none());
+    }
+
+    /// #339: Ctrl+F9 opens the Field dialog (#321) and Edit Field… shows the selected field's code;
+    /// scripts and agents get an error instead of a dialog.
+    #[test]
+    fn field_code_dialogs_open_for_users_only() {
+        let mut a = app();
+        assert_eq!(a.run("insert.field", json!({})).unwrap(), json!({"pending": "field"}));
+        a.dialog = None;
+        a.run("insert.field", json!({"instr": "PAGE"})).unwrap();
+        a.run("caret.docStart", json!({})).unwrap();
+        assert_eq!(a.run("fields.setCode", json!({})).unwrap(), json!({"pending": "editFieldCode"}));
+        let Some(dialogs::Dialog::FieldCode { code, edit: true, .. }) = &a.dialog else { panic!("{:?}", a.dialog) };
+        assert_eq!(code, "PAGE");
+        let mut b = app();
+        assert!(b.execute("insert.field", json!({})).is_err());
+        assert!(b.execute("fields.setCode", json!({})).is_err());
         assert!(b.dialog.is_none());
     }
 
