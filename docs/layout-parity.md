@@ -70,6 +70,7 @@ font can't match Word's metrics.
 |---|---|---|
 | 2026-10-11 | trivial | Group and Ungroup keep turned members' orientation and placement (#441, #443); Size resizes a group (#442); the eraser hits turned ink where it is drawn (#445) |
 | 2026-10-10 | trivial | Long footnotes continue onto the next page with a continuation separator (#352) |
+| 2026-10-11 | trivial | `EQ \o` fields overstrike their arguments; enclosed characters draw their circle, square, triangle or diamond as vectors (#297) |
 | 2026-10-11 | trivial | Ruby (Phonetic Guide) layout landed (#288) |
 | 2026-10-10 | trivial | Wrap side: text on both sides, left only, right only or the largest side of an object (#354) |
 | 2026-10-10 | trivial | Tight and Through wrapping follow the object's outline (#354) |
