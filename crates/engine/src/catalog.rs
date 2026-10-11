@@ -218,6 +218,7 @@ Layout|Page Setup|Hyphenation|layout.hyphenation
 Layout|Page Setup|Page Setup Dialog|layout.pageSetup
 Layout|Page Setup|Vertical Alignment|layout.verticalAlign
 Layout|Page Setup|Section Direction|layout.sectionRtl
+Layout|Page Setup|Text Direction|layout.textDirection
 Layout|Paragraph|Indent|para.indents
 Layout|Paragraph|Spacing|para.spacing
 Layout|Arrange|Position|arrange.position

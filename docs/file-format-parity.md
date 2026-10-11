@@ -67,6 +67,7 @@ Measured by grepping `crates/docx/src/read` and `src/write` for the OOXML elemen
 | Equations (OMML `m:oMath`) | ✅ | ✅ | #191; manual breaks (`m:brk`) and the settings' `m:mathPr` wrapping options (#326) |
 | Themes, font table, settings, compatibility mode | ✅ | ✅ | Embedded fonts (`w:embedRegular`) not read |
 | Custom XML parts, document properties, bibliography sources | 🟡 | 🟡 | Custom properties round-trip; bibliography sources pending (#169) |
+| Section text direction (`w:textDirection` in `w:sectPr`, §17.6.20) | ✅ | ✅ | `tbRl`, `btLr` (and `tbRlV`/`tbLrV`, read as `tbRl`); `lrTbV` and unknown values read as horizontal (#491) |
 | Ruby (`w:ruby`: `w:rubyPr`, `w:rt`, `w:rubyBase`) | ✅ | ✅ | #288; base and ruby text with their run formatting, alignment, sizes, raise, language |
 | `w:eastAsianLayout`, `w:fitText`, document grid (`w:docGrid`) | ❌ | ❌ | East Asian layout |
 | Glossary document (building blocks), `w:altChunk`, sub-documents | ❌ | ❌ | |
@@ -93,6 +94,7 @@ Measured by grepping `crates/docx/src/read` and `src/write` for the OOXML elemen
 | 2026-10-11 | trivial | `.doc` import fixes per [MS-DOC]: piece Prm0/Prm1 decoding (#458), section-break kinds (#459), explicit orientation (#460), negative `sprmPIlfo` list references (#461), zero-based `istdBase` style inheritance (#462), font-table entries with alternate names (#463) |
 | 2026-10-11 | trivial | Formatting revisions (`w:rPrChange`, `w:pPrChange`, table, row, cell, section and numbering changes) read and written (#41) |
 | 2026-10-10 | trivial | OLE objects turned or flipped in WordCraft keep the turn on save (VML `rotation`/`flip`, DrawingML `a:xfrm` with the rotated effect extent); test counts refreshed |
+| 2026-10-11 | trivial | Section text direction read and written (#491) |
 | 2026-10-10 | trivial | Charts, SmartArt and OLE objects written back on save with their parts (#319); chart/SmartArt reading (#292) recorded |
 | 2026-10-10 | trivial | Footnote and endnote separators and continuation notices read and written (#352) |
 | 2026-10-11 | trivial | Enclosed characters (`EQ \o\ac`) read, drawn and written (#297) |

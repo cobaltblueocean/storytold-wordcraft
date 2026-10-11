@@ -17,6 +17,7 @@ pub mod math;
 pub mod para;
 mod table;
 mod textbox;
+mod vertical;
 
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
@@ -1384,15 +1385,31 @@ pub fn layout(doc: &Document, cache: &mut LayoutCache, opts: &LayoutOptions) -> 
     // Text boxes laid out in balancing attempts that were thrown away.
     let mut boxes_discarded = 0usize;
     let mut block = 0usize;
+    // Vertical sections are laid out on their pages turned on their side (see `vertical`).
+    let turned: Vec<Option<SectionProps>> = sections
+        .iter()
+        .map(|(_, s)| {
+            (!web && s.text_direction.is_turned()).then(|| {
+                let top = body_top_for(&mut ctx, s, s.headers.default);
+                vertical::unturned_sect(s, top)
+            })
+        })
+        .collect();
+    let mut prev_turn = TextDirection::Horizontal;
     for (si, (end, sect)) in sections.iter().enumerate() {
-        let sect: &SectionProps = if web { sect_ref } else { sect };
+        let turn = if web { TextDirection::Horizontal } else { sect.text_direction };
+        let sect: &SectionProps = match turned.get(si) {
+            Some(Some(t)) => t,
+            _ if web => sect_ref,
+            _ => sect,
+        };
         pb.sect = sect;
         pb.sect_idx = si;
         if !web && !doc.footnote_separators.is_empty() {
             pb.seps = NoteSeps::new(&mut ctx, &doc.footnote_separators, sect.text_width());
         }
-        let body_top = if web { sect.margin_top } else { body_top_for(&mut ctx, sect, sect.headers.default) };
-        let first_top = if web || !sect.title_page { body_top } else { body_top_for(&mut ctx, sect, sect.headers.first) };
+        let body_top = if web || turn.is_turned() { sect.margin_top } else { body_top_for(&mut ctx, sect, sect.headers.default) };
+        let first_top = if web || turn.is_turned() || !sect.title_page { body_top } else { body_top_for(&mut ctx, sect, sect.headers.first) };
         let restart = sect.page_num_start;
         if sect.line_numbers.as_ref().is_some_and(|l| l.restart == wordcraft_doc::section::LineNumberRestart::Section) {
             pb.line_no = 0;
@@ -1400,7 +1417,8 @@ pub fn layout(doc: &Document, cache: &mut LayoutCache, opts: &LayoutOptions) -> 
         let start = if si == 0 { SectionStart::NextPage } else { sect.start };
         if web && si > 0 {
             // one long page
-        } else if pb.pages.is_empty() || start != SectionStart::Continuous {
+        } else if pb.pages.is_empty() || start != SectionStart::Continuous || turn != prev_turn {
+            // A page holds text running one way: a section turning the other way starts a page.
             if let Some(n) = restart {
                 pb.number = n.saturating_sub(1);
             }
@@ -1419,6 +1437,7 @@ pub fn layout(doc: &Document, cache: &mut LayoutCache, opts: &LayoutOptions) -> 
             pb.y = pb.top;
             pb.max_y = pb.top;
         }
+        prev_turn = turn;
         let last = (*end).min(doc.body.len().saturating_sub(1));
         // Newspaper columns are balanced on the section's last page when the next section starts
         // on the same page (a continuous break), as in Word. That page is laid out again from the
@@ -1514,6 +1533,13 @@ pub fn layout(doc: &Document, cache: &mut LayoutCache, opts: &LayoutOptions) -> 
     }
     pb.carry.clear();
     let mut pages = pb.pages;
+    for p in &mut pages {
+        if let Some((_, s)) = sections.get(p.section)
+            && !web
+        {
+            vertical::turn_page(p, s.text_direction, s);
+        }
+    }
     if web && let Some(p) = pages.first_mut() {
         let bottom = p
             .items
@@ -2525,3 +2551,5 @@ mod tests;
 mod tests_bidi;
 #[cfg(test)]
 mod tests_textbox;
+#[cfg(test)]
+mod tests_vertical;

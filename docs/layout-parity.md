@@ -46,7 +46,7 @@ font can't match Word's metrics.
 | Vertical page alignment | ✅ | | — |
 | Gutter, mirror margins, book fold, 2 pages per sheet | 🟡 | gutter and mirror margins; book fold missing | 2–3 |
 | Document grid (`w:docGrid`, lines per page, characters per line) | ❌ | East Asian documents paginate differently without it | 4–6 |
-| Vertical text (`tbRl`) in sections and text boxes; cell text direction | 🟡 | cell text direction landed (#245); text-box text direction (rotate 90°, 270°, stacked) landed (#369); page-level vertical text and East Asian upright vertical glyphs missing | 8–12 |
+| Vertical text (`tbRl`) in sections and text boxes; cell text direction | ✅ | cell text direction (#245); text-box text direction (#369); vertical sections (`tbRl`/`btLr`, #491): the page's text area turned, lines top to bottom stacking right to left, ideographs, kana and Hangul upright, Latin on its side, caret and clicks through the turn. Missing: OpenType `vert` alternates (punctuation is moved, not substituted), arrow keys along vertical lines, upright pictures take turned room | 2–4 |
 | Ruby / phonetic guide, enclose characters, combined characters | 🟡 | ruby (Phonetic Guide) landed (#288): ruby text over its base by alignment, line grows to fit, in PDF; enclose and combined characters missing; ruby not yet compared with Word page by page | 2–4 |
 | Bidirectional paragraphs, mixed-direction lines; RTL tables and sections | 🟡 | #207; RTL tables (#362): grid columns from the right edge, start alignment and indent from the right margin, cell margins and left/right borders mirrored, merged and turned cells and nested tables included; RTL sections (#362): newspaper columns right to left with the line between mirrored. Right-hand page gutter (`w:rtlGutter`) missing | 1 |
 | Equations: display layout, numbering, wrapping long display equations | ✅ | #191; long display equations break at top-level operators (`m:brkBin`, `m:brkBinSub`), manual breaks and `m:alnAt`, continuation lines indented by `m:wrapIndent` or set right (`m:wrapRight`) (#326) | — |
@@ -68,6 +68,7 @@ font can't match Word's metrics.
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-11 | trivial | Vertical sections: `w:textDirection` in `w:sectPr`, upright East Asian glyphs (#491) |
 | 2026-10-11 | trivial | Linked text boxes, Align Text and text-box text direction (#369) |
 | 2026-10-11 | trivial | Right-to-left tables and sections laid out mirrored (#362) |
 | 2026-10-10 | trivial | The document's own note separators and continuation notice are drawn (#352) |

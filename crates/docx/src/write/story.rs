@@ -1105,6 +1105,9 @@ fn sectpr_body(w: &mut W, s: &SectionProps) {
         if s.title_page {
             w.empty("w:titlePg", &[]);
         }
+        if s.text_direction.is_turned() {
+            w.val("w:textDirection", s.text_direction.ooxml());
+        }
         if s.rtl {
             w.empty("w:bidi", &[]);
         }
