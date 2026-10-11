@@ -1408,6 +1408,39 @@
 	Left Only	Yalnızca Sol
 	Right Only	Yalnızca Sağ
 	Largest Only	Yalnızca En Geniş
+	Developer	Geliştirici
+	Controls	Denetimler
+	Rich Text Content Control	Zengin Metin İçerik Denetimi
+	Plain Text Content Control	Düz Metin İçerik Denetimi
+	Picture Content Control	Resim İçerik Denetimi
+	Building Block Gallery Content Control	Yapı Bloğu Galerisi İçerik Denetimi
+	Check Box Content Control	Onay Kutusu İçerik Denetimi
+	Combo Box Content Control	Açılan Kutu İçerik Denetimi
+	Drop-Down List Content Control	Açılır Liste İçerik Denetimi
+	Date Picker Content Control	Tarih Seçici İçerik Denetimi
+	Repeating Section Content Control	Yinelenen Bölüm İçerik Denetimi
+	Design Mode	Tasarım Modu
+	Content Control at Selection	Seçimdeki İçerik Denetimi
+	Toggle Check Box	Onay Kutusunu Değiştir
+	Choose List Item	Liste Öğesi Seç
+	Set Date	Tarihi Ayarla
+	Remove Content Control	İçerik Denetimini Kaldır
+	Content Control Properties	İçerik Denetimi Özellikleri
+	Title	Başlık
+	Tag	Etiket
+	Placeholder text	Yer tutucu metin
+	Can't be deleted	Silinemez
+	Contents can't be edited	İçerik düzenlenemez
+	Remove the control once edited	Düzenlendikten sonra denetimi kaldır
+	Allow line breaks	Satır sonlarına izin ver
+	Date format	Tarih biçimi
+	Checked symbol	Seçili simge
+	Unchecked symbol	Seçili olmayan simge
+	List entries	Liste girdileri
+	Display text	Görünen metin
+	Value	Değer
+	Today	Bugün
+	Put the caret in a content control first.	Önce imleci bir içerik denetiminin içine koyun.
 	Right-to-Left Table	Sağdan Sola Tablo
 	Right-to-Left Section	Sağdan Sola Bölüm
 	Table direction:	Tablo yönü:
