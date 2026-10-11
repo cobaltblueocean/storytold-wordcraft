@@ -673,6 +673,34 @@ fn paragraph_props_and_heading_style() {
     assert_eq!(p1.props.style.as_deref(), Some("Normal"));
 }
 
+/// #534: Chinese theses set a first-line indent of two characters (`sprmPDxaLeft1`, whose operand
+/// is two bytes, plus `sprmPDxcLeft1` in hundredths of a character), and exact line spacing as a
+/// negative LSPD `dyaLine`. Both were lost: the indent read as four bytes, and exact 20pt as
+/// 799pt, a page per empty paragraph.
+#[test]
+fn first_line_indent_chars_and_exact_line_spacing() {
+    let lspd = |dya: i16, mult: u16| [dya.to_le_bytes(), mult.to_le_bytes()].concat();
+    let (exact, multiple) = (lspd(-400, 0), lspd(360, 1));
+    let spec = RichSpec {
+        text: "indented\rexact\rold\r",
+        styles: vec![(1, 0, "Normal", Vec::new(), Vec::new())],
+        fonts: vec!["Times New Roman"],
+        chpx_runs: vec![(0, Vec::new())],
+        papx_entries: vec![
+            (0, 0, grpprl(&[(0x8460, &480i16.to_le_bytes()), (0x4457, &200i16.to_le_bytes()), (0x6412, &multiple)])),
+            (9, 0, grpprl(&[(0x6412, &exact)])),
+            (15, 0, grpprl(&[(0x8411, &(-360i16).to_le_bytes())])),
+        ],
+    };
+    let doc = read(&rich_doc(&spec)).expect("opens");
+    let para = |i: usize| doc.body.get(i).and_then(|b| b.as_para()).expect("para").props.clone();
+    let p0 = para(0);
+    assert_eq!((p0.indent_first, p0.indent_first_chars), (Some(24.0), Some(2.0)));
+    assert_eq!(p0.line_spacing, Some(wordcraft_doc::props::LineSpacing::Multiple(1.5)));
+    assert_eq!(para(1).line_spacing, Some(wordcraft_doc::props::LineSpacing::Exactly(20.0)));
+    assert_eq!(para(2).indent_first, Some(-18.0)); // sprmPDxaLeft1_80: a hanging indent
+}
+
 /// Local corpus (gitignored `plan/word/fixtures`): real files must open with text and styles.
 #[test]
 fn corpus_files_open() {

@@ -2354,6 +2354,74 @@ fn a_floating_table_taller_than_a_page_runs_across_pages() {
     assert_eq!(rows, 80);
 }
 
+/// #534: a table placed on the page (`w:tblpPr w:vertAnchor="page"`) whose anchor comes after a
+/// page full of text goes to the next page with it, like Word, instead of covering that text.
+#[test]
+fn a_page_anchored_floating_table_after_a_full_page_moves_to_the_next() {
+    use wordcraft_doc::para::Anchor;
+    use wordcraft_doc::props::TableFloat;
+    let text: Vec<String> = (0..24).map(|i| format!("Paragraph {i} before the table.")).collect();
+    let mut d = Document::from_text(&(text.join("\n") + "\nAfter the table."));
+    let mut t = Table::new(15, 1, 300.0);
+    for (i, r) in t.rows.iter_mut().enumerate() {
+        r.cells[0].blocks = vec![wordcraft_doc::para_block(wordcraft_doc::Paragraph::with_text(&format!("Row {i}"), Default::default()))];
+    }
+    t.props.float = Some(TableFloat { h_rel: Anchor::Page, v_rel: Anchor::Page, x: 70.0, y: 71.0, ..Default::default() });
+    d.insert_block(StoryRef::Body, &Path::top(24), wordcraft_doc::Block::Table(t)).unwrap();
+    let l = lay(&d);
+    let page_of = |want: &dyn Fn(&Path) -> bool| -> Vec<usize> {
+        l.pages
+            .iter()
+            .enumerate()
+            .flat_map(|(i, p)| p.items.iter().map(move |it| (i, it)))
+            .filter_map(|(i, it)| if let Placed::Lines { story: StoryRef::Body, path, .. } = it { want(path).then_some(i) } else { None })
+            .collect()
+    };
+    // The text before the table fills page 1; the table and the text after it are on page 2.
+    assert_eq!(page_of(&|p| p.0 == [23]), vec![0]);
+    let rows = page_of(&|p| p.0.first() == Some(&24) && p.0.len() > 1);
+    assert!(rows.len() == 15 && rows.iter().all(|pg| *pg == 1), "table rows on pages {rows:?}");
+    assert_eq!(page_of(&|p| p.0 == [25]), vec![1]);
+}
+
+/// #534: a paragraph that starts with a page break right where the page is full keeps the break
+/// on that page: no blank page between the two tables around it.
+#[test]
+fn a_page_break_at_the_bottom_of_a_full_page_leaves_no_blank_page() {
+    use wordcraft_doc::props::LineSpacing;
+    let props = ParaProps { line_spacing: Some(LineSpacing::Exactly(24.0)), space_before: Some(0.0), space_after: Some(0.0), ..Default::default() };
+    let para = |text: &str| {
+        let mut p = wordcraft_doc::Paragraph::with_text(text, Default::default());
+        p.props = props.clone();
+        wordcraft_doc::para_block(p)
+    };
+    let mut d = Document::from_text("");
+    // 27 lines of 24pt fill the 648pt of text on a Letter page.
+    d.body = (0..27).map(|i| para(&format!("Line {i}"))).collect();
+    d.body.push(para("\u{000C}Next page"));
+    let l = lay(&d);
+    assert_eq!(l.pages.len(), 2, "pages: {}", l.pages.len());
+    let last_on_2 = l.pages[1].items.iter().any(|it| matches!(it, Placed::Lines { path, .. } if path.0 == [27]));
+    assert!(last_on_2, "the text after the break is on page 2");
+}
+
+/// #534: indents in characters (`w:firstLineChars`) are measured in the paragraph mark's font
+/// size and win over the indent in points.
+#[test]
+fn character_indents_use_the_paragraph_mark_size() {
+    let mut p = wordcraft_doc::Paragraph::with_text(&"字".repeat(80), Default::default());
+    p.props.indent_first = Some(5.0);
+    p.props.indent_first_chars = Some(2.0);
+    p.props.indent_left_chars = Some(1.0);
+    p.mark.size = Some(20.0);
+    let mut d = Document::from_text("");
+    d.body = vec![wordcraft_doc::para_block(p)];
+    let l = lay(&d);
+    let para = l.pages[0].items.iter().find_map(|it| if let Placed::Lines { para, .. } = it { Some(para.clone()) } else { None }).unwrap();
+    assert!((para.lines[0].left - 60.0).abs() < 0.01, "first line at {}", para.lines[0].left);
+    assert!((para.lines[1].left - 20.0).abs() < 0.01, "second line at {}", para.lines[1].left);
+}
+
 #[test]
 fn no_line_break_right_after_a_slash() {
     // Word keeps "and/or" and web addresses whole on a line when they fit.

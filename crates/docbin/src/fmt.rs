@@ -30,6 +30,11 @@ const P_DXA_LEFT80: u16 = 0x840F;
 const P_DXA_RIGHT: u16 = 0x845D;
 const P_DXA_RIGHT80: u16 = 0x840E;
 const P_DXA_FIRST: u16 = 0x8460; // sprmPDxaLeft1
+const P_DXA_FIRST80: u16 = 0x8411; // sprmPDxaLeft1_80
+// Indents in hundredths of a character (sprmPDxcRight, sprmPDxcLeft, sprmPDxcLeft1).
+const P_DXC_RIGHT: u16 = 0x4455;
+const P_DXC_LEFT: u16 = 0x4456;
+const P_DXC_FIRST: u16 = 0x4457;
 const P_DYA_BEFORE: u16 = 0xA413;
 const P_DYA_AFTER: u16 = 0xA414;
 const P_DYA_LINE: u16 = 0x6412;
@@ -186,12 +191,6 @@ pub(crate) fn apply_char(p: &mut CharProps, prl: &Prl, base: &CharProps, fonts: 
 pub(crate) fn apply_para(p: &mut ParaProps, prl: &Prl) {
     let tw = |v: i32| (v as f32 / 20.0).clamp(-1000.0, 1000.0);
     let s16 = |prl: &Prl| -> Option<i16> { u16_of(prl).map(|v| v as i16) };
-    let i32of = |prl: &Prl| -> Option<i32> {
-        match prl.operand {
-            [b0, b1, b2, b3, ..] => Some(i32::from_le_bytes([*b0, *b1, *b2, *b3])),
-            _ => None,
-        }
-    };
     match prl.op {
         P_JC | P_JC80 => {
             p.align = match prl.operand.first().copied().unwrap_or(0) {
@@ -212,9 +211,20 @@ pub(crate) fn apply_para(p: &mut ParaProps, prl: &Prl) {
                 p.indent_right = Some(tw(v as i32));
             }
         }
-        P_DXA_FIRST => {
-            if let Some(v) = i32of(prl) {
-                p.indent_first = Some(tw(v));
+        // A two-byte operand, like the other indents (spra 4).
+        P_DXA_FIRST | P_DXA_FIRST80 => {
+            if let Some(v) = s16(prl) {
+                p.indent_first = Some(tw(v as i32));
+            }
+        }
+        P_DXC_RIGHT | P_DXC_LEFT | P_DXC_FIRST => {
+            if let Some(v) = s16(prl) {
+                let chars = Some(f32::from(v) / 100.0);
+                match prl.op {
+                    P_DXC_RIGHT => p.indent_right_chars = chars,
+                    P_DXC_LEFT => p.indent_left_chars = chars,
+                    _ => p.indent_first_chars = chars,
+                }
             }
         }
         P_DYA_BEFORE => {
@@ -227,13 +237,18 @@ pub(crate) fn apply_para(p: &mut ParaProps, prl: &Prl) {
                 p.space_after = Some((v as f32 / 20.0).clamp(0.0, 3168.0));
             }
         }
+        // LSPD ([MS-DOC] §2.9.150): a signed dyaLine, then fMultLinespace. In lines (240ths) when
+        // fMultLinespace is 1; else twips, at least when positive and exactly when negative.
         P_DYA_LINE => {
-            if let Some(v) = u16_of(prl) {
-                let mult = (v & 0x3FFF) as f32;
-                p.line_spacing = Some(match v & 0xC000 {
-                    0x0000 => LineSpacing::Multiple((mult / 240.0).clamp(0.1, 20.0)),
-                    0x8000 => LineSpacing::AtLeast((mult / 20.0).clamp(0.0, 1584.0)),
-                    _ => LineSpacing::Exactly((mult / 20.0).clamp(0.0, 1584.0)),
+            if let Some(v) = s16(prl) {
+                let mult = prl.operand.get(2..4).is_some_and(|b| b == [1, 0]);
+                let v = f32::from(v);
+                p.line_spacing = Some(if mult {
+                    LineSpacing::Multiple((v.abs() / 240.0).clamp(0.06, 132.0))
+                } else if v < 0.0 {
+                    LineSpacing::Exactly((-v / 20.0).clamp(0.7, 1584.0))
+                } else {
+                    LineSpacing::AtLeast((v / 20.0).clamp(0.0, 1584.0))
                 });
             }
         }

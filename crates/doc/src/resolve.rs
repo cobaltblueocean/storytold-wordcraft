@@ -152,6 +152,10 @@ pub struct ResolvedPara {
     pub top_line_punct: bool,
     pub auto_space_de: bool,
     pub auto_space_dn: bool,
+    /// Indents in characters (left, right, first line; 0 = in points), which win over the
+    /// point values; see [`ResolvedPara::set_char_unit`].
+    #[serde(default)]
+    pub indent_chars: [f32; 3],
 }
 
 const MAX_INDENT: f32 = 1584.0; // 22"
@@ -162,6 +166,18 @@ impl ResolvedPara {
     /// `w:ind/@w:start`, read from `w:left` too).
     pub fn visual_indents(&self) -> (f32, f32) {
         if self.bidi { (self.indent_right, self.indent_left) } else { (self.indent_left, self.indent_right) }
+    }
+
+    /// Turn the indents given in characters into points, one character being `size` points: the
+    /// size of the paragraph mark's font (as Word measures `w:firstLineChars` and friends).
+    pub fn set_char_unit(&mut self, size: f32) {
+        let size = if size.is_finite() { size.clamp(1.0, 1638.0) } else { 12.0 };
+        let [l, r, f] = self.indent_chars;
+        for (chars, pts) in [(l, &mut self.indent_left), (r, &mut self.indent_right), (f, &mut self.indent_first)] {
+            if chars != 0.0 {
+                *pts = (chars * size).clamp(-MAX_INDENT, MAX_INDENT);
+            }
+        }
     }
 }
 
@@ -203,9 +219,14 @@ impl ResolvedPara {
             top_line_punct: p.top_line_punct.unwrap_or(false),
             auto_space_de: p.auto_space_de.unwrap_or(true),
             auto_space_dn: p.auto_space_dn.unwrap_or(true),
+            indent_chars: [p.indent_left_chars, p.indent_right_chars, p.indent_first_chars]
+                .map(|c| c.filter(|c| c.is_finite()).unwrap_or(0.0).clamp(-MAX_CHARS, MAX_CHARS)),
         }
     }
 }
+
+/// The largest indent in characters (Word allows indents up to 22").
+const MAX_CHARS: f32 = 1584.0;
 
 impl StyleSheet {
     /// Paragraph properties after defaults and the style chain (without direct formatting).
@@ -256,7 +277,13 @@ impl StyleSheet {
             direct.tabs = Some(merged);
         }
         base.overlay(&direct);
-        ResolvedPara::from(&base, &style)
+        let mut rp = ResolvedPara::from(&base, &style);
+        // Indents in characters: measured in the style's font size here; layout measures them in
+        // the paragraph mark's (`set_char_unit`), which direct formatting may change.
+        if rp.indent_chars.iter().any(|c| *c != 0.0) {
+            rp.set_char_unit(self.resolve_char(Some(&style), &CharProps::default()).size);
+        }
+        rp
     }
 
     /// Resolve character formatting for a run in a paragraph of style `para_style`.

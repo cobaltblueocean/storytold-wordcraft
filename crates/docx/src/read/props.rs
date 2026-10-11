@@ -195,6 +195,19 @@ impl PropCtx {
                     } else if let Some(v) = tw(k, "w:firstLine") {
                         p.indent_first = Some(v);
                     }
+                    // Character units (hundredths of a character), which win when non-zero.
+                    let chars = |a: &str| k.attr(a).and_then(int).map(|v| v.clamp(-158_400, 158_400) as f32 / 100.0);
+                    if let Some(v) = chars("w:leftChars").or_else(|| chars("w:startChars")) {
+                        p.indent_left_chars = Some(v);
+                    }
+                    if let Some(v) = chars("w:rightChars").or_else(|| chars("w:endChars")) {
+                        p.indent_right_chars = Some(v);
+                    }
+                    match (chars("w:hangingChars"), chars("w:firstLineChars")) {
+                        (Some(h), f) if h != 0.0 || f.is_none() => p.indent_first_chars = Some(-h),
+                        (_, Some(f)) => p.indent_first_chars = Some(f),
+                        _ => {}
+                    }
                 }
                 "w:jc" => p.align = k.attr("w:val").map(align),
                 "w:outlineLvl" => p.outline_level = k.attr("w:val").and_then(u32_of).map(|v| v.min(9) as u8),
