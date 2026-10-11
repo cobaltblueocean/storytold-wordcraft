@@ -2,7 +2,8 @@
 //! Word Count, Zoom, Watermark, New/Modify Style, Manage Styles, New/Modify Table Style, Table
 //! Properties, Command search, Paste Special, About, Save Changes, the password to open a
 //! document and Encrypt with Password, and the mail-merge Recipient List, Insert Merge Field, Find
-//! Recipient, merge rules, Match Fields and Check for Errors. Every dialog ends by running a
+//! Recipient, merge rules, Match Fields and Check for Errors (Customize Keyboard is in
+//! `dialogs_keyboard`, Customize Ribbon in `dialogs_ribbon`). Every dialog ends by running a
 //! command (or shows one's result), so agents get the same result without the dialog.
 
 use egui::{Sense, Ui, vec2};
@@ -188,6 +189,13 @@ pub enum Dialog {
         fields: Vec<String>,
         field: String,
     },
+    /// A field's code: a new field (Ctrl+F9, `edit` false) or the selected field's code to edit
+    /// (double-click a field showing its code, right-click › Edit Field…).
+    FieldCode {
+        code: String,
+        edit: bool,
+        message: String,
+    },
     /// Mailings › Find Recipient.
     FindRecipient {
         text: String,
@@ -246,6 +254,14 @@ pub enum Dialog {
     /// Review › Tracking › Track Changes Options (#328).
     TrackOptions {
         form: Box<crate::dialogs_lists::TrackForm>,
+    },
+    /// Tools › Customize Keyboard (#368).
+    CustomizeKeyboard {
+        form: Box<crate::dialogs_keyboard::KeyboardForm>,
+    },
+    /// Tools › Customize Ribbon and the Quick Access Toolbar (#379).
+    CustomizeRibbon {
+        form: Box<crate::dialogs_ribbon::RibbonForm>,
     },
 }
 
@@ -491,6 +507,8 @@ fn table_style_preview(ui: &mut Ui, style: Option<&wordcraft_doc::styles::TableS
             && !header
             && (ri.saturating_sub(usize::from(look.header_row)) / p.band_size.unwrap_or(1).clamp(1, 1000) as usize).is_multiple_of(2);
         for (ci, txt) in row.iter().enumerate() {
+            // Sample words in the interface language; numbers as they are.
+            let txt = &if txt.chars().any(char::is_alphabetic) { tl!(txt) } else { *txt };
             let first = look.first_column && ci == 0;
             let last = look.last_column && ci + 1 == COLS;
             let col_band = look.banded_columns && !first && ci.saturating_sub(usize::from(look.first_column)).is_multiple_of(2);
@@ -641,6 +659,8 @@ impl Dialog {
             Dialog::RecipientList { .. } => "recipientList",
             Dialog::InsertMergeField { .. } => "insertMergeField",
             Dialog::FindRecipient { .. } => "findRecipient",
+            Dialog::FieldCode { edit: false, .. } => "fieldCode",
+            Dialog::FieldCode { .. } => "editFieldCode",
             Dialog::MergeRule { rule, .. } if rule == "SKIPIF" => "ruleSkipIf",
             Dialog::MergeRule { .. } => "ruleIf",
             Dialog::MatchFields { .. } => "matchFields",
@@ -650,6 +670,8 @@ impl Dialog {
             Dialog::EncryptPassword { .. } => "encryptPassword",
             Dialog::DefineList { .. } => "defineList",
             Dialog::TrackOptions { .. } => "trackChangesOptions",
+            Dialog::CustomizeKeyboard { .. } => "customizeKeyboard",
+            Dialog::CustomizeRibbon { .. } => "customizeRibbon",
         }
     }
 
@@ -794,6 +816,11 @@ impl Dialog {
                 Dialog::InsertMergeField { field: fields.first().cloned().unwrap_or_default(), fields }
             }
             "findRecipient" => Dialog::FindRecipient { text: String::new(), message: String::new() },
+            "fieldCode" => Dialog::FieldCode { code: String::new(), edit: false, message: String::new() },
+            "editFieldCode" => {
+                let field = wordcraft_engine::cmd::fields::selected(&app.session).into_iter().next()?;
+                Dialog::FieldCode { code: field.instr, edit: true, message: String::new() }
+            }
             "encryptPassword" => Dialog::EncryptPassword { password: Password::default(), confirm: Password::default(), message: String::new() },
             "ruleIf" | "ruleSkipIf" => {
                 let fields = app.session.merge.headers.clone();
@@ -812,6 +839,13 @@ impl Dialog {
             }
             "defineList" => Dialog::DefineList { form: Box::new(crate::dialogs_lists::ListForm::read(app)) },
             "trackChangesOptions" => Dialog::TrackOptions { form: Box::new(crate::dialogs_lists::TrackForm::read(app)) },
+            "customizeKeyboard" => Dialog::CustomizeKeyboard { form: Box::new(crate::dialogs_keyboard::KeyboardForm::read(app)) },
+            "customizeRibbon" => {
+                Dialog::CustomizeRibbon { form: Box::new(crate::dialogs_ribbon::RibbonForm::read(app, crate::dialogs_ribbon::Page::Ribbon)) }
+            }
+            "customizeQuickAccess" => {
+                Dialog::CustomizeRibbon { form: Box::new(crate::dialogs_ribbon::RibbonForm::read(app, crate::dialogs_ribbon::Page::QuickAccess)) }
+            }
             _ => return None,
         })
     }
@@ -897,8 +931,37 @@ pub fn table_grid_picker(ui: &mut Ui, app: &mut WordApp) {
     }
 }
 
+/// Where the open dialog's top edge sits, as (window id, offset below the top of the screen).
+fn dialog_top_key() -> egui::Id {
+    egui::Id::new("dialog_top")
+}
+
+/// Anchors a dialog: centred on the frame it opens, then with its top edge held where that put
+/// it, so a taller or shorter tab (Paragraph, Font, Borders and Shading…) only moves the bottom
+/// edge and the tab strip stays under the mouse (#507). egui keeps it on screen if it grows past
+/// the bottom.
+fn place_dialog<'a>(ctx: &egui::Context, id: egui::Id, w: egui::Window<'a>) -> egui::Window<'a> {
+    match ctx.data(|d| d.get_temp::<(egui::Id, f32)>(dialog_top_key())) {
+        Some((open, top)) if open == id => w.anchor(egui::Align2::CENTER_TOP, vec2(0.0, top)),
+        _ => w.anchor(egui::Align2::CENTER_CENTER, vec2(0.0, -40.0)),
+    }
+}
+
+/// After a dialog's first frame: holds its top edge where centring its measured size put it.
+fn remember_dialog_top(ctx: &egui::Context, id: egui::Id, rect: egui::Rect) {
+    if ctx.data(|d| d.get_temp::<(egui::Id, f32)>(dialog_top_key())).is_some_and(|(open, _)| open == id) {
+        return;
+    }
+    let screen = ctx.content_rect();
+    let top = (screen.center().y - 40.0 - rect.height() / 2.0 - screen.top()).max(0.0);
+    ctx.data_mut(|d| d.insert_temp(dialog_top_key(), (id, top)));
+}
+
 pub fn show(app: &mut WordApp, ctx: &egui::Context) {
-    let Some(mut d) = app.dialog.take() else { return };
+    let Some(mut d) = app.dialog.take() else {
+        ctx.data_mut(|d| d.remove::<(egui::Id, f32)>(dialog_top_key()));
+        return;
+    };
     let mut open = true;
     let mut close = false;
     let title = match &d {
@@ -929,6 +992,8 @@ pub fn show(app: &mut WordApp, ctx: &egui::Context) {
         Dialog::RecipientList { .. } => "Recipient List",
         Dialog::InsertMergeField { .. } => "Insert Merge Field",
         Dialog::FindRecipient { .. } => "Find Recipient",
+        Dialog::FieldCode { edit: false, .. } => "Field",
+        Dialog::FieldCode { .. } => "Edit Field Code",
         Dialog::MergeRule { rule, .. } if rule == "SKIPIF" => "Skip Record If",
         Dialog::MergeRule { .. } => "If…Then…Else",
         Dialog::MatchFields { .. } => "Match Fields",
@@ -938,17 +1003,17 @@ pub fn show(app: &mut WordApp, ctx: &egui::Context) {
         Dialog::EncryptPassword { .. } => "Encrypt with Password",
         Dialog::DefineList { .. } => "Define New Multilevel List",
         Dialog::TrackOptions { .. } => "Track Changes Options",
+        Dialog::CustomizeKeyboard { .. } => "Customize Keyboard",
+        Dialog::CustomizeRibbon { .. } => "Customize Ribbon",
     };
-    egui::Window::new(tl!(title))
-        .id(egui::Id::new(("dialog", title)))
-        .collapsible(false)
-        .resizable(false)
-        .anchor(egui::Align2::CENTER_CENTER, vec2(0.0, -40.0))
-        .open(&mut open)
-        .show(ctx, |ui| {
-            ui.set_min_width(340.0);
-            close = body(app, ui, &mut d);
-        });
+    let id = egui::Id::new(("dialog", title));
+    let shown = place_dialog(ctx, id, egui::Window::new(tl!(title)).id(id).collapsible(false).resizable(false)).open(&mut open).show(ctx, |ui| {
+        ui.set_min_width(340.0);
+        close = body(app, ui, &mut d);
+    });
+    if let Some(r) = shown {
+        remember_dialog_top(ctx, id, r.response.rect);
+    }
     if open && !close {
         app.dialog = Some(d);
     } else {
@@ -1551,6 +1616,7 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             let r = ui.add(egui::TextEdit::singleline(query).hint_text(tl!("Type a command, e.g. \"insert table\"")).desired_width(380.0));
             r.request_focus();
             let q = query.to_lowercase();
+            let localized_q = crate::i18n::lowercase(query);
             let reg = app.session.registry.clone();
             let mut hits: Vec<&wordcraft_engine::CommandSpec> = reg
                 .all()
@@ -1558,10 +1624,10 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                 .filter(|c| {
                     !q.is_empty()
                         && (c.label.to_lowercase().contains(&q)
-                            || tl!(c.label).to_lowercase().contains(&q)
+                            || crate::i18n::lowercase(tl!(c.label)).contains(&localized_q)
                             || c.id.to_lowercase().contains(&q)
                             || c.location.to_lowercase().contains(&q)
-                            || crate::i18n::location(c.location).to_lowercase().contains(&q))
+                            || crate::i18n::lowercase(&crate::i18n::location(c.location)).contains(&localized_q))
                 })
                 .collect();
             hits.truncate(14);
@@ -1779,6 +1845,32 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
         }
         Dialog::DefineList { form } => crate::dialogs_lists::define_list(app, ui, form),
         Dialog::TrackOptions { form } => crate::dialogs_lists::track_options(app, ui, form),
+        Dialog::CustomizeKeyboard { form } => crate::dialogs_keyboard::customize_keyboard(app, ui, form),
+        Dialog::CustomizeRibbon { form } => crate::dialogs_ribbon::customize_ribbon(app, ui, form),
+        Dialog::FieldCode { code, edit, message } => {
+            ui.label(tl!("Field codes:"));
+            let r = ui.add(egui::TextEdit::singleline(code).desired_width(320.0).font(egui::TextStyle::Monospace));
+            if !r.has_focus() && code.is_empty() {
+                r.request_focus();
+            }
+            ui.label(egui::RichText::new("PAGE · NUMPAGES · DATE \\@ \"MMMM d, yyyy\" · AUTHOR · TITLE · SEQ Figure").small().weak());
+            if !message.is_empty() {
+                ui.label(egui::RichText::new(message.as_str()).small().weak());
+            }
+            let (ok, cancel) = buttons(ui, tl!("OK"));
+            if ok && !code.trim().is_empty() {
+                let r = if *edit {
+                    app.run("fields.setCode", json!({"code": code.trim()}))
+                } else {
+                    app.run("insert.field", json!({"instr": code.trim()}))
+                };
+                match r {
+                    Ok(_) => return true,
+                    Err(e) => *message = e,
+                }
+            }
+            cancel
+        }
         Dialog::FindRecipient { text, message } => {
             ui.horizontal(|ui| {
                 ui.label(tl!("Find:"));
@@ -2242,6 +2334,53 @@ mod tests {
         app.session.doc.para_at(&app.session.sel.focus).map(|p| p.props.clone()).unwrap_or_default()
     }
 
+    /// Ordinary Turkish queries must find dotted-I labels, while canonical English labels and
+    /// ASCII command IDs retain their old case-insensitive search in every interface language.
+    #[test]
+    fn command_search_respects_turkish_i_pairs_and_keeps_canonical_matches() {
+        use egui_kittest::kittest::Queryable;
+        let mut fonts = false;
+        let mut h = egui_kittest::Harness::builder().with_size(vec2(1440.0, 900.0)).build_ui_state(
+            move |ui, app: &mut WordApp| {
+                let ctx = ui.ctx().clone();
+                crate::i18n::set_current(crate::i18n::Lang::from_pref(&app.ui.language));
+                if fonts {
+                    show(app, &ctx);
+                } else {
+                    crate::theme::install_fonts_for(&ctx, false);
+                    fonts = true;
+                }
+            },
+            app_with("Unchanged document"),
+        );
+        let before = serde_json::to_value(&h.state().session.doc).unwrap();
+        for (language, query, expected) in [
+            ("tr", "italik", "İtalik   —   Giriş › Yazı Tipi"),
+            ("tr", "İTALİK", "İtalik   —   Giriş › Yazı Tipi"),
+            ("tr", "içindekiler", "İçindekiler Tablosu   —   Başvurular › İçindekiler Tablosu"),
+            ("tr", "YAZI TİPİ", "İtalik   —   Giriş › Yazı Tipi"),
+            ("tr", "INSERT", "Tablo   —   Ekle › Tablolar"),
+            ("tr", "INSERT.TABLE", "Tablo   —   Ekle › Tablolar"),
+            ("tr", "FORMAT.ITALIC", "İtalik   —   Giriş › Yazı Tipi"),
+            ("tr", "TABLE OF CONTENTS", "İçindekiler Tablosu   —   Başvurular › İçindekiler Tablosu"),
+            ("en", "ITALIC", "Italic   —   Home › Font"),
+            ("en", "FORMAT.ITALIC", "Italic   —   Home › Font"),
+            ("en", "INSERT.TABLE", "Table   —   Insert › Tables"),
+        ] {
+            h.state_mut().ui.language = language.into();
+            h.state_mut().dialog = Some(Dialog::Commands { query: query.into() });
+            h.run_steps(4);
+            assert!(
+                h.query(egui_kittest::kittest::By::new().role(egui::accesskit::Role::Button).label_contains(expected)).is_some(),
+                "{language}: {query}\n{:?}",
+                h.query_all_by_role(egui::accesskit::Role::Button).collect::<Vec<_>>()
+            );
+            assert_eq!(crate::i18n::lowercase("Iİıi"), if language == "tr" { "ıiıi" } else { "ii\u{307}ıi" });
+        }
+        assert_eq!(serde_json::to_value(&h.state().session.doc).unwrap(), before, "search does not change the document");
+        crate::i18n::set_current(crate::i18n::Lang::EN);
+    }
+
     /// Open the Paragraph dialog and press OK without changing anything.
     fn ok_unchanged(app: &mut WordApp) {
         let Some(Dialog::Paragraph { rtl, align, left, right, first, before, after, line, keep_next, keep_lines, page_break, widow, .. }) =
@@ -2293,5 +2432,38 @@ mod tests {
         assert_eq!(p.bidi, Some(true));
         assert_eq!(p.align, Some(Align::Left), "right on the page is the start edge");
         assert_eq!(p.indent_left, Some(72.0), "the right indent is the start indent");
+    }
+
+    /// Switching the Paragraph dialog's tabs re-centred it, so the tab strip jumped up and down
+    /// by half the height difference (#507): the top edge now stays put and only the bottom moves.
+    #[test]
+    fn switching_paragraph_tabs_keeps_the_top_edge() {
+        use egui_kittest::kittest::Queryable;
+        let mut app = app_with("Some text");
+        app.dialog = Dialog::open("paragraph", &mut app);
+        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
+            |ui, app: &mut WordApp| {
+                let ctx = ui.ctx().clone();
+                app.logic(&ctx);
+                app.ui(ui);
+            },
+            app,
+        );
+        let mut tops = vec![];
+        let mut oks = vec![];
+        for page in [0u8, 1, 2, 0] {
+            if let Some(Dialog::Paragraph { tab, .. }) = &mut h.state_mut().dialog {
+                *tab = page;
+            }
+            for _ in 0..4 {
+                h.step();
+            }
+            tops.push(h.get_by_label("Indents and Spacing").rect().top());
+            oks.push(h.get_by_role_and_label(egui::accesskit::Role::Button, "OK").rect().top());
+        }
+        assert!((oks[0] - oks[1]).abs() > 10.0, "the tabs differ in height: {oks:?}");
+        for t in &tops {
+            assert!((t - tops[0]).abs() <= 0.5, "the tab strip stays put: {tops:?}");
+        }
     }
 }

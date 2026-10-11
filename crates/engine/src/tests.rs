@@ -26,6 +26,28 @@ fn doc_extension_dispatches_to_docbin() {
 }
 
 #[test]
+fn txt_open_decodes_windows_1252_and_unmarked_utf16() {
+    // #433: the TXT open path sniffs encodings like the formats importer.
+    let open = |b: &[u8]| crate::io::open_bytes("x.txt", b).unwrap().plain_text(StoryRef::Body);
+    assert_eq!(open(b"\x80"), "€");
+    assert_eq!(open(b"A\0B\0"), "AB");
+    assert_eq!(open(b"\0A\0B"), "AB");
+    assert_eq!(open("€".as_bytes()), "€");
+    assert_eq!(open(b"\xFF\xFEA\0B\0"), "AB");
+    assert_eq!(open(b"A\0B"), "AB", "odd byte count stays safe");
+    assert_eq!(crate::io::decode_text(b"caf\xE9 \x80"), "café €");
+}
+
+#[test]
+fn txt_save_writes_list_labels() {
+    // #434: list paragraphs keep their bullet or number and a tab in plain text.
+    let doc = crate::io::open_bytes("l.md", b"- alpha\n- beta\n\n1. first\n2. second\n").unwrap();
+    assert_eq!(crate::io::save_bytes("l.txt", &doc).unwrap(), "•\talpha\r\n•\tbeta\r\n1.\tfirst\r\n2.\tsecond".as_bytes());
+    let plain = crate::io::open_bytes("p.md", b"alpha\n\nbeta\n").unwrap();
+    assert_eq!(crate::io::save_bytes("p.txt", &plain).unwrap(), b"alpha\r\nbeta");
+}
+
+#[test]
 fn every_command_has_unique_id() {
     let reg = cmd::registry();
     let mut ids: Vec<&str> = reg.all().iter().map(|c| c.id).collect();
@@ -49,6 +71,58 @@ fn every_shortcut_runs_one_command() {
         }
     }
     assert_eq!(reg.by_shortcut("Shift+F3").map(|c| c.id), Some("format.changeCase"));
+}
+
+#[test]
+fn word_default_shortcuts_resolve() {
+    // #330: Word's documented default shortcuts reach the matching commands, with Word for
+    // Mac's keys where macOS takes Word's (⌘Q quits, ⌘Space is Spotlight, ⌘⇧G is Find Previous).
+    let reg = cmd::registry();
+    let id = |k: &str| reg.by_shortcut(k).map(|c| c.id);
+    assert_eq!(id("Mod+Alt+1"), Some("para.heading1"));
+    assert_eq!(id("Mod+Alt+P"), Some("view.printLayout"));
+    assert_eq!(id("Mod+Alt+O"), Some("view.outline"));
+    assert_eq!(id("Mod+Alt+N"), Some("view.draft"));
+    assert_eq!(id("Mod+Alt+S"), Some("view.split"));
+    assert_eq!(id("Mod+Alt+-"), Some("text.emDash"));
+    assert_eq!(id("Mod+Shift+F5"), Some("insert.bookmark"));
+    assert_eq!(id("Alt+F7"), Some("review.spelling"));
+    assert_eq!(id("Shift+F12"), Some("file.save"));
+    assert_eq!(id(cmd::mac_or("Ctrl+Q", "Mod+Q")), Some("para.reset"));
+    assert_eq!(id(cmd::mac_or("Ctrl+Space", "Mod+Space")), Some("format.resetChar"));
+    assert_eq!(id(cmd::mac_or("Ctrl+Shift+D", "Alt+Shift+D")), Some("insert.dateField"));
+    if cfg!(target_os = "macos") {
+        assert_eq!(id("Mod+Shift+G"), Some("edit.findPrevious"));
+    } else {
+        assert_eq!(id("Mod+Shift+G"), Some("review.wordCount"));
+        assert_eq!(id("Mod+Alt+C"), Some("text.copyright"));
+        assert_eq!(id("Mod+Alt+H"), Some("format.highlight"));
+    }
+    assert_eq!(id("Mod+PageUp"), Some("edit.findPrevious"));
+}
+
+#[test]
+fn reset_shortcuts_remove_direct_formatting_but_keep_styles() {
+    let mut s = s();
+    run(&mut s, "text.insert", json!({"text": "Hello world"}));
+    run(&mut s, "para.heading1", json!({}));
+    run(&mut s, "para.indent", json!({}));
+    run(&mut s, "para.alignCenter", json!({}));
+    run(&mut s, "para.reset", json!({}));
+    let props = s.doc.para_at(&Pos::body(0, 0)).unwrap().props.clone();
+    assert_eq!(props.style.as_deref(), Some("Heading1"), "Ctrl+Q keeps the paragraph style");
+    assert_eq!((props.indent_left, props.align), (None, None), "Ctrl+Q drops direct paragraph formatting");
+
+    run(&mut s, "select.all", json!({}));
+    run(&mut s, "format.bold", json!({}));
+    run(&mut s, "format.resetChar", json!({}));
+    let p = s.doc.para_at(&Pos::body(0, 0)).unwrap();
+    assert_eq!(p.props_of_char(1).bold, None, "Ctrl+Space drops direct character formatting");
+    assert_eq!(p.props.style.as_deref(), Some("Heading1"), "Ctrl+Space leaves the paragraph alone");
+
+    run(&mut s, "caret.docEnd", json!({}));
+    run(&mut s, "text.emDash", json!({}));
+    assert_eq!(text(&s), "Hello world—");
 }
 
 #[test]
@@ -2331,6 +2405,7 @@ fn charts_and_diagrams_can_be_selected_and_deleted_but_not_moved() {
         ("arrange.bounds", json!({"width": 50})),
         ("picture.size", json!({"width": 50})),
         ("arrange.wrap", json!({"wrap": "square"})),
+        ("arrange.wrapText", json!({"side": "left"})),
         ("arrange.position", json!({"preset": "topLeft"})),
         ("arrange.align", json!({"value": "left"})),
         ("arrange.bringForward", json!({})),

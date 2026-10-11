@@ -1,8 +1,10 @@
 //! WordCraft proofing.
 //!
 //! - **Spelling** against the public-domain Moby word list (~160k words, the same list that
-//!   drives hyphenation), with inflections (`-s`, `-es`, `-ed`, `-ing`, `-ly`, `'s`…), a user
-//!   dictionary and ignore lists; suggestions by edit distance.
+//!   drives hyphenation) plus our supplement of modern words it lacks
+//!   (`assets/spelling/en-extra.txt`: `desktop`, `email`, `download`…), with inflections (`-s`,
+//!   `-es`, `-ed`, `-ing`, `-ly`, `'s`…), a user dictionary and ignore lists; suggestions by edit
+//!   distance.
 //! - **Grammar** checks that are cheap and reliable: repeated words, `a`/`an`, capital letter
 //!   after a sentence end, spaces before punctuation, doubled spaces.
 //! - **Hyphenation** ([`hyphen`]): dictionary, Liang patterns, heuristic.
@@ -51,86 +53,23 @@ pub fn user_dictionary() -> Vec<String> {
 /// Common words the source list lacks (modern vocabulary, contractions).
 const COMMON: &str = "a an the and or but if of to in on at by for with from as is am are was were be been being it its we us our you your he him his she her they them their i me my mine this that these those there here what which who whom whose when where why how all any both each few more most other some such no nor not only own same so than too very can will just should now do does did done has have had having may might must shall would could up down out over under again further then once off into onto upon about above below between through during before after until while because per via vs etc ok yes yeah oh ah hi hey bye one two three four five six seven eight nine ten first last next new old get got go goes went gone see saw seen say said make made take took come came give gave know knew think thought look want need use used find found tell told ask asked feel felt try left keep let put mean set run show turn move live play pay hear hold bring begin seem help talk start might";
 
-const EXTRA: &[&str] = &[
-    "don't",
-    "doesn't",
-    "didn't",
-    "can't",
-    "won't",
-    "isn't",
-    "aren't",
-    "wasn't",
-    "weren't",
-    "shouldn't",
-    "wouldn't",
-    "couldn't",
-    "i'm",
-    "i've",
-    "i'd",
-    "i'll",
-    "you're",
-    "you've",
-    "you'll",
-    "you'd",
-    "we're",
-    "we've",
-    "we'll",
-    "they're",
-    "they've",
-    "they'll",
-    "it's",
-    "that's",
-    "there's",
-    "here's",
-    "what's",
-    "let's",
-    "email",
-    "emails",
-    "online",
-    "website",
-    "websites",
-    "internet",
-    "software",
-    "app",
-    "apps",
-    "smartphone",
-    "blog",
-    "login",
-    "logout",
-    "username",
-    "wifi",
-    "toolbar",
-    "workflow",
-    "workflows",
-    "dataset",
-    "datasets",
-    "metadata",
-    "startup",
-    "startups",
-    "covid",
-    "selfie",
-    "podcast",
-    "podcasts",
-    "hashtag",
-    "wordcraft",
-    "artcraft",
-    "discord",
-    "github",
-    "rust",
-    "ok",
-    "okay",
-    "unlabelled",
-    "labelled",
-    "colour",
-    "colours",
-    "favourite",
-    "centre",
-    "organise",
-];
+/// Our supplement of common words the Moby list lacks (`desktop`, `email`, `download`…): one
+/// lowercase base form per line, `#` comments. Inflections come from [`known_core`].
+const EXTRA_EN: &str = include_str!("../../../assets/spelling/en-extra.txt");
+
+fn extra_words() -> &'static HashSet<&'static str> {
+    static E: OnceLock<HashSet<&'static str>> = OnceLock::new();
+    E.get_or_init(|| EXTRA_EN.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')).collect())
+}
+
+/// A base form in the dictionary or the supplement.
+fn base_known(d: &dict::Dictionary, w: &str) -> bool {
+    d.get(w).is_some() || extra_words().contains(w)
+}
 
 fn known_core(w: &str) -> bool {
     let d = dict::Dictionary::en_us();
-    if d.get(w).is_some() || EXTRA.contains(&w) || COMMON.split(' ').any(|c| c == w) {
+    if base_known(d, w) || COMMON.split(' ').any(|c| c == w) {
         return true;
     }
     if user_words().read().unwrap_or_else(|e| e.into_inner()).contains(w) {
@@ -157,7 +96,7 @@ fn known_core(w: &str) -> bool {
         {
             for a in adds {
                 let s = format!("{stem}{a}");
-                if d.get(&s).is_some() || EXTRA.contains(&s.as_str()) {
+                if base_known(d, &s) {
                     return true;
                 }
             }
@@ -167,7 +106,7 @@ fn known_core(w: &str) -> bool {
                 && b.len() >= 3
                 && b.last() == b.get(b.len() - 2)
                 && let Some(s) = stem.get(..stem.len() - 1)
-                && d.get(s).is_some()
+                && base_known(d, s)
             {
                 return true;
             }
@@ -177,7 +116,7 @@ fn known_core(w: &str) -> bool {
     for pre in ["un", "re", "non", "pre", "over", "under", "co", "mis"] {
         if let Some(rest) = w.strip_prefix(pre)
             && rest.len() >= 3
-            && d.get(rest).is_some()
+            && base_known(d, rest)
         {
             return true;
         }
@@ -220,7 +159,7 @@ pub fn suggest(word: &str, max: usize) -> Vec<String> {
     let d = dict::Dictionary::en_us();
     let mut scored: Vec<(usize, i64, String)> = Vec::new();
     let target: Vec<char> = lower.chars().collect();
-    for (w, _) in d.iter() {
+    for w in d.iter().map(|(w, _)| w).chain(extra_words().iter().copied()) {
         let wn = w.chars().count();
         if wn + 2 < n || wn > n + 2 {
             continue;
@@ -458,6 +397,50 @@ mod tests {
         let s = suggest("recieve", 5);
         assert!(s.contains(&"receive".to_string()), "{s:?}");
         assert!(suggest("Wrold", 3).contains(&"World".to_string()));
+    }
+
+    /// #520: common modern words (and their inflections) are known; misspellings still flagged.
+    #[test]
+    fn common_modern_words() {
+        for w in [
+            "desktop",
+            "Desktops",
+            "laptop",
+            "download",
+            "downloaded",
+            "uploading",
+            "email",
+            "emailing",
+            "website",
+            "online",
+            "offline",
+            "smartphones",
+            "login",
+            "username",
+            "spreadsheet",
+            "database",
+            "screenshots",
+            "blogging",
+            "inbox",
+            "workplace",
+            "uploader",
+        ] {
+            assert!(is_correct(w), "{w}");
+        }
+        for w in ["dekstop", "laptp", "dowload", "spreadshet"] {
+            assert!(!is_correct(w), "{w}");
+        }
+        assert!(suggest("dekstop", 5).contains(&"desktop".to_string()), "{:?}", suggest("dekstop", 5));
+        assert!(check_spelling("My desktop and laptop download email online.").is_empty());
+    }
+
+    /// The supplement stays a sorted list of lowercase base forms.
+    #[test]
+    fn supplement_is_sorted_lowercase() {
+        let words: Vec<&str> = EXTRA_EN.lines().filter(|l| !l.is_empty() && !l.starts_with('#')).collect();
+        assert!(words.len() > 100);
+        assert!(words.windows(2).all(|p| p[0] < p[1]), "not sorted / duplicate");
+        assert!(words.iter().all(|w| w.chars().all(|c| c.is_lowercase() || c == '\'' || c == '-')), "not lowercase");
     }
 
     #[test]
