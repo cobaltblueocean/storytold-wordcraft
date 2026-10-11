@@ -1408,6 +1408,19 @@
 	Left Only	Yalnızca Sol
 	Right Only	Yalnızca Sağ
 	Largest Only	Yalnızca En Geniş
+	Lasso Select	Kement Seçimi
+	Move Selected Ink	Seçili Mürekkebi Taşı
+	Delete Selected Ink	Seçili Mürekkebi Sil
+	Recolor Selected Ink	Seçili Mürekkebi Yeniden Renklendir
+	Add Pen	Kalem Ekle
+	Remove Pen	Kalemi Kaldır
+	Ink to Shape	Mürekkepten Şekle
+	Convert to Shapes	Şekillere Dönüştür
+	Ink Replay	Mürekkep Yeniden Oynatma
+	Add\nPen	Kalem\nEkle
+	Rewind	Geri Sar
+	Forward	İleri
+	Stroke {n} of {total}	Vuruş {n} / {total}
 	Drawing Canvas	Çizim Tuvali
 	New Drawing Canvas	Yeni Çizim Tuvali
 	Fit	Sığdır

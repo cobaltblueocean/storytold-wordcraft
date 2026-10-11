@@ -1790,6 +1790,19 @@ preview	Title	Пример
 	Left Only	Только слева
 	Right Only	Только справа
 	Largest Only	Только по большей стороне
+	Lasso Select	Лассо
+	Move Selected Ink	Переместить выделенные штрихи
+	Delete Selected Ink	Удалить выделенные штрихи
+	Recolor Selected Ink	Перекрасить выделенные штрихи
+	Add Pen	Добавить перо
+	Remove Pen	Удалить перо
+	Ink to Shape	Рукописный ввод в фигуры
+	Convert to Shapes	Преобразовать в фигуры
+	Ink Replay	Воспроизведение рукописного ввода
+	Add\nPen	Добавить\nперо
+	Rewind	Назад
+	Forward	Вперёд
+	Stroke {n} of {total}	Штрих {n} из {total}
 	Drawing Canvas	Полотно для рисования
 	New Drawing Canvas	Новое полотно для рисования
 	Fit	По размеру

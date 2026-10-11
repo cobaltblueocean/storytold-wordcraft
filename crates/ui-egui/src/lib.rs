@@ -134,6 +134,10 @@ pub struct UiState {
     /// Custom ribbon tabs and groups, hidden tabs and the Quick Access Toolbar (Customize Ribbon,
     /// #379); the session owns them while running.
     pub ribbon: wordcraft_engine::RibbonLayout,
+    /// Draw › Add Pen: the pens added to the pen gallery; the session owns them while running.
+    /// Entries that aren't pens are dropped on reading.
+    #[serde(deserialize_with = "wordcraft_engine::cmd::draw::lenient_pens")]
+    pub ink_pens: Vec<wordcraft_engine::cmd::draw::CustomPen>,
 }
 
 impl Default for UiState {
@@ -161,6 +165,7 @@ impl Default for UiState {
             dark_page: false,
             keyboard: wordcraft_engine::KeyMap::default(),
             ribbon: wordcraft_engine::RibbonLayout::default(),
+            ink_pens: Vec::new(),
         }
     }
 }
@@ -304,6 +309,7 @@ impl WordApp {
         ui.dark_page = self.session.view.dark_mode;
         ui.keyboard = self.session.keymap.clone();
         ui.ribbon = self.session.ribbon.clone();
+        ui.ink_pens = self.session.view.draw.pens.clone();
         ui
     }
 
@@ -331,6 +337,7 @@ impl WordApp {
         // So are ribbon and toolbar commands.
         self.session.ribbon = std::mem::take(&mut self.ui.ribbon);
         self.session.ribbon.retain_known(&reg);
+        self.session.view.draw.pens = std::mem::take(&mut self.ui.ink_pens);
     }
 
     /// Run a command the user asked for (ribbon, shortcut, Backstage, file drop). New, Open,

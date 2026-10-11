@@ -1419,3 +1419,16 @@
 	Enlarge symbol	記号を拡大
 	Enclosure	囲い
 	Circle	円
+	Lasso Select	なげなわ選択
+	Move Selected Ink	選択したインクを移動
+	Delete Selected Ink	選択したインクを削除
+	Recolor Selected Ink	選択したインクの色を変更
+	Add Pen	ペンの追加
+	Remove Pen	ペンの削除
+	Ink to Shape	インクを図形に変換
+	Convert to Shapes	図形に変換
+	Ink Replay	インクの再生
+	Add\nPen	ペンの\n追加
+	Rewind	巻き戻し
+	Forward	早送り
+	Stroke {n} of {total}	ストローク {n}/{total}
