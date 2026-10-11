@@ -1425,3 +1425,19 @@
 	Enlarge symbol	增大圈号
 	Enclosure	圈号
 	Circle	圆形
+
+# Built-in file browser when the system file dialog is unavailable (#576)
+	Documents	文档
+	Word document	Word 文档
+	All files	所有文件
+	Recipient lists	收件人列表
+	The system file dialog isn't available, so WordCraft shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	系统文件对话框不可用，因此 WordCraft 显示自己的对话框。要使用系统对话框，请安装文件选择器门户（例如 xdg-desktop-portal-gtk）或 zenity。
+	Up one level	向上一级
+	Home folder	主文件夹
+	{name} wasn't found.	未找到 {name}。
+	{name} already exists. Choose Save again to replace it.	{name} 已存在。再次选择“保存”即可替换它。
+	This folder can't be read: {error}	无法读取此文件夹：{error}
+	Showing the first {count} items.	仅显示前 {count} 项。
+	File name:	文件名:
+	Browse in WordCraft…	在 WordCraft 中浏览…
+	Open a file with WordCraft's own browser when the system file dialog doesn't appear.	当系统文件对话框没有出现时，使用 WordCraft 自带的浏览器打开文件。

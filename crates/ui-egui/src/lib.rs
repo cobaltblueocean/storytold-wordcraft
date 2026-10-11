@@ -25,6 +25,9 @@ pub mod dialogs_lists;
 pub mod dialogs_para;
 pub mod dialogs_ribbon;
 pub mod equation_tab;
+/// The built-in file browser, for desktops without a system file dialog (#576).
+#[cfg(not(target_arch = "wasm32"))]
+pub mod file_browser;
 pub mod file_dialogs;
 pub mod frame;
 pub mod i18n;
@@ -51,7 +54,7 @@ use serde_json::{Value, json};
 use wordcraft_engine::Session;
 
 pub use control::ControlRequest;
-pub use file_dialogs::FileDialogRequest;
+pub use file_dialogs::{FileDialogAnswer, FileDialogRequest, open_filters};
 
 /// Platform services injected by the host (file dialogs, file I/O).
 #[derive(Default)]
@@ -61,10 +64,11 @@ pub struct Services {
     /// Pick a path to save to, given a suggested name.
     pub pick_save: Option<Box<dyn Fn(&str) -> Option<String>>>,
     /// Desktop: show a native file dialog without blocking the UI thread (#94); used instead of
-    /// `pick_open` / `pick_save` when set. The host sends the picked path (`None` when cancelled)
-    /// through the returned channel once the user answers, and wakes the UI; a dropped sender
-    /// counts as cancelled. The app shows one dialog at a time ([`file_dialogs`]).
-    pub file_dialog: Option<Box<dyn Fn(FileDialogRequest) -> std::sync::mpsc::Receiver<Option<String>>>>,
+    /// `pick_open` / `pick_save` when set. The host sends the picked path (`Ok(None)` when
+    /// cancelled) through the returned channel once the user answers, and wakes the UI; a dropped
+    /// sender counts as cancelled. An `Err` says no system dialog could be shown, and the app shows
+    /// its built-in file browser instead (#576). The app shows one dialog at a time ([`file_dialogs`]).
+    pub file_dialog: Option<Box<dyn Fn(FileDialogRequest) -> std::sync::mpsc::Receiver<FileDialogAnswer>>>,
     /// Web: open a file picker; the file arrives later through `inbox`.
     pub open_async: Option<Box<dyn Fn(&str)>>,
     /// Web: files (name, bytes) delivered asynchronously (picker, drag and drop).
@@ -221,6 +225,9 @@ pub struct WordApp {
     autosave_path: Option<std::path::PathBuf>,
     /// The file dialog the host is showing, and what its answer is for ([`file_dialogs`]).
     file_dialog: Option<file_dialogs::PendingDialog>,
+    /// The built-in file browser, when it is open, and the folder it showed last (#576).
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) file_browser: file_browser::State,
     /// File › Info: the property field being typed in and the document revision after its last
     /// keystroke, so one visit's keystrokes make a single undo step (and anything else in
     /// between, such as an Undo, starts a new one).
@@ -284,6 +291,8 @@ impl WordApp {
             change_picture_target: None,
             recipient_list_pending: false,
             file_dialog: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            file_browser: file_browser::State::default(),
             info_editing: None,
         }
     }
@@ -681,6 +690,14 @@ impl WordApp {
                 self.open_dialog();
                 json!({})
             }
+            // The built-in file browser (#576), for when the system's file dialog doesn't show up
+            // (desktop only): `purpose` is document (default), picture, recipients or save. A system
+            // dialog still waiting for an answer is given up as cancelled.
+            #[cfg(not(target_arch = "wasm32"))]
+            "ui.fileBrowser" => {
+                self.browse_builtin(s("purpose").unwrap_or("document"));
+                json!({"open": self.file_browser.open.is_some()})
+            }
             // Mailings › Select Recipients › Use an Existing List…: pick a CSV/TSV/text file and
             // load it as the mail-merge recipients. Opens system UI, like `ui.openFileDialog`.
             "ui.openRecipientList" => {
@@ -983,6 +1000,8 @@ impl WordApp {
             });
         }
         dialogs::show(self, &ctx);
+        #[cfg(not(target_arch = "wasm32"))]
+        file_browser::show(self, &ctx);
         zotero::show_alert(self, &ctx);
         read_aloud::show(self, &ctx);
         crate::keytips::show(self, &ctx, ui);

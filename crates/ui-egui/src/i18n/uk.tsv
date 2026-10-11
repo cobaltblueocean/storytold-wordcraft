@@ -1425,3 +1425,19 @@
 	Enlarge symbol	Збільшити символ
 	Enclosure	Обведення
 	Circle	Коло
+
+# Built-in file browser when the system file dialog is unavailable (#576)
+	Documents	Документи
+	Word document	Документ Word
+	All files	Усі файли
+	Recipient lists	Списки одержувачів
+	The system file dialog isn't available, so WordCraft shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Системне діалогове вікно файлів недоступне, тож WordCraft показує власне. Щоб отримати системне вікно, установіть портал вибору файлів (наприклад, xdg-desktop-portal-gtk) або zenity.
+	Up one level	На рівень вище
+	Home folder	Домашня тека
+	{name} wasn't found.	{name} не знайдено.
+	{name} already exists. Choose Save again to replace it.	{name} уже існує. Щоб замінити файл, виберіть «Зберегти» ще раз.
+	This folder can't be read: {error}	Не вдається прочитати цю теку: {error}
+	Showing the first {count} items.	Показано лише перші елементи: {count}.
+	File name:	Ім'я файлу:
+	Browse in WordCraft…	Огляд у WordCraft…
+	Open a file with WordCraft's own browser when the system file dialog doesn't appear.	Відкрити файл власним оглядачем WordCraft, коли системне діалогове вікно файлів не з'являється.

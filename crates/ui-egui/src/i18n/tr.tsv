@@ -1422,3 +1422,19 @@
 	Search icons	Simgelerde ara
 	No icons match your search.	Aramanızla eşleşen simge yok.
 	Recolor a one-color picture, such as an icon	Simge gibi tek renkli bir resmi yeniden renklendir
+
+# Built-in file browser (#576).
+	Documents	Belgeler
+	Word document	Word belgesi
+	All files	Tüm dosyalar
+	Recipient lists	Alıcı listeleri
+	The system file dialog isn't available, so WordCraft shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Sistemin dosya iletişim kutusu kullanılamadığı için WordCraft kendi iletişim kutusunu gösteriyor. Sistem iletişim kutusunu kullanmak için bir dosya seçici portalı (örneğin xdg-desktop-portal-gtk) ya da zenity yükleyin.
+	Up one level	Bir düzey yukarı
+	Home folder	Ana klasör
+	{name} wasn't found.	{name} bulunamadı.
+	{name} already exists. Choose Save again to replace it.	{name} zaten var. Değiştirmek için Kaydet'i yeniden seçin.
+	This folder can't be read: {error}	Bu klasör okunamıyor: {error}
+	Showing the first {count} items.	İlk {count} öğe gösteriliyor.
+	File name:	Dosya adı:
+	Browse in WordCraft…	WordCraft'ta Gözat…
+	Open a file with WordCraft's own browser when the system file dialog doesn't appear.	Sistemin dosya iletişim kutusu açılmadığında dosyayı WordCraft'ın kendi dosya tarayıcısıyla açın.
