@@ -1329,3 +1329,40 @@
 	Formatted	Con formato
 	Interface size:	Tamaño de la interfaz:
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	Agranda o reduce la cinta, los menús y los cuadros de diálogo, además del escalado de pantalla del sistema. El zoom del documento es aparte.
+
+# WordArt and connectors (#416).
+	WordArt Styles	Estilos de WordArt
+	Text Fill	Relleno de texto
+	Text Outline	Contorno de texto
+	Transform	Transformar
+	No Fill	Sin relleno
+	No Outline	Sin contorno
+	Reflection	Reflejo
+	No Reflection	Sin reflejo
+	No Transform	Sin transformación
+	Connect Shapes	Conectar formas
+	Straight Connector	Conector recto
+	Straight Arrow Connector	Conector recto de flecha
+	Elbow Connector	Conector angular
+	Elbow Arrow Connector	Conector angular de flecha
+	Curved Connector	Conector curvo
+	Curved Arrow Connector	Conector curvo de flecha
+	Arch Up	Arco hacia arriba
+	Arch Down	Arco hacia abajo
+	Circle	Círculo
+	Slant Up	Inclinación hacia arriba
+	Slant Down	Inclinación hacia abajo
+	Inflate	Inflar
+	Deflate	Desinflar
+	Chevron Up	Chevrón hacia arriba
+	Chevron Down	Chevrón hacia abajo
+	Triangle Up	Triángulo hacia arriba
+	Triangle Down	Triángulo hacia abajo
+	Solid Accent	Color de énfasis sólido
+	Light with Outline	Claro con contorno
+	Hollow	Hueco
+	Accent Gradient	Degradado de énfasis
+	Dark with Shadow	Oscuro con sombra
+	Soft Glow	Resplandor suave
+	Accent with Reflection	Énfasis con reflejo
+	Warm Gradient with Outline	Degradado cálido con contorno
