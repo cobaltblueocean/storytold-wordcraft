@@ -123,6 +123,7 @@
 	Bold	Negrita
 	Bookmark	Marcador
 	Bookmark name:	Nombre del marcador:
+	Book Title	Título de libro
 	Border Painter	Pincel de bordes
 	Border\nPainter	Pincel de\nbordes
 	Borders	Bordes
@@ -161,7 +162,9 @@
 	Calendar	Calendario
 	Cancel	Cancelar
 	Capitalize Each Word	Mayúscula inicial en cada palabra
+	Caption	Leyenda
 	Captions	Leyendas
+	Category	Categorías
 	Cell Margins	Márgenes de celda
 	Cell Size	Tamaño de celda
 	Cell\nMargins	Márgenes de\ncelda
@@ -224,6 +227,7 @@
 	Compress Pictures	Comprimir imágenes
 	Compress punctuation at the start of a line	Comprimir la puntuación al inicio de la línea
 	Continuous	Continuo
+	Contributors	Colaboradores
 	Convert	Convertir
 	Convert Text to Table	Convertir texto en tabla
 	Convert Text to Table…	Convertir texto en tabla…
@@ -315,6 +319,9 @@
 	Editor	Editor
 	Effects	Efectos
 	Emboss	Relieve
+	Emphasis	Énfasis
+	Endnote Reference	Referencia de nota al final
+	Endnote Text	Texto de nota al final
 	Encrypt with Password	Cifrar con contraseña
 	English (United States)	Inglés (Estados Unidos)
 	Engrave	Grabado
@@ -354,6 +361,8 @@
 	Fonts	Fuentes
 	Footer	Pie de página
 	Footnote and Endnote	Nota al pie y nota final
+	Footnote Reference	Referencia de nota al pie
+	Footnote Text	Texto de nota al pie
 	Footnotes	Notas al pie
 	Format	Formato
 	Format Page Numbers	Formato de números de página
@@ -382,6 +391,7 @@
 	Heading 1	Título 1
 	Heading 2	Título 2
 	Heading 3	Título 3
+	Heading {n}	Título {n}
 	Headings	Títulos
 	Heart	Corazón
 	Help	Ayuda
@@ -392,6 +402,7 @@
 	Home	Inicio
 	Horizontal	Horizontal
 	Horizontal Line	Línea horizontal
+	Hyperlink	Hipervínculo
 	Hyphenation	Separación de palabras
 	Icons	Iconos
 	Ignore All	Omitir todo
@@ -432,6 +443,9 @@
 	Insert\nCaption	Insertar\nleyenda
 	Insert\nCitation	Insertar\ncita
 	Insert\nFootnote	Insertar nota\nal pie
+	Intense Emphasis	Énfasis intenso
+	Intense Quote	Cita Intensa
+	Intense Reference	Referencia intensa
 	Inside Borders	Bordes interiores
 	Inspect Document	Inspeccionar documento
 	Inspect Styles at Selection	Inspeccionar estilos de la selección
@@ -443,6 +457,7 @@
 	Keep Lines Together	Mantener líneas juntas
 	Keep Text Only	Mantener solo el texto
 	Keep lines together	Mantener líneas juntas
+	Keywords	Palabras Clave
 	Keep with Next	Mantener con el siguiente
 	Keep with next	Mantener con el siguiente
 	Keeps the fonts and formatting of the copied text.	Conserva las fuentes y el formato del texto copiado.
@@ -528,6 +543,7 @@
 	No Color	Sin color
 	No Markup	Sin marcas
 	No Paragraph Space	Sin espacio entre párrafos
+	No Spacing	Sin espaciado
 	No contributor data was built into this copy.	Esta copia no incluye datos de colaboradores.
 	No model credits were built into this copy.	Esta copia no incluye créditos de modelos.
 	No templates match your search.	Ninguna plantilla coincide con la búsqueda.
@@ -636,6 +652,7 @@
 	Quick Access Toolbar	Barra de herramientas de acceso rápido
 	Quick Parts	Elementos rápidos
 	Quick Tables	Tablas rápidas
+	Quote	Cita
 	Read Aloud	Leer en voz alta
 	Read Mode	Modo lectura
 	Read\nAloud	Leer en\nvoz alta
@@ -796,8 +813,12 @@
 	Statistics	Estadísticas
 	Status Bar	Barra de estado
 	Strikethrough	Tachado
+	Strong	Fuerte
 	Studio cover	Portada de Studio
 	Studio handbook (sample)	Manual de Studio (ejemplo)
+	Subtitle	Subtítulo
+	Subtle Emphasis	Énfasis sutil
+	Subtle Reference	Referencia sutil
 	Style	Estilo
 	Style Inspector	Inspector de estilos
 	Style Set	Conjunto de estilos
@@ -805,6 +826,7 @@
 	Style: {style}	Estilo: {style}
 	Styles	Estilos
 	Styles Pane	Panel de estilos
+	Subject	Asunto
 	Subscript	Subíndice
 	Superscript	Superíndice
 	Switch Modes	Cambiar de modo
@@ -824,6 +846,8 @@
 	Table Styles	Estilos de tabla
 	Table of Authorities	Tabla de autoridades
 	Table of Contents	Tabla de contenido
+	TOC Heading	Título de tabla de contenido
+	TOC {n}	Tabla de contenido {n}
 	Table of\nContents	Tabla de\ncontenido
 	Tables	Tablas
 	Tabs	Tabulaciones
@@ -851,6 +875,7 @@
 	Thick	Gruesa
 	Three	Tres
 	Tight	Ajustado
+	Title	Titulo
 	Top Border	Borde superior
 	Top Margin	Margen superior
 	Top of Page	Parte superior de la página
@@ -1191,6 +1216,7 @@
 	Hide Codes	Ocultar códigos
 	Index and Tables	Índices y tablas
 	Line between	Línea entre columnas
+	List Paragraph	Párrafo de lista
 	Links and References	Vínculos y referencias
 	Mail Merge	Combinar correspondencia
 	More Columns…	Más columnas…
@@ -1313,6 +1339,7 @@
 	First	Primero
 	Last	Último
 	Model	Modelo
+	Models	Modelos
 	Version	Versión
 	% of all commits	% de todos los commits
 	Lines +/−	Líneas +/−
