@@ -1432,6 +1432,37 @@
 	Search icons	Simgelerde ara
 	No icons match your search.	Aramanızla eşleşen simge yok.
 	Recolor a one-color picture, such as an icon	Simge gibi tek renkli bir resmi yeniden renklendir
+	Change Chart Type	Grafik Türünü Değiştir
+	Chart Design	Grafik Tasarımı
+	Type	Tür
+	Edit Data	Verileri Düzenle
+	Chart Title	Grafik Başlığı
+	Chart Layouts	Grafik Düzenleri
+	Add Chart Element	Grafik Öğesi Ekle
+	Legend	Gösterge
+	Data Labels	Veri Etiketleri
+	Above Chart	Grafiğin Üstünde
+	Insert Chart	Grafik Ekle
+	Clustered Column	Kümelenmiş Sütun
+	Stacked Column	Yığılmış Sütun
+	Clustered Bar	Kümelenmiş Çubuk
+	Stacked Bar	Yığılmış Çubuk
+	Area	Alan
+	Pie	Pasta
+	Doughnut	Halka
+	Scatter	Dağılım
+	“{text}” ({row}, {series}) isn't a number.	“{text}” ({row}, {series}) bir sayı değil.
+	Category {n}	Kategori {n}
+	Series {n}	Seri {n}
+	Type the categories down the side and a column of values per series.	Kategorileri yan tarafa, her seri için bir değer sütunu yazın.
+	Categories	Kategoriler
+	Series name	Seri adı
+	Remove series	Seriyi kaldır
+	Remove row	Satırı kaldır
+	Add Row	Satır Ekle
+	Add Series	Seri Ekle
+	Edit\nData	Verileri\nDüzenle
+	Change\nChart Type	Grafik Türünü\nDeğiştir
 	Align Text	Metni Hizala
 	Create Link	Bağlantı Oluştur
 	Break Link	Bağlantıyı Kes
