@@ -86,6 +86,11 @@ pub struct ViewState {
     /// Show field codes instead of their results (`view.fieldCodes`, Alt+F9).
     #[serde(default)]
     pub field_codes: bool,
+    /// Print Layout › Hide White Space: pages run together, the top and bottom margins (with
+    /// headers and footers) between pages collapse to a thin line. On screen only; the layout
+    /// and page count are unchanged.
+    #[serde(default)]
+    pub hide_white_space: bool,
 }
 
 fn on() -> bool {
@@ -118,6 +123,7 @@ impl Default for ViewState {
             hide_ink: false,
             draw: Default::default(),
             field_codes: false,
+            hide_white_space: false,
         }
     }
 }

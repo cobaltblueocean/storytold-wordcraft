@@ -1258,6 +1258,10 @@ fn view(app: &mut WordApp, ui: &mut Ui) {
             if ui.checkbox(&mut n, tl!("Navigation Pane")).changed() {
                 let _ = app.run("view.navigationPane", json!({"value": n}));
             }
+            let mut w = v.hide_white_space;
+            if ui.checkbox(&mut w, tl!("Hide White Space")).changed() {
+                let _ = app.run("view.hideWhiteSpace", json!({"value": w}));
+            }
         });
     });
     group(ui, "Zoom", None, app, |ui, app| {

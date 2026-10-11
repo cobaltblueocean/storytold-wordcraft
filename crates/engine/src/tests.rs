@@ -2807,3 +2807,14 @@ fn deleting_the_last_cell_column_never_leaves_a_table_without_rows() {
     run(&mut s, "edit.undo", json!({}));
     assert!(s.doc.body.iter().any(|b| b.as_table().is_some_and(|t| !t.rows.is_empty())));
 }
+
+#[test]
+fn hide_white_space_toggles_view_state_only() {
+    let mut s = s();
+    let before = s.doc.body.len();
+    assert!(!s.view.hide_white_space);
+    assert_eq!(run(&mut s, "view.hideWhiteSpace", json!({}))["value"], true);
+    assert!(s.view.hide_white_space);
+    assert_eq!(run(&mut s, "view.hideWhiteSpace", json!({"value": false}))["value"], false);
+    assert_eq!(s.doc.body.len(), before, "a view option never edits the document");
+}

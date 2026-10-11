@@ -142,6 +142,62 @@ pub struct Geometry {
     pub scale: f32,
     /// Pages per row.
     pub cols: usize,
+    /// Per page, the vertical range (pixels from the page rect's top) that is on screen. The
+    /// whole page, except with Hide White Space, which cuts the margins between pages.
+    pub bands: Vec<(f32, f32)>,
+}
+
+/// Room kept above the first line and below the last line of a page when white space is hidden (points).
+const WHITE_SPACE_PAD: f32 = 6.0;
+/// The line drawn between two pages when white space is hidden (pixels).
+const SEAM: f32 = 1.0;
+
+/// Hide White Space: stack single-column pages (`rects`, full pages) so that only each page's
+/// text area (`bodies`: top and bottom of the body in points, plus a little room) shows, with a
+/// [`SEAM`] between pages. The first page keeps its top and the last its bottom. Rects keep the
+/// full page size, so page coordinates still map as `(p - rect.min) / scale`; neighbouring rects
+/// overlap in the hidden margins. Returns the moved rects, the visible band of each, and the
+/// content height.
+fn collapse_white_space(rects: &[Rect], bodies: &[(f32, f32)], scale: f32, avail_h: f32) -> (Vec<Rect>, Vec<(f32, f32)>, f32) {
+    let n = rects.len();
+    let scale = if scale.is_finite() { scale.clamp(0.01, 10.0) } else { PX_PER_PT };
+    let avail_h = if avail_h.is_finite() { avail_h } else { 0.0 };
+    let mut out = Vec::with_capacity(n);
+    let mut bands = Vec::with_capacity(n);
+    let Some(first) = rects.first() else { return (out, bands, avail_h) };
+    let mut cursor = first.min.y;
+    for (i, r) in rects.iter().enumerate() {
+        let h = if r.height().is_finite() { r.height().max(0.0) } else { 0.0 };
+        let (bt, bb) = bodies.get(i).copied().unwrap_or((0.0, h));
+        let fin = |v: f32, d: f32| if v.is_finite() { v } else { d };
+        let top = if i == 0 { 0.0 } else { (fin(bt, 0.0) * scale - WHITE_SPACE_PAD * scale).clamp(0.0, h) };
+        let bot = if i + 1 == n { h } else { (fin(bb, 0.0) * scale + WHITE_SPACE_PAD * scale).clamp(top, h) };
+        let y = cursor - top;
+        out.push(Rect::from_min_size(pos2(r.min.x, y), r.size()));
+        bands.push((top, bot));
+        cursor = y + bot + SEAM;
+    }
+    (out, bands, (cursor - SEAM + GAP).max(avail_h))
+}
+
+/// True when any page is cut to a band (white space is hidden).
+fn white_space_hidden(rects: &[Rect], bands: &[(f32, f32)]) -> bool {
+    rects.iter().zip(bands).any(|(r, b)| b.0 > 0.5 || b.1 < r.height() - 0.5)
+}
+
+/// True when a double-click at `p` is on the space between two pages (or on the seam when white
+/// space is hidden): Word's way to toggle Hide White Space.
+fn on_page_gap(rects: &[Rect], bands: &[(f32, f32)], p: Pos2) -> bool {
+    let hidden = white_space_hidden(rects, bands);
+    rects.windows(2).enumerate().any(|(i, w)| {
+        let (a, b) = (w[0], w[1]);
+        let in_x = p.x >= a.min.x.min(b.min.x) && p.x <= a.max.x.max(b.max.x);
+        let (y0, y1) = match bands.get(i) {
+            Some(&(_, bot)) if hidden => (a.min.y + bot - 3.0, a.min.y + bot + SEAM + 3.0),
+            _ => (a.max.y, b.min.y),
+        };
+        in_x && p.y >= y0 && p.y <= y1
+    })
 }
 
 /// Width of the markup area beside each page for comment balloons (points), or 0.
@@ -240,8 +296,16 @@ pub fn geometry(app: &WordApp, l: &DocLayout, avail: egui::Vec2) -> Geometry {
     };
     let cols = if v.read_mode { 2 } else { columns_for(avail.x, maxw * scale, l.pages.len(), min_cols, auto) };
     let sizes: Vec<(f32, f32)> = l.pages.iter().map(|p| (p.w, p.h)).collect();
-    let (rects, size) = place_pages(&sizes, markup, scale, cols, avail);
-    Geometry { rects, size, scale, cols }
+    let (mut rects, mut size) = place_pages(&sizes, markup, scale, cols, avail);
+    let mut bands: Vec<(f32, f32)> = rects.iter().map(|r| (0.0, r.height())).collect();
+    let editing_part = matches!(app.session.sel.focus.story, StoryRef::Part(_));
+    if v.hide_white_space && v.mode == wordcraft_layout::ViewMode::Print && !v.read_mode && cols == 1 && !editing_part && rects.len() > 1 {
+        let bodies: Vec<(f32, f32)> = l.pages.iter().map(|p| (p.body.y, p.body.bottom())).collect();
+        let (r, b, h) = collapse_white_space(&rects, &bodies, scale, avail.y);
+        (rects, bands) = (r, b);
+        size.y = h;
+    }
+    Geometry { rects, size, scale, cols, bands }
 }
 
 /// While a fit mode (Page Width, One Page, Multiple Pages) sizes the page, keep the session's zoom
@@ -433,6 +497,7 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
         for (i, pr) in geo.rects.iter().enumerate() {
             let sr = pr.translate(content_origin.to_vec2());
             let Some(page) = layout.pages.get(i) else { continue };
+            let (band_top, band_bot) = geo.bands.get(i).copied().unwrap_or((0.0, sr.height()));
             let scale_px = (geo.scale * ppp).min(max_tex / page.w.max(1.0)).min(max_tex / page.h.clamp(1.0, 1e6)).max(0.05);
             let key = page_key(app, page, scale_px, dim_body);
             let fresh = app.canvas.textures.get(&i).is_some_and(|(k, _)| *k == key);
@@ -443,9 +508,17 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
                 sr
             };
             rects.push(visual_sr);
-            if !sr.intersects(ui.clip_rect().expand(200.0)) {
+            // Hide White Space shows only a band of the page; everything below paints into it.
+            let band =
+                Rect::from_min_max(pos2(visual_sr.min.x - 4.0, visual_sr.min.y + band_top), pos2(visual_sr.max.x + 4.0, visual_sr.min.y + band_bot));
+            if !band.intersects(ui.clip_rect().expand(200.0)) {
                 continue;
             }
+            let painter = if band_top <= 0.0 && band_bot >= sr.height() {
+                painter.clone()
+            } else {
+                painter.with_clip_rect(painter.clip_rect().intersect(band))
+            };
             // Shadow and paper.
             painter.rect_filled(visual_sr.translate(vec2(0.0, 2.0)).expand(1.5), 1.0, t.page_shadow);
             painter.rect_filled(visual_sr, 0.0, if dark_page { Color32::from_gray(dark_paper) } else { Color32::WHITE });
@@ -523,6 +596,14 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
                         painter.rect_stroke(r, 0.0, Stroke::new(0.5, t.blue.linear_multiply(0.6)), egui::StrokeKind::Middle);
                     }
                 }
+            }
+        }
+        // Hide White Space: a thin line where one page ends and the next begins.
+        for (i, pair) in rects.windows(2).enumerate() {
+            let Some(&(_, bot)) = geo.bands.get(i) else { continue };
+            if white_space_hidden(&geo.rects, &geo.bands) {
+                let y = pair[0].min.y + bot;
+                painter.rect_filled(Rect::from_min_max(pos2(pair[0].min.x, y), pos2(pair[0].max.x, y + SEAM)), 0.0, t.border_strong);
             }
         }
         if rendered > 0 {
@@ -675,6 +756,15 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
         });
     }
     app.canvas.focused = resp.has_focus();
+    // Double-click the space between two pages (or the line between them) to hide or show it.
+    if resp.double_clicked()
+        && app.session.view.mode == wordcraft_layout::ViewMode::Print
+        && !app.session.view.read_mode
+        && let Some(p) = resp.interact_pointer_pos()
+        && on_page_gap(&rects, &geo.bands, p)
+    {
+        let _ = app.run("view.hideWhiteSpace", json!({"value": !app.session.view.hide_white_space}));
+    } else
     // Draw Table / Eraser own the mouse while on (no caret moves); else the usual editing.
     if !crate::table_pen::pointer(app, ui, &resp, &rects, &layout, geo.scale) {
         mouse(app, ui, &resp, &rects, &layout, geo.scale);
@@ -1033,7 +1123,8 @@ pub fn nearest_page(rects: &[Rect], p: Pos2) -> Option<usize> {
     let mut best: Option<(usize, f32)> = None;
     for (i, r) in rects.iter().enumerate() {
         let d = if r.contains(p) {
-            0.0
+            // Pages overlap in the margins Hide White Space cuts: the one whose middle is nearer wins.
+            1e-3 * (p.y - r.center().y).abs() / r.height().max(1.0)
         } else {
             let dx = (r.min.x - p.x).max(p.x - r.max.x).max(0.0);
             let dy = (r.min.y - p.y).max(p.y - r.max.y).max(0.0);
@@ -1914,5 +2005,37 @@ mod tests {
         let visual = texel_aligned_rect(layout, vec2(160.0, 240.0), 2.0);
 
         assert_eq!(visual, layout);
+    }
+
+    #[test]
+    fn hiding_white_space_stacks_page_bands_and_keeps_hit_testing() {
+        let scale = 1.0;
+        let sizes = [(612.0, 792.0); 3];
+        let (rects, _) = place_pages(&sizes, 0.0, scale, 1, vec2(800.0, 600.0));
+        // Body from 72 to 720 pt on every page.
+        let bodies = [(72.0, 720.0); 3];
+        let (moved, bands, h) = collapse_white_space(&rects, &bodies, scale, 600.0);
+        assert_eq!(bands[0].0, 0.0, "first page keeps its top");
+        assert_eq!(bands[2].1, 792.0, "last page keeps its bottom");
+        assert_eq!(bands[1], (66.0, 726.0));
+        // Bands abut with one seam, so the content is much shorter than three full pages.
+        assert_eq!(moved[1].min.y + bands[1].0, moved[0].min.y + bands[0].1 + SEAM);
+        assert!(h < rects[2].bottom() - 2.0 * 66.0 * 2.0);
+        // A point inside page 2's band maps to that page and the right page coordinates.
+        let p = pos2(moved[1].center().x, moved[1].min.y + 300.0);
+        assert_eq!(page_at_index(&moved, p), Some(1));
+        // Just above the seam is page 1's text area, just below is page 2's, though the rects overlap.
+        let seam = moved[0].min.y + bands[0].1;
+        assert_eq!(nearest_page(&moved, pos2(moved[0].center().x, seam - 2.0)), Some(0));
+        assert_eq!(nearest_page(&moved, pos2(moved[0].center().x, seam + SEAM + 2.0)), Some(1));
+        assert!(on_page_gap(&moved, &bands, pos2(moved[0].center().x, seam + 0.5)));
+        assert!(!on_page_gap(&moved, &bands, pos2(moved[0].center().x, seam - 40.0)));
+        // Hostile numbers never panic.
+        let _ = collapse_white_space(&rects, &[(f32::NAN, f32::INFINITY), (-1e9, 1e9)], f32::NAN, f32::NAN);
+        let _ = collapse_white_space(&[], &[], 1.0, 1.0);
+    }
+
+    fn page_at_index(rects: &[Rect], p: Pos2) -> Option<usize> {
+        nearest_page(rects, p)
     }
 }
