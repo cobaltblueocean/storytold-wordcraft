@@ -1809,3 +1809,43 @@ preview	Title	Пример
 	Search icons	Поиск значков
 	No icons match your search.	Нет значков, соответствующих поиску.
 	Recolor a one-color picture, such as an icon	Перекрасить одноцветный рисунок, например значок
+
+# Insert SmartArt (#497).
+	Add Shape	Добавить фигуру
+	Change Colors	Изменить цвета
+	Change Layout	Изменить макет
+	Create Graphic	Создать графический элемент
+	Edit Items	Изменить элементы
+	Layouts	Макеты
+	Reset Graphic	Сбросить графический элемент
+	SmartArt Design	Конструктор SmartArt
+	SmartArt Styles	Стили SmartArt
+	Text Pane	Область текста
+	List	Список
+	Process	Процесс
+	Cycle	Цикл
+	Hierarchy	Иерархия
+	Relationship	Связь
+	Pyramid	Пирамида
+	Basic List	Простой список
+	Basic Process	Простой процесс
+	Basic Cycle	Простой цикл
+	Basic Pyramid	Простая пирамида
+	Basic Radial	Простая радиальная схема
+	Basic Matrix	Простая матрица
+	Basic Venn	Простая диаграмма Венна
+	Shows items of equal weight as blocks in rows.	Показывает равнозначные элементы блоками в строках.
+	Shows steps in order, left to right, with arrows between them.	Показывает шаги по порядку слева направо со стрелками между ними.
+	Shows steps that repeat, around a circle.	Показывает повторяющиеся шаги по кругу.
+	Shows a tree: each item below the item it belongs to.	Показывает дерево: каждый элемент находится под тем, к которому относится.
+	Shows parts that build on each other, largest at the bottom.	Показывает части, опирающиеся друг на друга; самая крупная внизу.
+	Shows items around a central idea: the first item is the centre.	Показывает элементы вокруг центральной идеи: первый элемент в центре.
+	Shows parts of a whole as quadrants.	Показывает части целого в виде четвертей.
+	Shows overlapping ideas as overlapping circles.	Показывает пересекающиеся идеи в виде пересекающихся кругов.
+	Accent {n}	Акцент {n}
+	Colorful	Разноцветный
+	Insert SmartArt	Вставка SmartArt
+	One line per item. Enter adds an item.	Одна строка на элемент. Enter добавляет элемент.
+	Add\nShape	Добавить\nфигуру
+	Change\nColors	Изменить\nцвета
+	Reset\nGraphic	Сбросить\nграфику
