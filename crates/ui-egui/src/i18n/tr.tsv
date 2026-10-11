@@ -1432,6 +1432,13 @@
 	Search icons	Simgelerde ara
 	No icons match your search.	Aramanızla eşleşen simge yok.
 	Recolor a one-color picture, such as an icon	Simge gibi tek renkli bir resmi yeniden renklendir
+	Couldn't make WordCraft the default: {error}	WordCraft varsayılan yapılamadı: {error}
+	In Default apps, choose WordCraft for the document types you want it to open.	Varsayılan uygulamalar bölümünde, WordCraft'ın açmasını istediğiniz belge türlerini seçin.
+	Make WordCraft the default for Word documents…	WordCraft'ı Word belgeleri için varsayılan yap…
+	Opens .docx, .doc, .rtf and .odt files and Word templates with WordCraft from now on.	Bundan sonra .docx, .doc, .rtf ve .odt dosyalarını ve Word şablonlarını WordCraft ile açar.
+	Opens Settings › Default apps, where you choose WordCraft for .docx and the other document types.	Ayarlar › Varsayılan uygulamalar bölümünü açar; burada .docx ve diğer belge türleri için WordCraft'ı seçersiniz.
+	To open Word documents with WordCraft by default: select one in Finder, choose File › Get Info, pick WordCraft under Open with, then click Change All.	Word belgelerini varsayılan olarak WordCraft ile açmak için: Finder'da bir belge seçin, Dosya › Bilgi Al'ı seçin, Birlikte aç altında WordCraft'ı seçin ve Tümünü Değiştir'e tıklayın.
+	WordCraft is now the default app for Word documents.	WordCraft artık Word belgeleri için varsayılan uygulama.
 	Align Text	Metni Hizala
 	Create Link	Bağlantı Oluştur
 	Break Link	Bağlantıyı Kes

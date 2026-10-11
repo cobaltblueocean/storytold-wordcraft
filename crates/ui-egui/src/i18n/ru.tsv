@@ -1813,6 +1813,13 @@ preview	Title	Пример
 	Search icons	Поиск значков
 	No icons match your search.	Нет значков, соответствующих поиску.
 	Recolor a one-color picture, such as an icon	Перекрасить одноцветный рисунок, например значок
+	Couldn't make WordCraft the default: {error}	Не удалось сделать WordCraft приложением по умолчанию: {error}
+	In Default apps, choose WordCraft for the document types you want it to open.	В разделе «Приложения по умолчанию» выберите WordCraft для нужных типов документов.
+	Make WordCraft the default for Word documents…	Сделать WordCraft приложением по умолчанию для документов Word…
+	Opens .docx, .doc, .rtf and .odt files and Word templates with WordCraft from now on.	Отныне файлы .docx, .doc, .rtf и .odt и шаблоны Word будут открываться в WordCraft.
+	Opens Settings › Default apps, where you choose WordCraft for .docx and the other document types.	Открывает «Параметры» › «Приложения по умолчанию», где можно выбрать WordCraft для .docx и других типов документов.
+	To open Word documents with WordCraft by default: select one in Finder, choose File › Get Info, pick WordCraft under Open with, then click Change All.	Чтобы открывать документы Word в WordCraft по умолчанию: выберите документ в Finder, выберите «Файл» › «Свойства», укажите WordCraft в разделе «Открывать в программе» и нажмите «Изменить все».
+	WordCraft is now the default app for Word documents.	WordCraft теперь приложение по умолчанию для документов Word.
 	Align Text	Выравнивание текста
 	Create Link	Создать связь
 	Break Link	Разорвать связь
