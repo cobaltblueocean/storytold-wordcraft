@@ -51,6 +51,8 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 krilla = { version = "0.8", features = ["pdf"] }
 quick-xml = "0.41"
 zip = { version = "3", default-features = false, features = ["deflate"] }
+# zlib streams (compressed metafile pictures in `.doc` drawings); already in the lock as a dependency of other crates.
+miniz_oxide = "0.8"
 cfb = "0.15"
 # Password-protected (agile-encrypted) Word documents: pure-Rust RustCrypto primitives.
 aes = "0.9"

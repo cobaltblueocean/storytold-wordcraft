@@ -13,7 +13,7 @@ wordcraft-doc = { workspace = true }
 wordcraft-geom = { workspace = true }
 cfb = { workspace = true }
 image = { workspace = true }
-miniz_oxide = "0.8"
+miniz_oxide = { workspace = true }
 thiserror = { workspace = true }
 log = { workspace = true }
 
