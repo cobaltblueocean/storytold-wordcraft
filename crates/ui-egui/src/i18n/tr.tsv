@@ -1384,6 +1384,12 @@
 	New Group	Yeni Grup
 	Rename…	Yeniden Adlandır…
 	Ribbon and Quick Access Toolbar:	Şerit ve Hızlı Erişim Araç Çubuğu:
+	Enclose Characters	Karakterleri Çevrele
+	Shrink text	Metni küçült
+	Enlarge symbol	Simgeyi büyüt
+	Enclosure	Çerçeve
+	Circle	Daire
+	Square	Kare
 	Base text:	Ana metin:
 	Distribute letters	Harfleri dağıt
 	Distribute spacing	Aralığı dağıt
@@ -1393,7 +1399,6 @@
 	Ruby text:	Ruby metni:
 	Size (pt):	Boyut (pt):
 	In Line with Text	Metinle Aynı Hizada
-	Square	Kare
 	Through	Geçişli
 	Top and Bottom	Üst ve Alt
 	Behind Text	Metnin Arkasında
