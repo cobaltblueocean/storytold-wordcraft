@@ -58,6 +58,12 @@ pub enum Dialog {
         /// `asian` when the dialog opened: OK sets only the flags that changed.
         #[serde(skip)]
         asian_was: [bool; 6],
+        /// Mirror indents, don't add space between paragraphs of the same style, suppress line
+        /// numbers, don't hyphenate (#512).
+        opts: [bool; 4],
+        /// `opts` when the dialog opened: OK sets only the ones that changed.
+        #[serde(skip)]
+        opts_was: [bool; 4],
     },
     /// Tabs (#320).
     Tabs {
@@ -777,6 +783,8 @@ impl Dialog {
                     tab: if name == "asianTypography" { 2 } else { 0 },
                     asian: [rp.kinsoku, rp.word_wrap, rp.overflow_punct, rp.top_line_punct, rp.auto_space_de, rp.auto_space_dn],
                     asian_was: [rp.kinsoku, rp.word_wrap, rp.overflow_punct, rp.top_line_punct, rp.auto_space_de, rp.auto_space_dn],
+                    opts: [rp.mirror_indents, rp.contextual_spacing, rp.suppress_line_numbers, rp.suppress_hyphens],
+                    opts_was: [rp.mirror_indents, rp.contextual_spacing, rp.suppress_line_numbers, rp.suppress_hyphens],
                 }
             }
             "tabs" => Dialog::Tabs { form: Box::new(crate::dialogs_para::TabsForm::read(app)?) },
@@ -1205,6 +1213,8 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             tab,
             asian,
             asian_was,
+            opts,
+            opts_was,
         } => {
             ui.horizontal(|ui| {
                 for (k, name) in ["Indents and Spacing", "Line and Page Breaks", "Asian Typography"].into_iter().enumerate() {
@@ -1233,16 +1243,19 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                         });
                     });
                     ui.label(egui::RichText::new(tl!("Indentation")).font(semibold(12.5)));
+                    // Mirrored indents are the inside and outside ones (they swap on even pages).
+                    let (l_label, r_label) = if opts[0] { ("Inside:", "Outside:") } else { ("Left:", "Right:") };
                     egui::Grid::new("ind").num_columns(4).show(ui, |ui| {
-                        ui.label(tl!("Left:"));
+                        ui.label(tl!(l_label));
                         ui.add(egui::DragValue::new(left).speed(0.05).suffix("\"").max_decimals(2));
-                        ui.label(tl!("Right:"));
+                        ui.label(tl!(r_label));
                         ui.add(egui::DragValue::new(right).speed(0.05).suffix("\"").max_decimals(2));
                         ui.end_row();
                         ui.label(tl!("First line:"));
                         ui.add(egui::DragValue::new(first).speed(0.05).suffix("\"").max_decimals(2));
                         ui.end_row();
                     });
+                    ui.checkbox(&mut opts[0], tl!("Mirror indents"));
                     ui.label(egui::RichText::new(tl!("Spacing")).font(semibold(12.5)));
                     egui::Grid::new("sp").num_columns(4).show(ui, |ui| {
                         ui.label(tl!("Before:"));
@@ -1254,6 +1267,7 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                         ui.add(egui::DragValue::new(after).speed(1.0).range(0.0..=1584.0).suffix(format!(" {}", tl!("pt"))));
                         ui.end_row();
                     });
+                    ui.checkbox(&mut opts[1], tl!("Don't add space between paragraphs of the same style"));
                 }
                 1 => {
                     ui.label(egui::RichText::new(tl!("Line and Page Breaks")).font(semibold(12.5)));
@@ -1261,6 +1275,9 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
                     ui.checkbox(keep_next, tl!("Keep with next"));
                     ui.checkbox(keep_lines, tl!("Keep lines together"));
                     ui.checkbox(page_break, tl!("Page break before"));
+                    ui.label(egui::RichText::new(tl!("Formatting exceptions")).font(semibold(12.5)));
+                    ui.checkbox(&mut opts[2], tl!("Suppress line numbers"));
+                    ui.checkbox(&mut opts[3], tl!("Don't hyphenate"));
                 }
                 _ => {
                     let [kinsoku, word_wrap, overflow, top_line, de, dn] = asian;
@@ -1282,7 +1299,19 @@ fn body(app: &mut WordApp, ui: &mut Ui, d: &mut Dialog) -> bool {
             let tabs = ui.button(tl!("Tabs…")).clicked();
             let (ok, cancel) = buttons(ui, tl!("OK"));
             if ok || tabs {
-                apply_paragraph(app, *rtl, align, *left, *right, *first, *before, *after, *line, [*keep_next, *keep_lines, *page_break, *widow]);
+                apply_paragraph(
+                    app,
+                    *rtl,
+                    align,
+                    *left,
+                    *right,
+                    *first,
+                    *before,
+                    *after,
+                    *line,
+                    [*keep_next, *keep_lines, *page_break, *widow],
+                    (*opts, *opts_was),
+                );
                 apply_asian(app, *asian, *asian_was);
             }
             // Tabs… keeps what was set here and moves on to the Tabs dialog.
@@ -2234,9 +2263,6 @@ fn recipient_list(app: &mut WordApp, ui: &mut Ui, fields: &mut Vec<String>, rows
     }
 }
 
-/// The Paragraph dialog's OK. `align`, `left` and `right` are as seen on the page; `flags` are
-/// keep with next, keep lines together, page break before, widow/orphan control.
-#[allow(clippy::too_many_arguments)]
 /// The Table Properties dialog's fields: Table, Row, Column and Cell sections.
 fn table_properties(ui: &mut Ui, f: &mut TableForm) {
     let unit = wordcraft_geom::Unit::default();
@@ -2300,6 +2326,11 @@ fn table_properties(ui: &mut Ui, f: &mut TableForm) {
     });
 }
 
+/// The Paragraph dialog's OK. `align`, `left` and `right` are as seen on the page; `flags` are
+/// keep with next, keep lines together, page break before, widow/orphan control; `opts` (now,
+/// when opened) are mirror indents, contextual spacing, suppress line numbers and don't
+/// hyphenate, of which only the changed ones are set.
+#[allow(clippy::too_many_arguments)]
 fn apply_paragraph(
     app: &mut WordApp,
     rtl: bool,
@@ -2311,6 +2342,7 @@ fn apply_paragraph(
     after: f32,
     line: f32,
     flags: [bool; 4],
+    opts: ([bool; 4], [bool; 4]),
 ) {
     let [keep_next, keep_lines, page_break, widow] = flags;
     // Direction first: the alignment and indents are as seen on the page, and their logical
@@ -2318,14 +2350,21 @@ fn apply_paragraph(
     let _ = app.run(if rtl { "para.rtl" } else { "para.ltr" }, json!({}));
     let _ = app.run("para.align", json!({"value": align}));
     let (start, end) = if rtl { (right, left) } else { (left, right) };
-    let _ = app.run(
-        "para.set",
-        json!({"props": {
-            "indentLeft": start * 72.0, "indentRight": end * 72.0, "indentFirst": first * 72.0,
-            "spaceBefore": before, "spaceAfter": after, "lineSpacing": {"rule": "multiple", "value": line},
-            "keepNext": keep_next, "keepLines": keep_lines, "pageBreakBefore": page_break, "widowControl": widow,
-        }}),
-    );
+    let mut props = json!({
+        "indentLeft": start * 72.0, "indentRight": end * 72.0, "indentFirst": first * 72.0,
+        "spaceBefore": before, "spaceAfter": after, "lineSpacing": {"rule": "multiple", "value": line},
+        "keepNext": keep_next, "keepLines": keep_lines, "pageBreakBefore": page_break, "widowControl": widow,
+    });
+    let (now, was) = opts;
+    for (key, (on, was)) in ["mirrorIndents", "contextualSpacing", "suppressLineNumbers", "suppressHyphens"].into_iter().zip(now.into_iter().zip(was))
+    {
+        if on != was
+            && let Some(m) = props.as_object_mut()
+        {
+            m.insert(key.into(), json!(on));
+        }
+    }
+    let _ = app.run("para.set", json!({ "props": props }));
 }
 
 /// The Paragraph dialog's Asian Typography: sets the flags that changed since it opened, so an
@@ -2667,12 +2706,40 @@ mod tests {
 
     /// Open the Paragraph dialog and press OK without changing anything.
     fn ok_unchanged(app: &mut WordApp) {
-        let Some(Dialog::Paragraph { rtl, align, left, right, first, before, after, line, keep_next, keep_lines, page_break, widow, .. }) =
-            Dialog::open("paragraph", app)
+        ok_with(app, |_| {});
+    }
+
+    /// Open the Paragraph dialog, change its options (`opts`) with `edit` and press OK.
+    fn ok_with(app: &mut WordApp, edit: impl FnOnce(&mut [bool; 4])) {
+        let Some(Dialog::Paragraph {
+            rtl, align, left, right, first, before, after, line, keep_next, keep_lines, page_break, widow, mut opts, ..
+        }) = Dialog::open("paragraph", app)
         else {
             panic!("no paragraph dialog")
         };
-        apply_paragraph(app, rtl, &align, left, right, first, before, after, line, [keep_next, keep_lines, page_break, widow]);
+        let was = opts;
+        edit(&mut opts);
+        apply_paragraph(app, rtl, &align, left, right, first, before, after, line, [keep_next, keep_lines, page_break, widow], (opts, was));
+    }
+
+    #[test]
+    fn paragraph_dialog_sets_only_the_options_that_changed() {
+        // #512: mirror indents, same-style spacing, suppress line numbers, don't hyphenate.
+        let mut app = app_with("Hello");
+        ok_unchanged(&mut app);
+        let p = props(&app);
+        assert_eq!((p.mirror_indents, p.contextual_spacing, p.suppress_line_numbers, p.suppress_hyphens), (None, None, None, None));
+        ok_with(&mut app, |o| *o = [true; 4]);
+        let p = props(&app);
+        assert_eq!(
+            (p.mirror_indents, p.contextual_spacing, p.suppress_line_numbers, p.suppress_hyphens),
+            (Some(true), Some(true), Some(true), Some(true))
+        );
+        let Some(Dialog::Paragraph { opts, .. }) = Dialog::open("paragraph", &mut app) else { panic!() };
+        assert_eq!(opts, [true; 4], "the dialog shows what is set");
+        ok_with(&mut app, |o| o[3] = false);
+        assert_eq!(props(&app).suppress_hyphens, Some(false));
+        assert_eq!(props(&app).mirror_indents, Some(true));
     }
 
     #[test]
@@ -2710,7 +2777,19 @@ mod tests {
             panic!()
         };
         // Right to left, aligned right on the page, 1" from the right edge.
-        apply_paragraph(&mut app, true, "right", left, right + 1.0, first, before, after, line, [keep_next, keep_lines, page_break, widow]);
+        apply_paragraph(
+            &mut app,
+            true,
+            "right",
+            left,
+            right + 1.0,
+            first,
+            before,
+            after,
+            line,
+            [keep_next, keep_lines, page_break, widow],
+            ([false; 4], [false; 4]),
+        );
         let _ = align;
         let p = props(&app);
         assert_eq!(p.bidi, Some(true));

@@ -132,6 +132,8 @@ pub struct ResolvedPara {
     pub space_after: f32,
     pub line_spacing: LineSpacing,
     pub contextual_spacing: bool,
+    /// Left/right indents are inside/outside: they swap on even pages.
+    pub mirror_indents: bool,
     pub keep_next: bool,
     pub keep_lines: bool,
     pub page_break_before: bool,
@@ -144,6 +146,7 @@ pub struct ResolvedPara {
     pub bidi: bool,
     pub drop_cap: u8,
     pub suppress_hyphens: bool,
+    pub suppress_line_numbers: bool,
     /// Asian typography (see `ParaProps`): East Asian line-breaking rules.
     pub kinsoku: bool,
     /// Latin words wrap whole (`false`: they may break at any character).
@@ -185,6 +188,7 @@ impl ResolvedPara {
                 LineSpacing::Exactly(v) => LineSpacing::Exactly(if v.is_finite() { v.clamp(0.7, 1584.0) } else { 12.0 }),
             },
             contextual_spacing: p.contextual_spacing.unwrap_or(false),
+            mirror_indents: p.mirror_indents.unwrap_or(false),
             keep_next: p.keep_next.unwrap_or(false),
             keep_lines: p.keep_lines.unwrap_or(false),
             page_break_before: p.page_break_before.unwrap_or(false),
@@ -197,6 +201,7 @@ impl ResolvedPara {
             bidi: p.bidi.unwrap_or(false),
             drop_cap: p.drop_cap.unwrap_or(0).min(10),
             suppress_hyphens: p.suppress_hyphens.unwrap_or(false),
+            suppress_line_numbers: p.suppress_line_numbers.unwrap_or(false),
             kinsoku: p.kinsoku.unwrap_or(true),
             word_wrap: p.word_wrap.unwrap_or(true),
             overflow_punct: p.overflow_punct.unwrap_or(true),

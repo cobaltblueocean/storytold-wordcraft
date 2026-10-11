@@ -93,10 +93,12 @@
 	Enter formatting for number:	输入编号的格式：
 	Follow number with:	编号之后：
 	Formatting	格式
+	Formatting exceptions	格式例外
 	Include level number from:	包含的级别编号来自：
 	Ink	墨迹
 	Insertions and Deletions	插入和删除
 	Insertions:	插入内容：
+	Inside:	内侧：
 	Left border	左框线
 	Left Margin	左边距
 	Indents and Spacing	缩进和间距
@@ -104,6 +106,7 @@
 	Line breaking	断行
 	Link level to style:	将级别链接到样式：
 	List Definition	列表定义
+	Mirror indents	对称缩进
 	More templates →	更多模板 →
 	No templates match your search.	没有与搜索匹配的模板。
 	Nothing	无
@@ -111,6 +114,7 @@
 	Number format	编号格式
 	Number style for this level:	此级别的编号样式：
 	Outside border	外侧框线
+	Outside:	外侧：
 	Reopen	重新打开
 	Restart list after:	重新开始列表的级别：
 	Right border	右框线

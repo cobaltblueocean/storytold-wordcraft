@@ -1428,3 +1428,9 @@
 	Search icons	Simgelerde ara
 	No icons match your search.	Aramanızla eşleşen simge yok.
 	Recolor a one-color picture, such as an icon	Simge gibi tek renkli bir resmi yeniden renklendir
+
+# Paragraph dialog options (#512).
+	Formatting exceptions	Biçimlendirme özel durumları
+	Inside:	İç:
+	Mirror indents	Ayna girintiler
+	Outside:	Dış:

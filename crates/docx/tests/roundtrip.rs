@@ -118,6 +118,7 @@ fn every_para_prop_round_trips() {
         space_after: Some(12.0),
         line_spacing: Some(LineSpacing::Multiple(1.5)),
         contextual_spacing: Some(true),
+        mirror_indents: Some(true),
         keep_next: Some(true),
         keep_lines: Some(false),
         page_break_before: Some(true),
