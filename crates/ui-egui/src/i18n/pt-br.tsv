@@ -883,6 +883,7 @@
 	Window	Janela
 	Word Count	Contagem de palavras
 	Word document (*.docx)	Documento Word (*.docx)
+	Word XML Document (*.xml)	Documento XML do Word (*.xml)
 	Word Left	Palavra à esquerda
 	Word Right	Palavra à direita
 	WordArt	Texto artístico

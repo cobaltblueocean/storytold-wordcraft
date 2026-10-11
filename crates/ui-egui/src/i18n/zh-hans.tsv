@@ -895,6 +895,7 @@
 	Window	窗口
 	Word Count	字数统计
 	Word document (*.docx)	Word 文档 (*.docx)
+	Word XML Document (*.xml)	Word XML 文档 (*.xml)
 	Word Left	左移一个单词
 	Word Right	右移一个单词
 	WordArt	艺术字

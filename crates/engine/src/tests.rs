@@ -2703,6 +2703,19 @@ fn style_visibility_round_trips_through_docx() {
     assert!(s.doc.styles.get("Heading4").is_some_and(|h| !h.quick), "undoable");
 }
 
+/// #548: `.xml` saves a Word XML Document (Flat OPC) and opens it again; other XML is refused.
+#[test]
+fn word_xml_saves_and_opens_through_io() {
+    let mut s = s();
+    run(&mut s, "text.insert", json!({"text": "Kept in one XML file"}));
+    let bytes = crate::io::save_bytes("notes.xml", &s.doc).unwrap();
+    assert_eq!(wordcraft_docx::sniff_xml(&bytes), wordcraft_docx::XmlKind::FlatOpc);
+    let doc = crate::io::open_bytes("notes.XML", &bytes).unwrap();
+    assert_eq!(doc.body, crate::io::open_bytes("n.docx", &crate::io::save_bytes("n.docx", &s.doc).unwrap()).unwrap().body);
+    let err = crate::io::open_bytes("feed.xml", b"<rss><channel/></rss>").unwrap_err();
+    assert!(err.contains("not a Word XML document"), "{err}");
+}
+
 /// #146: the first/last column, total row and banded column regions apply in layout (later
 /// regions win: the total row's fill beats the first column's) and round-trip through .docx.
 #[test]

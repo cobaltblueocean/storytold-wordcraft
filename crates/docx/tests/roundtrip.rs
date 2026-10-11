@@ -1167,6 +1167,21 @@ fn second_generation_is_stable() {
     assert_eq!(d2, d1);
 }
 
+/// A Word XML Document (Flat OPC) carries the same package as a .docx: reading it back gives
+/// what the .docx round trip gives, pictures included (#548).
+#[test]
+fn flat_opc_round_trip_equals_docx() {
+    let d = kitchen_sink();
+    let xml = wordcraft_docx::write_flat(&d).expect("write flat");
+    let text = std::str::from_utf8(&xml).expect("utf-8");
+    assert!(text.starts_with("<?xml") && text.contains("<?mso-application progid=\"Word.Document\"?>"));
+    assert!(text.contains("pkg:name=\"/word/document.xml\"") && text.contains("<pkg:binaryData>"));
+    assert_eq!(wordcraft_docx::sniff_xml(&xml), wordcraft_docx::XmlKind::FlatOpc);
+    let back = wordcraft_docx::read_xml(&xml).expect("read flat");
+    assert_eq!(back, rt(&d));
+    assert_eq!(back.media.len(), 1);
+}
+
 #[test]
 fn builtin_stylesheet_survives() {
     let d = Document::new();

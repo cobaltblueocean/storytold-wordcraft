@@ -1139,7 +1139,7 @@ impl AutoSaveBlock {
 /// copy that leaves it unsaved. AutoSave writes only these formats.
 fn keeps_everything(name: &str) -> bool {
     let ext = std::path::Path::new(name).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
-    matches!(ext.as_str(), "docx" | "docm" | "dotx" | "dotm" | "odt" | "rtf" | "json")
+    matches!(ext.as_str(), "docx" | "docm" | "dotx" | "dotm" | "odt" | "rtf" | "json" | "xml")
 }
 
 /// The dialog a user-run command opens when it lacks the input it needs (scripts and agents get

@@ -947,6 +947,7 @@
 	Window	Прозор
 	Word Count	Број речи
 	Word document (*.docx)	Word документ (*.docx)
+	Word XML Document (*.xml)	Word XML документ (*.xml)
 	Word Left	Реч лево
 	Word Right	Реч десно
 	WordArt	WordArt

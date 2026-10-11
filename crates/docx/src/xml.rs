@@ -63,7 +63,10 @@ const STRICT: &[(&str, &str)] = &[
     ("m", "http://purl.oclc.org/ooxml/officeDocument/math"),
 ];
 
-fn prefix_for(uri: &[u8]) -> &'static str {
+fn prefix_for(uri: &[u8], extra: &[(&'static str, &str)]) -> &'static str {
+    if let Some((p, _)) = extra.iter().find(|(_, u)| u.as_bytes() == uri) {
+        return p;
+    }
     for (p, u) in NAMESPACES.iter().chain(OTHER_NAMESPACES).chain(STRICT) {
         if u.as_bytes() == uri {
             return p;
@@ -205,10 +208,9 @@ impl El {
     }
 }
 
-/// Parse XML bytes into the root element.
 /// UTF-16 LE/BE text with a byte-order mark as UTF-8 (`None` without one). Lossy: an unpaired
 /// surrogate becomes U+FFFD and a trailing odd byte is dropped. The result is at most 1.5× the input.
-fn utf16_to_utf8(bytes: &[u8]) -> Option<String> {
+pub(crate) fn utf16_to_utf8(bytes: &[u8]) -> Option<String> {
     let (rest, le) = match bytes.get(..2) {
         Some([0xFF, 0xFE]) => (bytes.get(2..)?, true),
         Some([0xFE, 0xFF]) => (bytes.get(2..)?, false),
@@ -218,7 +220,14 @@ fn utf16_to_utf8(bytes: &[u8]) -> Option<String> {
     Some(char::decode_utf16(units).map(|c| c.unwrap_or(char::REPLACEMENT_CHARACTER)).collect())
 }
 
+/// Parse XML bytes into the root element.
 pub fn parse(bytes: &[u8]) -> Result<El, DocxError> {
+    parse_ns(bytes, &[])
+}
+
+/// [`parse`] with `extra` namespaces (prefix, URI) mapped to canonical prefixes first, so a
+/// related vocabulary (WordprocessingML 2003) reads with the prefixes the reader knows.
+pub fn parse_ns(bytes: &[u8], extra: &[(&'static str, &str)]) -> Result<El, DocxError> {
     // UTF-16 (with a BOM) is transcoded to UTF-8; a UTF-8 BOM is stripped.
     let transcoded = utf16_to_utf8(bytes);
     let bytes = match &transcoded {
@@ -241,7 +250,7 @@ pub fn parse(bytes: &[u8]) -> Result<El, DocxError> {
         buf.clear();
         let (res, ev) = r.read_resolved_event_into(&mut buf).map_err(|e| DocxError::Xml(e.to_string()))?;
         let el_prefix = match &res {
-            ResolveResult::Bound(ns) => Some(prefix_for(ns.as_ref())),
+            ResolveResult::Bound(ns) => Some(prefix_for(ns.as_ref(), extra)),
             _ => None,
         };
         match ev {
@@ -266,7 +275,7 @@ pub fn parse(bytes: &[u8]) -> Result<El, DocxError> {
                     let (ares, alocal) = r.resolver_mut().resolve_attribute(key);
                     let alocal = String::from_utf8_lossy(alocal.as_ref()).into_owned();
                     let aname = match ares {
-                        ResolveResult::Bound(ns) => format!("{}:{alocal}", prefix_for(ns.as_ref())),
+                        ResolveResult::Bound(ns) => format!("{}:{alocal}", prefix_for(ns.as_ref(), extra)),
                         _ => alocal,
                     };
                     let val = match a.normalized_value(XmlVersion::Explicit1_0) {
