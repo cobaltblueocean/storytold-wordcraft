@@ -35,9 +35,9 @@ pub fn specs() -> Vec<CommandSpec> {
             .pure(),
         CommandSpec::new("file.save", "Save", "File", save)
             .key("Mod+S / Shift+F12")
-            .params(r#"{"path"?: string, "password"?: string (encrypt this and later saves with it, as file.encrypt does)}"#)
+            .params(r#"{"path"?: string, "password"?: string (encrypt this and later saves with it, as file.encrypt does), "markup"?: bool (Print Markup for a PDF, PNG, HTML, Markdown or text copy: comments shown; default file.printMarkup)}"#)
             .pure(),
-        CommandSpec::new("file.saveAs", "Save As", "File", save_as).key("F12").params(r#"{"path": string, "password"?: string}"#).pure(),
+        CommandSpec::new("file.saveAs", "Save As", "File", save_as).key("F12").params(r#"{"path": string, "password"?: string, "markup"?: bool (as file.save)}"#).pure(),
         // Pure: the password must not land in Repeat or a recorded macro, and it isn't an edit
         // to undo; it marks the document as changed itself.
         CommandSpec::new("file.encrypt", "Encrypt with Password", "File › Info › Protect Document", encrypt)
@@ -46,14 +46,22 @@ pub fn specs() -> Vec<CommandSpec> {
         CommandSpec::new("file.exportPdf", "Export PDF", "File › Export", |s, v| {
             let path = p::req_str(v, "path")?;
             let path = if path.to_ascii_lowercase().ends_with(".pdf") { path.to_string() } else { format!("{path}.pdf") };
-            crate::io::save_path(std::path::Path::new(&path), &s.doc).map_err(CmdError::Failed)?;
-            Ok(json!({"path": path}))
+            let opts = export_options(s, v);
+            crate::io::save_path_with(std::path::Path::new(&path), &s.doc, None, &opts).map_err(CmdError::Failed)?;
+            Ok(json!({"path": path, "markup": opts.markup}))
         })
-        .params(r#"{"path": string}"#)
+        .params(r#"{"path": string, "markup"?: bool (Print Markup: tracked changes marked up and each page scaled down beside the comments in balloons; default file.printMarkup)}"#)
         .pure(),
         CommandSpec::new("file.exportPng", "Export Page as PNG", "File › Export", export_png)
-            .params(r#"{"path": string, "page"?: n (1-based), "scale"?: px per pt}"#)
+            .params(r#"{"path": string, "page"?: n (1-based), "scale"?: px per pt, "markup"?: bool (the page with its comments in balloons beside it; default file.printMarkup)}"#)
             .pure(),
+        // A print setting, like Word's: not part of the document, so no undo step.
+        CommandSpec::new("file.printMarkup", "Print Markup", "File › Print", |s, v| {
+            s.prefs.print_markup = p::bool(v, "value").unwrap_or(!s.prefs.print_markup);
+            Ok(json!({"value": s.prefs.print_markup}))
+        })
+        .params(r#"{"value"?: bool (omit to toggle)} — PDFs, prints and copies show comments (balloons beside each page; a list at the end of HTML, Markdown and text) and tracked changes"#)
+        .pure(),
         CommandSpec::new("file.print", "Print", "File", |s, _| {
             s.ui_requests.push(json!({"open": "print"}));
             sel_result(s)
@@ -178,7 +186,7 @@ fn save(s: &mut Session, v: &Value) -> CmdResult {
     }
     s.stamp_save();
     let password = s.password.as_ref().map(crate::io::Password::as_str);
-    crate::io::save_path_with(&path, &s.doc, password).map_err(CmdError::Failed)?;
+    crate::io::save_path_with(&path, &s.doc, password, &export_options(s, v)).map_err(CmdError::Failed)?;
     let encrypted = password.is_some() && crate::io::can_encrypt(&path.to_string_lossy());
     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
     if ["docx", "docm", "dotx", "dotm", "odt", "rtf", "json"].contains(&ext.as_str()) {
@@ -196,11 +204,18 @@ fn save_as(s: &mut Session, v: &Value) -> CmdResult {
     save(s, v)
 }
 
+/// How a copy is written: Print Markup from the command's `markup`, else the File › Print
+/// setting (`file.printMarkup`); comments as Track Changes Options show them.
+pub fn export_options(s: &Session, v: &Value) -> crate::io::ExportOptions {
+    let markup = p::bool(v, "markup").unwrap_or(s.prefs.print_markup);
+    crate::io::ExportOptions { markup, comments: markup && s.prefs.markup.comments }
+}
+
 fn export_png(s: &mut Session, v: &Value) -> CmdResult {
     let path = p::req_str(v, "path")?;
     let page = p::u64(v, "page").unwrap_or(1).max(1) as usize - 1;
     let scale = p::f32(v, "scale").unwrap_or(2.0).clamp(0.1, 8.0);
-    let l = s.export_layout();
+    let l = s.export_layout_with(export_options(s, v).markup);
     let pg = l.pages.get(page).ok_or_else(|| CmdError::Params(format!("no page {}", page + 1)))?;
     let img = wordcraft_render::render_page(&s.doc, pg, scale, &Default::default());
     let png = img.to_png();

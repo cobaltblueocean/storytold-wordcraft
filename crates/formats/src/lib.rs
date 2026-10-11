@@ -8,6 +8,7 @@
 //! depth-limited and sizes are capped.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
+pub mod comments;
 pub mod html;
 pub mod latex;
 pub mod markdown;
@@ -51,6 +52,25 @@ pub fn export(ext: &str, doc: &Document) -> Option<Result<Vec<u8>, String>> {
         "tex" | "latex" | "ltx" => Ok(latex::export(doc).into_bytes()),
         _ => return None,
     })
+}
+
+/// How [`export_with`] writes a copy.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ExportOptions {
+    /// Print Markup: HTML, Markdown and plain text end with the document's comments (who wrote
+    /// each, the text it comments on, what it says, its replies). Other formats keep comments
+    /// their own way or not at all.
+    pub comments: bool,
+}
+
+/// [`export`] with options.
+pub fn export_with(ext: &str, doc: &Document, opts: &ExportOptions) -> Option<Result<Vec<u8>, String>> {
+    let out = export(ext, doc)?;
+    if !opts.comments {
+        return Some(out);
+    }
+    let ext = ext.trim_start_matches('.').to_ascii_lowercase();
+    Some(out.map(|bytes| comments::append(&ext, doc, bytes)))
 }
 
 #[cfg(test)]

@@ -418,11 +418,13 @@ fn draw_watermark(ctx: &mut RenderContext, view: Affine, page: &Page, wm: &wordc
     if raw_w <= 0.0 {
         return;
     }
-    let diag = if wm.diagonal { ((page.w as f64).powi(2) + (page.h.min(2000.0) as f64).powi(2)).sqrt() } else { page.w as f64 };
+    // The document page, not a Print Markup area beside it.
+    let pw = (page.w - page.markup.max(0.0)).max(1.0) as f64;
+    let diag = if wm.diagonal { (pw.powi(2) + (page.h.min(2000.0) as f64).powi(2)).sqrt() } else { pw };
     let size = (diag * 0.5 / raw_w).min(200.0);
     let k = size / upem;
-    let angle = if wm.diagonal { -((page.h.min(2000.0) as f64) / page.w.max(1.0) as f64).atan() } else { 0.0 };
-    let base = Affine::translate((page.w as f64 / 2.0, page.h.min(2000.0) as f64 / 2.0))
+    let angle = if wm.diagonal { -((page.h.min(2000.0) as f64) / pw).atan() } else { 0.0 };
+    let base = Affine::translate((pw / 2.0, page.h.min(2000.0) as f64 / 2.0))
         * Affine::rotate(angle)
         * Affine::translate((-raw_w * size / 2.0, size * 0.35));
     ctx.set_paint(color(opts.ink(wm.color), if wm.semitransparent { 0.35 } else { 0.8 }));

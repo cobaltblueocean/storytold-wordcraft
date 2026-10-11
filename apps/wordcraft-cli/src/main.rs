@@ -12,7 +12,10 @@ const USAGE: &str = "\
 wordcraft-cli — WordCraft from the command line
 
 USAGE:
-  wordcraft-cli convert <in> <out>            convert between formats (docx, doc [read], pdf, odt, rtf, html, md, tex, txt, json, png)
+  wordcraft-cli convert <in> <out> [--markup]
+                                              convert between formats (docx, doc [read], pdf, odt, rtf, html, md, tex, txt, json, png);
+                                              --markup (Print Markup): comments beside each page and
+                                              tracked changes in pdf/png, a comment list in html/md/txt
   wordcraft-cli info <file>                   pages, words, paragraphs, properties (JSON)
   wordcraft-cli text <file>                   plain text
   wordcraft-cli inspect <file>                document structure (JSON)
@@ -74,6 +77,7 @@ fn validate_options(command: &str, args: &[String], specs: &[OptionSpec]) -> Res
 }
 
 const NO_OPTIONS: &[OptionSpec] = &[];
+const CONVERT_OPTIONS: &[OptionSpec] = &[OptionSpec { name: "--markup", takes_value: false }];
 const RENDER_OPTIONS: &[OptionSpec] = &[OptionSpec { name: "--page", takes_value: true }, OptionSpec { name: "--scale", takes_value: true }];
 const RUN_OPTIONS: &[OptionSpec] = &[
     OptionSpec { name: "--file", takes_value: true },
@@ -147,13 +151,14 @@ fn run(args: &[String]) -> Result<(), Failure> {
     let pos = |i: usize| rest.iter().filter(|a| !a.starts_with("--")).nth(i).cloned().ok_or_else(|| format!("missing argument\n\n{USAGE}"));
     match cmd {
         "convert" => {
-            validate_options("convert", &rest, NO_OPTIONS)?;
+            validate_options("convert", &rest, CONVERT_OPTIONS)?;
             let (i, o) = (pos(0)?, pos(1)?);
+            let markup = rest.iter().any(|a| a == "--markup");
             let mut s = open(&i)?;
             let r = if o.to_ascii_lowercase().ends_with(".png") {
-                s.run("file.exportPng", &json!({"path": o, "page": 1}))
+                s.run("file.exportPng", &json!({"path": o, "page": 1, "markup": markup}))
             } else {
-                s.run("file.save", &json!({"path": o}))
+                s.run("file.save", &json!({"path": o, "markup": markup}))
             };
             r.map_err(|e| e.to_string())?;
             eprintln!("wrote {o}");

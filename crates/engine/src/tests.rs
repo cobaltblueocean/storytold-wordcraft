@@ -2807,3 +2807,54 @@ fn deleting_the_last_cell_column_never_leaves_a_table_without_rows() {
     run(&mut s, "edit.undo", json!({}));
     assert!(s.doc.body.iter().any(|b| b.as_table().is_some_and(|t| !t.rows.is_empty())));
 }
+
+/// Print Markup (#589): `file.printMarkup` or a command's `markup` puts the comments into PDFs
+/// (balloons beside the scaled page) and at the end of HTML, Markdown and text copies.
+#[test]
+fn print_markup_exports_comments() {
+    let mut s = Session::new(wordcraft_doc::Document::from_text("The quarterly figures look strong."));
+    s.author = "Ada Reviewer".into();
+    s.run("select.text", &json!({"text": "figures"})).unwrap();
+    let id = s.run("review.newComment", &json!({"text": "Check the totals"})).unwrap()["id"].as_u64().unwrap();
+    s.run("review.reply", &json!({"id": id, "text": "Totals checked"})).unwrap();
+    let opts = |s: &Session, v| cmd::file::export_options(s, &v);
+    assert!(!opts(&s, json!({})).markup, "off by default");
+    let pdf = |s: &Session, v| crate::io::save_bytes_opts("x.pdf", &s.doc, &opts(s, v)).unwrap();
+    let html = |s: &Session, v| String::from_utf8(crate::io::save_bytes_opts("x.html", &s.doc, &opts(s, v)).unwrap()).unwrap();
+    let txt = |s: &Session, v| String::from_utf8(crate::io::save_bytes_opts("x.txt", &s.doc, &opts(s, v)).unwrap()).unwrap();
+    assert!(!html(&s, json!({})).contains("Check the totals"));
+    assert!(!txt(&s, json!({})).contains("Check the totals"));
+    let plain = pdf(&s, json!({}));
+    // The setting turns it on for every copy; a command's `markup` overrides it.
+    assert_eq!(s.run("file.printMarkup", &json!({})).unwrap()["value"], true);
+    let h = html(&s, json!({}));
+    assert!(
+        h.contains("<section class=\"comments\">") && h.contains("Ada Reviewer") && h.contains("<q>figures</q>") && h.contains("Totals checked"),
+        "{h}"
+    );
+    assert!(h.find("Check the totals") < h.find("</body>"));
+    let t = txt(&s, json!({}));
+    assert!(t.contains("[1] Ada Reviewer on “figures”: Check the totals") && t.contains("Totals checked"), "{t}");
+    let md = String::from_utf8(crate::io::save_bytes_opts("x.md", &s.doc, &opts(&s, json!({}))).unwrap()).unwrap();
+    assert!(md.contains("## Comments") && md.contains("1. **Ada Reviewer**"), "{md}");
+    assert_ne!(pdf(&s, json!({})), plain);
+    assert!(!html(&s, json!({"markup": false})).contains("Check the totals"));
+    // Comments hidden in Track Changes Options stay out.
+    s.prefs.markup.comments = false;
+    assert!(!html(&s, json!({})).contains("Check the totals"));
+    s.prefs.markup.comments = true;
+    assert_eq!(s.run("file.printMarkup", &json!({"value": false})).unwrap()["value"], false);
+    assert!(html(&s, json!({"markup": true})).contains("Check the totals"));
+    // file.exportPdf and file.exportPng take it too.
+    let dir = std::env::temp_dir().join(format!("wordcraft-print-markup-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("m.pdf");
+    let r = s.run("file.exportPdf", &json!({"path": path.to_string_lossy(), "markup": true})).unwrap();
+    assert_eq!(r["markup"], true);
+    assert!(std::fs::read(&path).unwrap().starts_with(b"%PDF-"));
+    let png = dir.join("m.png");
+    let wide = s.run("file.exportPng", &json!({"path": png.to_string_lossy(), "markup": true, "scale": 1.0})).unwrap()["width"].as_u64().unwrap();
+    let narrow = s.run("file.exportPng", &json!({"path": png.to_string_lossy(), "scale": 1.0})).unwrap()["width"].as_u64().unwrap();
+    assert!(wide > narrow + 200, "{wide} vs {narrow}");
+    let _ = std::fs::remove_dir_all(&dir);
+}

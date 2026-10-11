@@ -333,6 +333,18 @@ fn info_page(app: &mut WordApp, ui: &mut Ui) {
 fn export_page(app: &mut WordApp, ui: &mut Ui) {
     let is_print = app.ui.backstage_page == "print";
     heading(ui, if is_print { "Print" } else { "Export" });
+    // Print Markup (a print setting, as in Word): the comments beside each page.
+    let mut markup = app.session.prefs.print_markup;
+    if ui
+        .checkbox(&mut markup, tl!("Print Markup"))
+        .on_hover_text(tl!(
+            "Comments beside each page and tracked changes in PDFs, prints and images; a comment list at the end of web pages, Markdown and text."
+        ))
+        .changed()
+    {
+        let _ = app.run("file.printMarkup", json!({"value": markup}));
+    }
+    ui.add_space(12.0);
     if is_print && app.services.print.is_some() {
         ui.label(tl!("Send the document straight to the system print dialog, or save a copy in another format below."));
         ui.add_space(12.0);

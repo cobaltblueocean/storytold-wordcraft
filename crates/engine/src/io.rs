@@ -36,6 +36,17 @@ pub fn is_word_package(ext: &str) -> bool {
     wordcraft_docx::Flavor::from_ext(ext).is_some()
 }
 
+/// How a copy in another format is written.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ExportOptions {
+    /// Print Markup: PDFs show tracked changes marked up and, with `comments`, each page scaled
+    /// down beside a markup area with the comments in balloons (page images get the area too);
+    /// HTML, Markdown and text copies end with the comments.
+    pub markup: bool,
+    /// With `markup`, show the comments (Track Changes Options › Comments).
+    pub comments: bool,
+}
+
 /// A document password: wiped from memory when dropped, never printed (`Debug` shows `***`).
 #[derive(Clone, Default, PartialEq, Eq)]
 pub struct Password(zeroize::Zeroizing<String>);
@@ -108,12 +119,20 @@ pub fn open_bytes_with(name: &str, bytes: &[u8], password: Option<&str>) -> Resu
 
 /// Serialise a document; `name` gives the format by extension.
 pub fn save_bytes(name: &str, doc: &Document) -> Result<Vec<u8>, String> {
+    save_bytes_opts(name, doc, &ExportOptions::default())
+}
+
+/// [`save_bytes`] with export options (Print Markup).
+pub fn save_bytes_opts(name: &str, doc: &Document, opts: &ExportOptions) -> Result<Vec<u8>, String> {
     let ext = ext_of(name);
     match ext.as_str() {
         // List paragraphs get their label and a tab, as in Word's plain-text save.
-        "txt" | "text" => Ok(wordcraft_formats::txt::export(doc)),
+        "txt" | "text" => {
+            let bytes = wordcraft_formats::txt::export(doc);
+            Ok(if opts.markup && opts.comments { wordcraft_formats::comments::append("txt", doc, bytes) } else { bytes })
+        }
         "json" => serde_json::to_vec_pretty(doc).map_err(|e| e.to_string()),
-        other => match crate::io_ext::save(other, doc) {
+        other => match crate::io_ext::save(other, doc, opts) {
             Some(r) => r,
             None => Err(format!("{name}: can't save as `.{other}`")),
         },
@@ -122,8 +141,8 @@ pub fn save_bytes(name: &str, doc: &Document) -> Result<Vec<u8>, String> {
 
 /// [`save_bytes`], encrypted with `password` when there is one and the format is a Word package
 /// (other formats are copies and are written as they are).
-pub fn save_bytes_with(name: &str, doc: &Document, password: Option<&str>) -> Result<Vec<u8>, String> {
-    let bytes = save_bytes(name, doc)?;
+pub fn save_bytes_with(name: &str, doc: &Document, password: Option<&str>, opts: &ExportOptions) -> Result<Vec<u8>, String> {
+    let bytes = save_bytes_opts(name, doc, opts)?;
     match password {
         Some(pw) if can_encrypt(name) => wordcraft_docx::encrypt(&bytes, pw).map_err(|e| e.to_string()),
         _ => Ok(bytes),
@@ -262,13 +281,13 @@ pub fn open_path_with(path: &std::path::Path, _password: Option<&str>) -> Result
 }
 
 pub fn save_path(path: &std::path::Path, doc: &Document) -> Result<(), String> {
-    save_path_with(path, doc, None)
+    save_path_with(path, doc, None, &ExportOptions::default())
 }
 
 /// [`save_path`], encrypted with `password` as [`save_bytes_with`] does.
 #[cfg(not(target_arch = "wasm32"))]
-pub fn save_path_with(path: &std::path::Path, doc: &Document, password: Option<&str>) -> Result<(), String> {
-    let bytes = save_bytes_with(&path.to_string_lossy(), doc, password)?;
+pub fn save_path_with(path: &std::path::Path, doc: &Document, password: Option<&str>, opts: &ExportOptions) -> Result<(), String> {
+    let bytes = save_bytes_with(&path.to_string_lossy(), doc, password, opts)?;
     // Write atomically: temp file next to the target, then rename.
     let tmp = path.with_extension(format!("{}.tmp", ext_of(&path.to_string_lossy())));
     std::fs::write(&tmp, &bytes).map_err(|e| format!("{}: {e}", tmp.display()))?;
@@ -276,7 +295,7 @@ pub fn save_path_with(path: &std::path::Path, doc: &Document, password: Option<&
 }
 
 #[cfg(target_arch = "wasm32")]
-pub fn save_path_with(path: &std::path::Path, _doc: &Document, _password: Option<&str>) -> Result<(), String> {
+pub fn save_path_with(path: &std::path::Path, _doc: &Document, _password: Option<&str>, _opts: &ExportOptions) -> Result<(), String> {
     Err(format!("{}: files are saved through the browser on the web", path.display()))
 }
 

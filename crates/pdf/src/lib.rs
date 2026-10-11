@@ -77,20 +77,25 @@ pub struct PdfOptions {
     pub tagged: bool,
     /// Show tracked changes as markup (coloured, underlined / struck through).
     pub include_markup: bool,
+    /// Print Markup's comments: each page is scaled down to make room on its right for the
+    /// comments in balloons joined to their anchors (Word's "Document showing markup").
+    pub comments: bool,
     /// Compress content streams.
     pub compress: bool,
 }
 
 impl Default for PdfOptions {
     fn default() -> Self {
-        PdfOptions { pages: None, title: None, author: None, tagged: true, include_markup: false, compress: true }
+        PdfOptions { pages: None, title: None, author: None, tagged: true, include_markup: false, comments: false, compress: true }
     }
 }
 
 /// Lay out `doc` and write it as PDF. Without markup the layout is the final text: tracked
-/// deletions are left out, as in Word's "No Markup" view.
+/// deletions are left out, as in Word's "No Markup" view. With `comments` each page carries the
+/// markup area with the comment balloons.
 pub fn export(doc: &Document, opts: &PdfOptions) -> Result<Vec<u8>, PdfError> {
-    let lay = layout(doc, &mut LayoutCache::new(), &LayoutOptions { hide_deleted: !opts.include_markup, ..Default::default() });
+    let lo = LayoutOptions { hide_deleted: !opts.include_markup, comment_balloons: opts.comments, ..Default::default() };
+    let lay = layout(doc, &mut LayoutCache::new(), &lo);
     export_layout(doc, &lay, opts)
 }
 
@@ -154,16 +159,26 @@ fn write(doc: &Document, lay: &DocLayout, opts: &PdfOptions, pages: &[usize], ou
     if let Some(o) = ex.outline(pages) {
         pdf.set_outline(o);
     }
-    for (out, &pi) in pages.iter().enumerate() {
+    for &pi in pages {
         let Some(page) = lay.pages.get(pi) else { return Err(PdfError::BadPage(pi + 1)) };
-        let (w, h) = (clamp_side(page.w), clamp_side(page.h));
+        let fit = Fit::of(page);
+        let (w, h) = (clamp_side(fit.paper_w), clamp_side(page.h));
         let size = Size::from_wh(w, h).ok_or(PdfError::NoPages)?;
         let mut kp = pdf.start_page_with(PageSettings::new(size));
         let mut s = kp.surface();
         ex.links.clear();
+        // A page with a markup area is scaled down to fit its paper with the area beside it.
+        let scaled = fit.k < 1.0;
+        if scaled {
+            s.push_transform(&Transform::from_row(fit.k, 0.0, 0.0, fit.k, 0.0, fit.dy));
+        }
+        // `w` is the document page's width: the page colour and watermark stay off the markup area.
         ex.page(&mut s, page, w, h);
+        if scaled {
+            s.pop();
+        }
         s.finish();
-        for a in ex.annotations(out) {
+        for a in ex.annotations(fit) {
             kp.add_annotation(a);
         }
         kp.finish();
@@ -181,6 +196,32 @@ fn write(doc: &Document, lay: &DocLayout, opts: &PdfOptions, pages: &[usize], ou
             }
         }
         Err(e) => Err(PdfError::Write(format!("{e:?}"))),
+    }
+}
+
+/// How a layout page maps onto its PDF page: a page with a markup area (Print Markup) is scaled
+/// by `k` to its paper width and centred vertically (`dy`); any other page is drawn as it is.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Fit {
+    paper_w: f32,
+    k: f32,
+    dy: f32,
+}
+
+impl Fit {
+    fn of(page: &Page) -> Fit {
+        let paper_w = page.w - page.markup;
+        if page.markup > 0.0 && ok(page.markup) && ok(page.w) && paper_w > 1.0 {
+            let k = paper_w / page.w;
+            Fit { paper_w, k, dy: page.h * (1.0 - k) / 2.0 }
+        } else {
+            Fit { paper_w: page.w, k: 1.0, dy: 0.0 }
+        }
+    }
+
+    /// A layout point on the PDF page.
+    fn point(self, x: f32, y: f32) -> (f32, f32) {
+        (x * self.k, y * self.k + self.dy)
     }
 }
 
@@ -1112,8 +1153,9 @@ impl Exporter<'_> {
         let places = self.lay.index.get(&(story, path.clone()))?;
         for (pi, ii) in places {
             let Some(out) = self.out_index.get(pi) else { continue };
-            let (x, y) = match self.lay.pages.get(*pi).and_then(|p| p.items.get(*ii)) {
-                Some(Placed::Lines { x, y, .. }) => (*x, *y),
+            let Some(page) = self.lay.pages.get(*pi) else { continue };
+            let (x, y) = match page.items.get(*ii) {
+                Some(Placed::Lines { x, y, .. }) => Fit::of(page).point(*x, *y),
                 _ => (0.0, 0.0),
             };
             return Some((*out, x, y));
@@ -1121,10 +1163,11 @@ impl Exporter<'_> {
         None
     }
 
-    fn annotations(&self, _out: usize) -> Vec<Annotation> {
+    fn annotations(&self, fit: Fit) -> Vec<Annotation> {
         let mut v = Vec::new();
         for (x0, y0, x1, y1, target) in &self.links {
-            let Some(rect) = krilla::geom::Rect::from_ltrb(*x0, *y0, *x1, *y1) else { continue };
+            let ((x0, y0), (x1, y1)) = (fit.point(*x0, *y0), fit.point(*x1, *y1));
+            let Some(rect) = krilla::geom::Rect::from_ltrb(x0, y0, x1, y1) else { continue };
             let t = if let Some(name) = target.strip_prefix('#') {
                 match self.bookmark(name) {
                     Some((page, x, y)) => Target::Destination(XyzDestination::new(page, Point::from_xy(x, y)).into()),
@@ -1155,7 +1198,8 @@ impl Exporter<'_> {
                 if title.is_empty() {
                     continue;
                 }
-                flat.push((level.min(8), title, out, *x, *y));
+                let (x, y) = Fit::of(page).point(*x, *y);
+                flat.push((level.min(8), title, out, x, y));
             }
         }
         if flat.is_empty() {

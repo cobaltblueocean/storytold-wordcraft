@@ -1340,6 +1340,8 @@
 	Formatted	已設定格式
 	Interface size:	介面大小：
 	Makes the ribbon, menus and dialogs larger or smaller, on top of your system's display scaling. Document zoom is separate.	在系統顯示縮放的基礎上放大或縮小功能區、功能表與對話方塊。文件縮放另行設定。
+	Print Markup	列印標記
+	Comments beside each page and tracked changes in PDFs, prints and images; a comment list at the end of web pages, Markdown and text.	在 PDF、列印和影像中於每頁旁顯示註解和修訂；在網頁、Markdown 和文字末尾附上註解清單。
 	In Line with Text	與文字同行
 	Square	矩形
 	Through	穿透
